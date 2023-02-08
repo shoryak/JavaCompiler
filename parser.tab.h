@@ -111,7 +111,26 @@ extern int yydebug;
     OPEN = 322,
     RECORD = 323,
     TRANSITIVE = 324,
-    YIELD = 325
+    YIELD = 325,
+    CharacterLiteral = 326,
+    BooleanLiteral = 327,
+    IntegerLiteral = 328,
+    FloatingPointLiteral = 329,
+    StringLiteral = 330,
+    TextBlock = 331,
+    NullLiteral = 332,
+    LeftParenthesis = 333,
+    RightParenthesis = 334,
+    LeftCurlyBrace = 335,
+    RightCurlyBrace = 336,
+    LeftSquareBracket = 337,
+    RightSquareBracket = 338,
+    Semicolon = 339,
+    Comma = 340,
+    Period = 341,
+    AtSign = 342,
+    Scope = 343,
+    ellipsis = 344
   };
 #endif
 
@@ -120,14 +139,14 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 46 "parser.y" /* yacc.c:1909  */
+#line 26 "parser.y" /* yacc.c:1909  */
 
     char* str;
     int num;
     float float_val;
     char sym;
 
-#line 131 "parser.tab.h" /* yacc.c:1909  */
+#line 150 "parser.tab.h" /* yacc.c:1909  */
 };
 
 typedef union YYSTYPE YYSTYPE;
