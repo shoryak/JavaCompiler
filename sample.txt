@@ -1,0 +1,33 @@
+public class SyntaxCheck {
+    public static void main(String[] args) {
+        int a;
+        a = 5;
+        a++;
+        printFunc(a);
+
+        float b = 3.1_4f; // Default to a float type
+        printFunc(b);
+
+        long val = 100L;
+        printFunc(val);
+        char p = '\n';
+    }
+
+    static void printFunc(float val) {
+        System.out.println(val);
+    }
+
+    static void printFunc(int val) {
+        System.out.println(val);
+    }
+
+    static void printFunc(long val) {
+        System.out.println(val);
+    }
+    089
+}
+
+0    2    0372    0xDada_Cafe    1996    0x00_FF__00_FF
+
+0l    0777L    0x100000000L    2_147_483_648L    0xC0B0L
+0b1000_
