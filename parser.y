@@ -42,11 +42,13 @@ T parser_string(string str){
 %token NullLiteral
 %token LeftParenthesis  RightParenthesis  LeftCurlyBrace RightCurlyBrace LeftSquareBracket  RightSquareBracket
 %token Semicolon Comma  Period  AtSign 
-%token GreaterThan LessThan
 %token Scope ellipsis 
+%token ASSIGN GT LT EXCLAMATION TILDE QUESTIONMARK COLON ARROW EQUAL GE LE NOTEQUAL AND OR INC DEC ADD SUB MUL DIV BITAND BITOR CARET MOD LSHIFT RSHIFT URSHIFT ADD_ASSIGN SUB_ASSIGN MUL_ASSIGN DIV_ASSIGN AND_ASSIGN OR_ASSIGN XOR_ASSIGN MOD_ASSIGN LSHIFT_ASSIGN RSHIFT_ASSIGN URSHIFT_ASSIGN 
+
 %type<str> CompilationUnit  OrdinaryCompilationUnit  ModularCompilationUnit ImportDeclaration ImportDeclarationList PackageDeclaration ModuleDeclaration TopLevelClassOrInterfaceDeclaration TopLevelClassOrInterfaceDeclarationList
 %type<str> ClassDeclaration InterfaceDeclaration EnumDeclaration RecordDeclaration ClassBody ClassExtends ClassExtendsOpt ClassImplements ClassImplementsOpt ClassModifier ClassModifierList ClassPermits ClassPermitsOpt 
 %type<str> TypeIdentifier TypeParameters TypeParametersOpt Annotation
+
 %%
 
 program : 
@@ -116,7 +118,7 @@ Annotation:
 TypeIdentifier :
 ;
 
-TypeParameters: LessThan TypeParameterList GreaterThan
+TypeParameters: LT TypeParameterList GT
 ;
 // < TypeParameterList >
 TypeParameterList: TypeParameter CommaTypeParameterList
@@ -139,7 +141,7 @@ TypeBoundOpt :
 TypeParameterModifier: Annotation;
 
 TypeBound: extends TypeVariable
-    | extends ClassOrInterfaceType {AdditionalBound}
+    | extends ClassOrInterfaceType AdditionalBoundList
 ;
 
 AdditionalBoundList : 
@@ -187,7 +189,7 @@ CommaInterfaceTypeList :
 | Comma InterfaceType CommaInterfaceTypeList
 ;
 
-ClassPermits: permits TypeName {, TypeName}
+ClassPermits: permits TypeName CommaTypeNameList
 
 CommaTypeNameList : 
  | Comma TypeName CommaTypeNameList
@@ -237,7 +239,7 @@ ConstructorDeclaration: ConstructorModifierList ConstructorDeclarator ThrowsOpt 
 ConstructorModifierList : Block
 ;
 
-ConstructorDeclaration: {ConstructorModifier} ConstructorDeclarator [Throws] ConstructorBody
+ConstructorDeclaration: ConstructorModifierList ConstructorDeclarator ThrowsOpt ConstructorBody
 ;
 
 ConstructorModifierList : 
