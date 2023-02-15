@@ -145,7 +145,18 @@ Literals {DecimalIntegerLiteral}|{HexIntegerLiteral}|{OctalIntegerLiteral}|{Floa
 "_" { yylval.str = strdup(yytext); return underscore ;}
 
 
-"("|")"|"{"|"}"|"["|"]"|";"|","|"."|"..."|"@"|"::" {mp1[yytext]="Separator"; mp2[yytext]++; if(mp2[yytext]!=1){} else v.push_back(yytext);}
+"(" {   yylval.str = strdup(yytext); return LeftParenthesis;}
+")" {   yylval.str = strdup(yytext); return RightParenthesis;}
+"{" {   yylval.str = strdup(yytext); return LeftCurlyBrace ;}
+"}" {   yylval.str = strdup(yytext); return RightCurlyBrace; }
+"[" { yylval.str = strdup(yytext); return LeftSquareBracket;}
+"]" { yylval.str = strdup(yytext); return RightSquareBracket;}
+";" { yylval.str = strdup(yytext); return Semicolon;}
+"," { yylval.str = strdup(yytext); return Comma;}
+"." { yylval.str = strdup(yytext); return Period;}
+"..." { yylval.str = strdup(yytext); return ellipsis;}
+"@" { yylval.str = strdup(yytext); return AtSign;}
+"::" { yylval.str = strdup(yytext); return Scope;}
 
 "=" { yylval.str = strdup(yytext); return ASSIGN ;}
 ">" { yylval.str = strdup(yytext); return GT ;}
@@ -189,7 +200,7 @@ Literals {DecimalIntegerLiteral}|{HexIntegerLiteral}|{OctalIntegerLiteral}|{Floa
 
 
 
-(\"\"\")[ ]*([\n\r]|[\r][\n])([^\\]|(\\\\))*(\"\"\") {mp1[yytext]="Literal";mp2[yytext]++;if(mp2[yytext]!=1){} else v.push_back(yytext);}
+(\"\"\")[ ]*([\n\r]|[\r][\n])([^\\]|(\\\\))*(\"\"\") {mp1[yytext]="Literal";mp2[yytext]++;if(mp2[yytext]!=1){} else v.push_back(yytext); yylval.str = strdup(yytext); return TextBlock;}
 
 
 [\"]([^\"\\\n]|(\\\")|(\\\\))*[\"] {
@@ -197,11 +208,13 @@ Literals {DecimalIntegerLiteral}|{HexIntegerLiteral}|{OctalIntegerLiteral}|{Floa
     mp1[yytext]="Literal";
     mp2[yytext]++; 
     if(mp2[yytext]!=1){} else v.push_back(yytext);
-
+    yylval.str = strdup(yytext);
+    return StringLiteral;
 }
 
 
 [\'][\\][\'] {cout<<yytext<<" "<<" Line number is "<<yylineno<< " Illegal Character is "<<yytext[0]<<endl; mp1[yytext]="Illegal";mp2[yytext]++;}
+
 
 [\'][\'][\'] {cout<<yytext<<" "<<" Line number is "<<yylineno<< " Illegal Character is "<<yytext[1]<<endl; mp1[yytext]="Illegal";mp2[yytext]++;}
 [\'].[\'] {
@@ -209,13 +222,20 @@ Literals {DecimalIntegerLiteral}|{HexIntegerLiteral}|{OctalIntegerLiteral}|{Floa
     mp1[yytext]="Literal";
     mp2[yytext]++; 
     if(mp2[yytext]!=1){} else v.push_back(yytext);
+    yylval.str = strdup(yytext);
+    return CharLiteral;
 
 }
 
 
-{Literals} {mp1[yytext]="Literal";mp2[yytext]++;if(mp2[yytext]!=1){} else v.push_back(yytext);}
+{DecimalIntegerLiteral}|{HexIntegerLiteral}|{OctalIntegerLiteral}|{BinaryIntegerLiteral} {yylval.str=strdup(yytext); return IntegerLiteral; }
+{FloatingPointLiteral} {yylval.str=strdup(yyetxt); return FloatingPointLiteral}
+{BooleanLiteral} {yylval.str=strdup(yyetxt); return BooleanLiteral;}
+{CharLiteral} {yylval.str=strdup(yyetxt); return CharLiteral;}
+{NullLiteral} {yylval.str=strdup(yyetxt); return NullLiteral;}
 
-[a-zA-Z$_]+[$_a-zA-Z0-9]* {mp1[yytext]="Identifier";mp2[yytext]++;if(mp2[yytext]!=1){} else v.push_back(yytext); yylval.str = strdup(yytext) ;return IDENTIFIER;}
+
+[a-zA-Z$_]+[$_a-zA-Z0-9]* {mp1[yytext]="Identifier";mp2[yytext]++;if(mp2[yytext]!=1){} else v.push_back(yytext); yylval.str = strdup(yytext) ;return IdentifierChars;}
 \".*\" { cout<<yytext<<" "<<" Line number is "<<yylineno<< " Illegal Character is "<<yytext[0]<<endl; }
 
 . {cout<<yytext<<" "<<" Line number is "<<yylineno<< " Illegal Character is "<<yytext[0]<<endl; mp1[yytext]="Illegal";mp2[yytext]++;}
