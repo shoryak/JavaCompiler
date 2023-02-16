@@ -3,7 +3,7 @@
 using namespace std;
 int lines=0;
 extern "C" {
-        int yyparse();
+        int yyparse(void);
         int yylex(void);
         int yyerror(char* s)
         {
@@ -846,17 +846,3 @@ Literal : IntegerLiteral | FloatingPointLiteral | BooleanLiteral |CharacterLiter
 
 
 %%
-
-
-
-int main(int argc , char** argv){
-    #ifdef YYDEBUG 
-        yydebug = 1; 
-    #endif
-
-    ++argv, --argc; 
-    if ( argc > 0 )yyin = fopen( argv[0], "r" );
-    else yyin = stdin;
-    yyparse();
-    return 0;
-}

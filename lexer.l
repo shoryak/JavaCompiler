@@ -1,7 +1,7 @@
 %{
     #include<bits/stdc++.h>
   
-    #include "parser.tab.h"
+    #include "token.h"
   #include<string.h>
   using namespace std;
   extern "C" {

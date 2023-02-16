@@ -1,7 +1,9 @@
 #include <iostream>
 #include <string>
 
-int yyparse(void);
+extern "C" {
+    int yyparse(void);
+}
 /* Add all extern variables here */
 
 int main(int argc, char *argv[]) {
