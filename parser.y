@@ -49,7 +49,7 @@ T parser_string(string str){
 %type<str> CompilationUnit  OrdinaryCompilationUnit  ModularCompilationUnit ImportDeclaration ImportDeclarationList PackageDeclaration ModuleDeclaration TopLevelClassOrInterfaceDeclaration TopLevelClassOrInterfaceDeclarationList
 %type<str> ClassDeclaration InterfaceDeclaration EnumDeclaration RecordDeclaration ClassBody ClassExtends ClassExtendsOpt ClassImplements ClassImplementsOpt ClassModifier ClassModifierList ClassPermits ClassPermitsOpt 
 %type<str> TypeIdentifier TypeParameters TypeParametersOpt Annotation
-%type<str> NormalInterfaceDeclaration LabeledStatementNoShortIf ThrowStatement
+%type<str> NormalInterfaceDeclaration LabeledStatementNoShortIf
 %type<str> ThrowStatement TryWithResourcesStatement RelationalExpression SwitchExpression Amprescent
 
 %%
@@ -77,6 +77,18 @@ TopLevelClassOrInterfaceDeclarationList:
 ;
 
 ModularCompilationUnit: ImportDeclarationList ModuleDeclaration Semicolon
+
+ModuleDeclaration : 
+InterfaceDeclaration :
+EnumDeclaration :
+NormalInterfaceDeclaration :
+LabeledStatementNoShortIf :
+ThrowStatement : 
+TryWithResourcesStatement : 
+RecordDeclaration : 
+RelationalExpression : 
+SwitchExpression : 
+Amprescent :
 
 TopLevelClassOrInterfaceDeclaration: ClassDeclaration
     | InterfaceDeclaration
