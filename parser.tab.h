@@ -1,8 +1,9 @@
-/* A Bison parser, made by GNU Bison 3.0.4.  */
+/* A Bison parser, made by GNU Bison 3.8.2.  */
 
 /* Bison interface for Yacc-like parsers in C
 
-   Copyright (C) 1984, 1989-1990, 2000-2015 Free Software Foundation, Inc.
+   Copyright (C) 1984, 1989-1990, 2000-2015, 2018-2021 Free Software Foundation,
+   Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -15,7 +16,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* As a special exception, you may create a larger work that contains
    part or all of the Bison parser skeleton and distribute that work
@@ -30,6 +31,10 @@
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
+/* DO NOT RELY ON FEATURES THAT ARE NOT DOCUMENTED in the manual,
+   especially those whose name start with YY_ or yy_.  They are
+   private implementation details that can be changed or removed.  */
+
 #ifndef YY_YY_PARSER_TAB_H_INCLUDED
 # define YY_YY_PARSER_TAB_H_INCLUDED
 /* Debug traces.  */
@@ -40,153 +45,145 @@
 extern int yydebug;
 #endif
 
-/* Token type.  */
+/* Token kinds.  */
 #ifndef YYTOKENTYPE
 # define YYTOKENTYPE
   enum yytokentype
   {
-    abstract = 258,
-    Continue = 259,
-    for = 260,
-    new = 261,
-    switch = 262,
-    assert = 263,
-    default = 264,
-    if = 265,
-    package = 266,
-    synchronized = 267,
-    boolean = 268,
-    do = 269,
-    goto = 270,
-    private = 271,
-    this = 272,
-    break = 273,
-    double = 274,
-    implements = 275,
-    protected = 276,
-    throw = 277,
-    byte = 278,
-    else = 279,
-    import = 280,
-    public = 281,
-    throws = 282,
-    case = 283,
-    enum = 284,
-    instanceof = 285,
-    return = 286,
-    transient = 287,
-    catch = 288,
-    extends = 289,
-    int = 290,
-    short = 291,
-    try = 292,
-    char = 293,
-    final = 294,
-    interface = 295,
-    static = 296,
-    void = 297,
-    class = 298,
-    finally = 299,
-    long = 300,
-    strictfp = 301,
-    volatile = 302,
-    const = 303,
-    float = 304,
-    native = 305,
-    super = 306,
-    while = 307,
-    underscore = 308,
-    exports = 309,
-    opens = 310,
-    requires = 311,
-    uses = 312,
-    module = 313,
-    permits = 314,
-    sealed = 315,
-    var = 316,
-    provides = 318,
-    to = 319,
-    with = 320,
-    open = 321,
-    record = 322,
-    transitive = 323,
-    yield = 324,
-    CharacterLiteral = 325,
-    BooleanLiteral = 326,
-    IntegerLiteral = 327,
-    FloatingPointLiteral = 328,
-    StringLiteral = 329,
-    TextBlock = 330,
-    NullLiteral = 331,
-    LeftParenthesis = 332,
-    RightParenthesis = 333,
-    LeftCurlyBrace = 334,
-    RightCurlyBrace = 335,
-    LeftSquareBracket = 336,
-    RightSquareBracket = 337,
-    Semicolon = 338,
-    Comma = 339,
-    Dot = 340,
-    AtSign = 341,
-    Scope = 342,
-    ellipsis = 343,
-    ASSIGN = 344,
-    GT = 345,
-    LT = 346,
-    EXCLAMATION = 347,
-    TILDE = 348,
-    QUESTIONMARK = 349,
-    COLON = 350,
-    ARROW = 351,
-    EQUAL = 352,
-    GE = 353,
-    LE = 354,
-    NOTEQUAL = 355,
-    AND = 356,
-    OR = 357,
-    INC = 358,
-    DEC = 359,
-    ADD = 360,
-    SUB = 361,
-    MUL = 362,
-    DIV = 363,
-    BITAND = 364,
-    BITOR = 365,
-    CARET = 366,
-    MOD = 367,
-    LSHIFT = 368,
-    RSHIFT = 369,
-    URSHIFT = 370,
-    ADD_ASSIGN = 371,
-    SUB_ASSIGN = 372,
-    MUL_ASSIGN = 373,
-    DIV_ASSIGN = 374,
-    AND_ASSIGN = 375,
-    OR_ASSIGN = 376,
-    XOR_ASSIGN = 377,
-    MOD_ASSIGN = 378,
-    LSHIFT_ASSIGN = 379,
-    RSHIFT_ASSIGN = 380,
-    URSHIFT_ASSIGN = 381,
-    IdentifierChars = 382
+    YYEMPTY = -2,
+    YYEOF = 0,                     /* "end of file"  */
+    YYerror = 256,                 /* error  */
+    YYUNDEF = 257,                 /* "invalid token"  */
+    Abstract = 258,                /* Abstract  */
+    Continue = 259,                /* Continue  */
+    For = 260,                     /* For  */
+    New = 261,                     /* New  */
+    Switch = 262,                  /* Switch  */
+    Assert = 263,                  /* Assert  */
+    Default = 264,                 /* Default  */
+    If = 265,                      /* If  */
+    Package = 266,                 /* Package  */
+    Synchronized = 267,            /* Synchronized  */
+    Boolean = 268,                 /* Boolean  */
+    Do = 269,                      /* Do  */
+    Goto = 270,                    /* Goto  */
+    Private = 271,                 /* Private  */
+    This = 272,                    /* This  */
+    Break = 273,                   /* Break  */
+    Double = 274,                  /* Double  */
+    Implements = 275,              /* Implements  */
+    Protected = 276,               /* Protected  */
+    Throw = 277,                   /* Throw  */
+    Byte = 278,                    /* Byte  */
+    Else = 279,                    /* Else  */
+    Import = 280,                  /* Import  */
+    Public = 281,                  /* Public  */
+    Throws_key = 282,              /* Throws_key  */
+    Case = 283,                    /* Case  */
+    Enum = 284,                    /* Enum  */
+    Instanceof = 285,              /* Instanceof  */
+    Return = 286,                  /* Return  */
+    Transient = 287,               /* Transient  */
+    Catch = 288,                   /* Catch  */
+    Extends = 289,                 /* Extends  */
+    Int = 290,                     /* Int  */
+    Short = 291,                   /* Short  */
+    Try = 292,                     /* Try  */
+    Char = 293,                    /* Char  */
+    Final = 294,                   /* Final  */
+    Interface = 295,               /* Interface  */
+    Static = 296,                  /* Static  */
+    Void = 297,                    /* Void  */
+    Class = 298,                   /* Class  */
+    Finally = 299,                 /* Finally  */
+    Long = 300,                    /* Long  */
+    Strictfp = 301,                /* Strictfp  */
+    Volatile = 302,                /* Volatile  */
+    Const = 303,                   /* Const  */
+    Float = 304,                   /* Float  */
+    Native = 305,                  /* Native  */
+    Super = 306,                   /* Super  */
+    While = 307,                   /* While  */
+    Underscore = 308,              /* Underscore  */
+    Permits = 309,                 /* Permits  */
+    Var = 310,                     /* Var  */
+    Yield = 311,                   /* Yield  */
+    CharacterLiteral = 312,        /* CharacterLiteral  */
+    BooleanLiteral = 313,          /* BooleanLiteral  */
+    IntegerLiteral = 314,          /* IntegerLiteral  */
+    FloatingPointLiteral = 315,    /* FloatingPointLiteral  */
+    StringLiteral = 316,           /* StringLiteral  */
+    TextBlock = 317,               /* TextBlock  */
+    NullLiteral = 318,             /* NullLiteral  */
+    LeftParenthesis = 319,         /* LeftParenthesis  */
+    RightParenthesis = 320,        /* RightParenthesis  */
+    LeftCurlyBrace = 321,          /* LeftCurlyBrace  */
+    RightCurlyBrace = 322,         /* RightCurlyBrace  */
+    LeftSquareBracket = 323,       /* LeftSquareBracket  */
+    RightSquareBracket = 324,      /* RightSquareBracket  */
+    Semicolon = 325,               /* Semicolon  */
+    Comma = 326,                   /* Comma  */
+    Dot = 327,                     /* Dot  */
+    AtSign = 328,                  /* AtSign  */
+    Scope = 329,                   /* Scope  */
+    ellipsis = 330,                /* ellipsis  */
+    ASSIGN = 331,                  /* ASSIGN  */
+    GT = 332,                      /* GT  */
+    LT = 333,                      /* LT  */
+    EXCLAMATION = 334,             /* EXCLAMATION  */
+    TILDE = 335,                   /* TILDE  */
+    QUESTIONMARK = 336,            /* QUESTIONMARK  */
+    COLON = 337,                   /* COLON  */
+    ARROW = 338,                   /* ARROW  */
+    EQUAL = 339,                   /* EQUAL  */
+    GE = 340,                      /* GE  */
+    LE = 341,                      /* LE  */
+    NOTEQUAL = 342,                /* NOTEQUAL  */
+    AND = 343,                     /* AND  */
+    OR = 344,                      /* OR  */
+    INC = 345,                     /* INC  */
+    DEC = 346,                     /* DEC  */
+    ADD = 347,                     /* ADD  */
+    SUB = 348,                     /* SUB  */
+    MUL = 349,                     /* MUL  */
+    DIV = 350,                     /* DIV  */
+    BITAND = 351,                  /* BITAND  */
+    BITOR = 352,                   /* BITOR  */
+    CARET = 353,                   /* CARET  */
+    MOD = 354,                     /* MOD  */
+    LSHIFT = 355,                  /* LSHIFT  */
+    RSHIFT = 356,                  /* RSHIFT  */
+    URSHIFT = 357,                 /* URSHIFT  */
+    ADD_ASSIGN = 358,              /* ADD_ASSIGN  */
+    SUB_ASSIGN = 359,              /* SUB_ASSIGN  */
+    MUL_ASSIGN = 360,              /* MUL_ASSIGN  */
+    DIV_ASSIGN = 361,              /* DIV_ASSIGN  */
+    AND_ASSIGN = 362,              /* AND_ASSIGN  */
+    OR_ASSIGN = 363,               /* OR_ASSIGN  */
+    XOR_ASSIGN = 364,              /* XOR_ASSIGN  */
+    MOD_ASSIGN = 365,              /* MOD_ASSIGN  */
+    LSHIFT_ASSIGN = 366,           /* LSHIFT_ASSIGN  */
+    RSHIFT_ASSIGN = 367,           /* RSHIFT_ASSIGN  */
+    URSHIFT_ASSIGN = 368,          /* URSHIFT_ASSIGN  */
+    IdentifierChars = 369          /* IdentifierChars  */
   };
+  typedef enum yytokentype yytoken_kind_t;
 #endif
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
-
 union YYSTYPE
 {
-#line 26 "parser.y" /* yacc.c:1909  */
+#line 26 "parser.y"
 
     char* str;
     int num;
     float float_val;
     char sym;
 
-#line 188 "parser.tab.h" /* yacc.c:1909  */
-};
+#line 185 "parser.tab.h"
 
+};
 typedef union YYSTYPE YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define YYSTYPE_IS_DECLARED 1
@@ -195,6 +192,8 @@ typedef union YYSTYPE YYSTYPE;
 
 extern YYSTYPE yylval;
 
+
 int yyparse (void);
+
 
 #endif /* !YY_YY_PARSER_TAB_H_INCLUDED  */

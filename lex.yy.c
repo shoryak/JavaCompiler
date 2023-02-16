@@ -1,5 +1,5 @@
 
-#line 3 "lex.yy.c"
+#line 2 "lex.yy.c"
 
 #define  YY_INT_ALIGNED short int
 
@@ -1063,8 +1063,8 @@ char *yytext;
     std::ofstream myfile;
     vector<string>v;
     //
+#line 1066 "lex.yy.c"
 #line 1067 "lex.yy.c"
-#line 1068 "lex.yy.c"
 
 #define INITIAL 0
 
@@ -1284,7 +1284,7 @@ YY_DECL
 #line 84 "lexer.l"
 
 
-#line 1288 "lex.yy.c"
+#line 1287 "lex.yy.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -1376,7 +1376,7 @@ YY_RULE_SETUP
 case 5:
 YY_RULE_SETUP
 #line 95 "lexer.l"
-{ yylval.str = strdup(yytext); return abstract ;}
+{ yylval.str = strdup(yytext); return Abstract ;}
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
@@ -1386,247 +1386,247 @@ YY_RULE_SETUP
 case 7:
 YY_RULE_SETUP
 #line 97 "lexer.l"
-{ yylval.str = strdup(yytext); return for ;}
+{ yylval.str = strdup(yytext); return For ;}
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
 #line 98 "lexer.l"
-{ yylval.str = strdup(yytext); return new ;}
+{ yylval.str = strdup(yytext); return New ;}
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
 #line 99 "lexer.l"
-{ yylval.str = strdup(yytext); return switch ;}
+{ yylval.str = strdup(yytext); return Switch ;}
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
 #line 100 "lexer.l"
-{ yylval.str = strdup(yytext); return assert ;}
+{ yylval.str = strdup(yytext); return Assert ;}
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
 #line 101 "lexer.l"
-{ yylval.str = strdup(yytext); return default ;}
+{ yylval.str = strdup(yytext); return Default ;}
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
 #line 102 "lexer.l"
-{ yylval.str = strdup(yytext); return if ;}
+{ yylval.str = strdup(yytext); return If ;}
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
 #line 103 "lexer.l"
-{ yylval.str = strdup(yytext); return package ;}
+{ yylval.str = strdup(yytext); return Package ;}
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
 #line 104 "lexer.l"
-{ yylval.str = strdup(yytext); return synchronized ;}
+{ yylval.str = strdup(yytext); return Synchronized ;}
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
 #line 105 "lexer.l"
-{ yylval.str = strdup(yytext); return boolean ;}
+{ yylval.str = strdup(yytext); return Boolean ;}
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
 #line 106 "lexer.l"
-{ yylval.str = strdup(yytext); return do ;}
+{ yylval.str = strdup(yytext); return Do ;}
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
 #line 107 "lexer.l"
-{ yylval.str = strdup(yytext); return goto ;}
+{ yylval.str = strdup(yytext); return Goto ;}
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
 #line 108 "lexer.l"
-{ yylval.str = strdup(yytext); return private ;}
+{ yylval.str = strdup(yytext); return Private ;}
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
 #line 109 "lexer.l"
-{ yylval.str = strdup(yytext); return this ;}
+{ yylval.str = strdup(yytext); return This ;}
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
 #line 110 "lexer.l"
-{ yylval.str = strdup(yytext); return break ;}
+{ yylval.str = strdup(yytext); return Break ;}
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
 #line 111 "lexer.l"
-{ yylval.str = strdup(yytext); return double ;}
+{ yylval.str = strdup(yytext); return Double ;}
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
 #line 112 "lexer.l"
-{ yylval.str = strdup(yytext); return implements ;}
+{ yylval.str = strdup(yytext); return Implements ;}
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
 #line 113 "lexer.l"
-{ yylval.str = strdup(yytext); return protected ;}
+{ yylval.str = strdup(yytext); return Protected ;}
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
 #line 114 "lexer.l"
-{ yylval.str = strdup(yytext); return throw ;}
+{ yylval.str = strdup(yytext); return Throw ;}
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
 #line 115 "lexer.l"
-{ yylval.str = strdup(yytext); return byte ;}
+{ yylval.str = strdup(yytext); return Byte ;}
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
 #line 116 "lexer.l"
-{ yylval.str = strdup(yytext); return else ;}
+{ yylval.str = strdup(yytext); return Else ;}
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
 #line 117 "lexer.l"
-{ yylval.str = strdup(yytext); return import ;}
+{ yylval.str = strdup(yytext); return Import ;}
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
 #line 118 "lexer.l"
-{ yylval.str = strdup(yytext); return public ;}
+{ yylval.str = strdup(yytext); return Public ;}
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
 #line 119 "lexer.l"
-{ yylval.str = strdup(yytext); return throws ;}
+{ yylval.str = strdup(yytext); return Throws_key ;}
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
 #line 120 "lexer.l"
-{ yylval.str = strdup(yytext); return case ;}
+{ yylval.str = strdup(yytext); return Case ;}
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
 #line 121 "lexer.l"
-{ yylval.str = strdup(yytext); return enum ;}
+{ yylval.str = strdup(yytext); return Enum ;}
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
 #line 122 "lexer.l"
-{ yylval.str = strdup(yytext); return instanceof ;}
+{ yylval.str = strdup(yytext); return Instanceof ;}
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
 #line 123 "lexer.l"
-{ yylval.str = strdup(yytext); return return ;}
+{ yylval.str = strdup(yytext); return Return ;}
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
 #line 124 "lexer.l"
-{ yylval.str = strdup(yytext); return transient ;}
+{ yylval.str = strdup(yytext); return Transient ;}
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
 #line 125 "lexer.l"
-{ yylval.str = strdup(yytext); return catch ;}
+{ yylval.str = strdup(yytext); return Catch ;}
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
 #line 126 "lexer.l"
-{ yylval.str = strdup(yytext); return extends ;}
+{ yylval.str = strdup(yytext); return Extends ;}
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
 #line 127 "lexer.l"
-{ yylval.str = strdup(yytext); return int ;}
+{ yylval.str = strdup(yytext); return Int ;}
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
 #line 128 "lexer.l"
-{ yylval.str = strdup(yytext); return short ;}
+{ yylval.str = strdup(yytext); return Short ;}
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
 #line 129 "lexer.l"
-{ yylval.str = strdup(yytext); return try ;}
+{ yylval.str = strdup(yytext); return Try ;}
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
 #line 130 "lexer.l"
-{ yylval.str = strdup(yytext); return char ;}
+{ yylval.str = strdup(yytext); return Char ;}
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
 #line 131 "lexer.l"
-{ yylval.str = strdup(yytext); return final ;}
+{ yylval.str = strdup(yytext); return Final ;}
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
 #line 132 "lexer.l"
-{ yylval.str = strdup(yytext); return interface ;}
+{ yylval.str = strdup(yytext); return Interface ;}
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
 #line 133 "lexer.l"
-{ yylval.str = strdup(yytext); return static ;}
+{ yylval.str = strdup(yytext); return Static ;}
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
 #line 134 "lexer.l"
-{ yylval.str = strdup(yytext); return void ;}
+{ yylval.str = strdup(yytext); return Void ;}
 	YY_BREAK
 case 45:
 YY_RULE_SETUP
 #line 135 "lexer.l"
-{ yylval.str = strdup(yytext); return class ;}
+{ yylval.str = strdup(yytext); return Class ;}
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
 #line 136 "lexer.l"
-{ yylval.str = strdup(yytext); return finally ;}
+{ yylval.str = strdup(yytext); return Finally ;}
 	YY_BREAK
 case 47:
 YY_RULE_SETUP
 #line 137 "lexer.l"
-{ yylval.str = strdup(yytext); return long ;}
+{ yylval.str = strdup(yytext); return Long ;}
 	YY_BREAK
 case 48:
 YY_RULE_SETUP
 #line 138 "lexer.l"
-{ yylval.str = strdup(yytext); return strictfp ;}
+{ yylval.str = strdup(yytext); return Strictfp ;}
 	YY_BREAK
 case 49:
 YY_RULE_SETUP
 #line 139 "lexer.l"
-{ yylval.str = strdup(yytext); return volatile ;}
+{ yylval.str = strdup(yytext); return Volatile ;}
 	YY_BREAK
 case 50:
 YY_RULE_SETUP
 #line 140 "lexer.l"
-{ yylval.str = strdup(yytext); return const ;}
+{ yylval.str = strdup(yytext); return Const ;}
 	YY_BREAK
 case 51:
 YY_RULE_SETUP
 #line 141 "lexer.l"
-{ yylval.str = strdup(yytext); return float ;}
+{ yylval.str = strdup(yytext); return Float ;}
 	YY_BREAK
 case 52:
 YY_RULE_SETUP
 #line 142 "lexer.l"
-{ yylval.str = strdup(yytext); return native ;}
+{ yylval.str = strdup(yytext); return Native ;}
 	YY_BREAK
 case 53:
 YY_RULE_SETUP
 #line 143 "lexer.l"
-{ yylval.str = strdup(yytext); return super ;}
+{ yylval.str = strdup(yytext); return Super ;}
 	YY_BREAK
 case 54:
 YY_RULE_SETUP
 #line 144 "lexer.l"
-{ yylval.str = strdup(yytext); return while ;}
+{ yylval.str = strdup(yytext); return While ;}
 	YY_BREAK
 case 55:
 YY_RULE_SETUP
 #line 145 "lexer.l"
-{ yylval.str = strdup(yytext); return underscore ;}
+{ yylval.str = strdup(yytext); return Underscore ;}
 	YY_BREAK
 case 56:
 YY_RULE_SETUP
@@ -1671,7 +1671,7 @@ YY_RULE_SETUP
 case 64:
 YY_RULE_SETUP
 #line 156 "lexer.l"
-{ yylval.str = strdup(yytext); return Period;}
+{ yylval.str = strdup(yytext); return Dot;}
 	YY_BREAK
 case 65:
 YY_RULE_SETUP
@@ -1915,7 +1915,7 @@ YY_RULE_SETUP
     mp2[yytext]++; 
     if(mp2[yytext]!=1){} else v.push_back(yytext);
     yylval.str = strdup(yytext);
-    return CharLiteral;
+    return CharacterLiteral;
 
 }
 	YY_BREAK
@@ -1927,22 +1927,22 @@ YY_RULE_SETUP
 case 112:
 YY_RULE_SETUP
 #line 232 "lexer.l"
-{yylval.str=strdup(yyetxt); return FloatingPointLiteral}
+{yylval.str=strdup(yytext); return FloatingPointLiteral;}
 	YY_BREAK
 case 113:
 YY_RULE_SETUP
 #line 233 "lexer.l"
-{yylval.str=strdup(yyetxt); return BooleanLiteral;}
+{yylval.str=strdup(yytext); return BooleanLiteral;}
 	YY_BREAK
 case 114:
 YY_RULE_SETUP
 #line 234 "lexer.l"
-{yylval.str=strdup(yyetxt); return CharLiteral;}
+{yylval.str=strdup(yytext); return CharacterLiteral;}
 	YY_BREAK
 case 115:
 YY_RULE_SETUP
 #line 235 "lexer.l"
-{yylval.str=strdup(yyetxt); return NullLiteral;}
+{yylval.str=strdup(yytext); return NullLiteral;}
 	YY_BREAK
 case 116:
 YY_RULE_SETUP
@@ -1964,7 +1964,7 @@ YY_RULE_SETUP
 #line 243 "lexer.l"
 ECHO;
 	YY_BREAK
-#line 1968 "lex.yy.c"
+#line 1967 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
