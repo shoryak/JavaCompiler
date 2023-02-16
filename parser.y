@@ -49,6 +49,8 @@ T parser_string(string str){
 %type<str> CompilationUnit  OrdinaryCompilationUnit  ModularCompilationUnit ImportDeclaration ImportDeclarationList PackageDeclaration ModuleDeclaration TopLevelClassOrInterfaceDeclaration TopLevelClassOrInterfaceDeclarationList
 %type<str> ClassDeclaration InterfaceDeclaration EnumDeclaration RecordDeclaration ClassBody ClassExtends ClassExtendsOpt ClassImplements ClassImplementsOpt ClassModifier ClassModifierList ClassPermits ClassPermitsOpt 
 %type<str> TypeIdentifier TypeParameters TypeParametersOpt Annotation
+%type<str> NormalInterfaceDeclaration LabeledStatementNoShortIf ThrowStatement
+%type<str> ThrowStatement TryWithResourcesStatement RelationalExpression SwitchExpression Amprescent
 
 %%
 
@@ -525,7 +527,7 @@ TypePattern: LocalVariableDeclaration
 Primary: PrimaryNoNewArray | ArrayCreationExpression
 
 PrimaryNoNewArray: Literal | ClassLiteral | this
-| TypeName . this
+| TypeName Dot this
 | LeftParenthesis Expression RightParenthesis
 | ClassInstanceCreationExpression
 | FieldAccess
