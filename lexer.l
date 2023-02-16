@@ -92,57 +92,57 @@ Literals {DecimalIntegerLiteral}|{HexIntegerLiteral}|{OctalIntegerLiteral}|{Floa
 \n {linenum++;}
 
 
-"abstract" { yylval.str = strdup(yytext); return abstract ;}
-"continue" { yylval.str = strdup(yytext); return continue ;}
-"for" { yylval.str = strdup(yytext); return for ;}
-"new" { yylval.str = strdup(yytext); return new ;}
-"switch" { yylval.str = strdup(yytext); return switch ;}
-"assert" { yylval.str = strdup(yytext); return assert ;}
-"default" { yylval.str = strdup(yytext); return default ;}
-"if" { yylval.str = strdup(yytext); return if ;}
-"package" { yylval.str = strdup(yytext); return package ;}
-"synchronized" { yylval.str = strdup(yytext); return synchronized ;}
-"boolean" { yylval.str = strdup(yytext); return boolean ;}
-"do" { yylval.str = strdup(yytext); return do ;}
-"goto" { yylval.str = strdup(yytext); return goto ;}
-"private" { yylval.str = strdup(yytext); return private ;}
-"this" { yylval.str = strdup(yytext); return this ;}
-"break" { yylval.str = strdup(yytext); return break ;}
-"double" { yylval.str = strdup(yytext); return double ;}
-"implements" { yylval.str = strdup(yytext); return implements ;}
-"protected" { yylval.str = strdup(yytext); return protected ;}
-"throw" { yylval.str = strdup(yytext); return throw ;}
-"byte" { yylval.str = strdup(yytext); return byte ;}
-"else" { yylval.str = strdup(yytext); return else ;}
-"import" { yylval.str = strdup(yytext); return import ;}
-"public" { yylval.str = strdup(yytext); return public ;}
-"throws" { yylval.str = strdup(yytext); return throws ;}
-"case" { yylval.str = strdup(yytext); return case ;}
-"enum" { yylval.str = strdup(yytext); return enum ;}
-"instanceof" { yylval.str = strdup(yytext); return instanceof ;}
-"return" { yylval.str = strdup(yytext); return return ;}
-"transient" { yylval.str = strdup(yytext); return transient ;}
-"catch" { yylval.str = strdup(yytext); return catch ;}
-"extends" { yylval.str = strdup(yytext); return extends ;}
-"int" { yylval.str = strdup(yytext); return int ;}
-"short" { yylval.str = strdup(yytext); return short ;}
-"try" { yylval.str = strdup(yytext); return try ;}
-"char" { yylval.str = strdup(yytext); return char ;}
-"final" { yylval.str = strdup(yytext); return final ;}
-"interface" { yylval.str = strdup(yytext); return interface ;}
-"static" { yylval.str = strdup(yytext); return static ;}
-"void" { yylval.str = strdup(yytext); return void ;}
-"class" { yylval.str = strdup(yytext); return class ;}
-"finally" { yylval.str = strdup(yytext); return finally ;}
-"long" { yylval.str = strdup(yytext); return long ;}
-"strictfp" { yylval.str = strdup(yytext); return strictfp ;}
-"volatile" { yylval.str = strdup(yytext); return volatile ;}
-"const" { yylval.str = strdup(yytext); return const ;}
-"float" { yylval.str = strdup(yytext); return float ;}
-"native" { yylval.str = strdup(yytext); return native ;}
-"super" { yylval.str = strdup(yytext); return super ;}
-"while" { yylval.str = strdup(yytext); return while ;}
-"_" { yylval.str = strdup(yytext); return underscore ;}
+"abstract" { yylval.str = strdup(yytext); return Abstract ;}
+"continue" { yylval.str = strdup(yytext); return Continue ;}
+"for" { yylval.str = strdup(yytext); return For ;}
+"new" { yylval.str = strdup(yytext); return New ;}
+"switch" { yylval.str = strdup(yytext); return Switch ;}
+"assert" { yylval.str = strdup(yytext); return Assert ;}
+"default" { yylval.str = strdup(yytext); return Default ;}
+"if" { yylval.str = strdup(yytext); return If ;}
+"package" { yylval.str = strdup(yytext); return Package ;}
+"synchronized" { yylval.str = strdup(yytext); return Synchronized ;}
+"boolean" { yylval.str = strdup(yytext); return Boolean ;}
+"do" { yylval.str = strdup(yytext); return Do ;}
+"goto" { yylval.str = strdup(yytext); return Goto ;}
+"private" { yylval.str = strdup(yytext); return Private ;}
+"this" { yylval.str = strdup(yytext); return This ;}
+"break" { yylval.str = strdup(yytext); return Break ;}
+"double" { yylval.str = strdup(yytext); return Double ;}
+"implements" { yylval.str = strdup(yytext); return Implements ;}
+"protected" { yylval.str = strdup(yytext); return Protected ;}
+"throw" { yylval.str = strdup(yytext); return Throw ;}
+"byte" { yylval.str = strdup(yytext); return Byte ;}
+"else" { yylval.str = strdup(yytext); return Else ;}
+"import" { yylval.str = strdup(yytext); return Import ;}
+"public" { yylval.str = strdup(yytext); return Public ;}
+"throws" { yylval.str = strdup(yytext); return Throws_key ;}
+"case" { yylval.str = strdup(yytext); return Case ;}
+"enum" { yylval.str = strdup(yytext); return Enum ;}
+"instanceof" { yylval.str = strdup(yytext); return Instanceof ;}
+"return" { yylval.str = strdup(yytext); return Return ;}
+"transient" { yylval.str = strdup(yytext); return Transient ;}
+"catch" { yylval.str = strdup(yytext); return Catch ;}
+"extends" { yylval.str = strdup(yytext); return Extends ;}
+"int" { yylval.str = strdup(yytext); return Int ;}
+"short" { yylval.str = strdup(yytext); return Short ;}
+"try" { yylval.str = strdup(yytext); return Try ;}
+"char" { yylval.str = strdup(yytext); return Char ;}
+"final" { yylval.str = strdup(yytext); return Final ;}
+"interface" { yylval.str = strdup(yytext); return Interface ;}
+"static" { yylval.str = strdup(yytext); return Static ;}
+"void" { yylval.str = strdup(yytext); return Void ;}
+"class" { yylval.str = strdup(yytext); return Class ;}
+"finally" { yylval.str = strdup(yytext); return Finally ;}
+"long" { yylval.str = strdup(yytext); return Long ;}
+"strictfp" { yylval.str = strdup(yytext); return Strictfp ;}
+"volatile" { yylval.str = strdup(yytext); return Volatile ;}
+"const" { yylval.str = strdup(yytext); return Const ;}
+"float" { yylval.str = strdup(yytext); return Float ;}
+"native" { yylval.str = strdup(yytext); return Native ;}
+"super" { yylval.str = strdup(yytext); return Super ;}
+"while" { yylval.str = strdup(yytext); return While ;}
+"_" { yylval.str = strdup(yytext); return Underscore ;}
 
 
 "(" {   yylval.str = strdup(yytext); return LeftParenthesis;}
@@ -153,7 +153,7 @@ Literals {DecimalIntegerLiteral}|{HexIntegerLiteral}|{OctalIntegerLiteral}|{Floa
 "]" { yylval.str = strdup(yytext); return RightSquareBracket;}
 ";" { yylval.str = strdup(yytext); return Semicolon;}
 "," { yylval.str = strdup(yytext); return Comma;}
-"." { yylval.str = strdup(yytext); return Period;}
+"." { yylval.str = strdup(yytext); return Dot;}
 "..." { yylval.str = strdup(yytext); return ellipsis;}
 "@" { yylval.str = strdup(yytext); return AtSign;}
 "::" { yylval.str = strdup(yytext); return Scope;}
@@ -223,16 +223,16 @@ Literals {DecimalIntegerLiteral}|{HexIntegerLiteral}|{OctalIntegerLiteral}|{Floa
     mp2[yytext]++; 
     if(mp2[yytext]!=1){} else v.push_back(yytext);
     yylval.str = strdup(yytext);
-    return CharLiteral;
+    return CharacterLiteral;
 
 }
 
 
 {DecimalIntegerLiteral}|{HexIntegerLiteral}|{OctalIntegerLiteral}|{BinaryIntegerLiteral} {yylval.str=strdup(yytext); return IntegerLiteral; }
-{FloatingPointLiteral} {yylval.str=strdup(yyetxt); return FloatingPointLiteral}
-{BooleanLiteral} {yylval.str=strdup(yyetxt); return BooleanLiteral;}
-{CharLiteral} {yylval.str=strdup(yyetxt); return CharLiteral;}
-{NullLiteral} {yylval.str=strdup(yyetxt); return NullLiteral;}
+{FloatingPointLiteral} {yylval.str=strdup(yytext); return FloatingPointLiteral;}
+{BooleanLiteral} {yylval.str=strdup(yytext); return BooleanLiteral;}
+{CharLiteral} {yylval.str=strdup(yytext); return CharacterLiteral;}
+{NullLiteral} {yylval.str=strdup(yytext); return NullLiteral;}
 
 
 [a-zA-Z$_]+[$_a-zA-Z0-9]* {mp1[yytext]="Identifier";mp2[yytext]++;if(mp2[yytext]!=1){} else v.push_back(yytext); yylval.str = strdup(yytext) ;return IdentifierChars;}
