@@ -19,7 +19,7 @@ bison.o:		parser.tab.c
 				$(CC) $(CFLAGS) -c parser.tab.c -o bison.o
 
 parser.tab.c:	$(PARSER)
-				bison -dt $(PARSER)
+				bison -dvt $(PARSER)
 				cmp -s parser.tab.h token.h || cp parser.tab.h token.h
 
 main.o:			main.cpp

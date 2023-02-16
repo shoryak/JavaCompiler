@@ -2,13 +2,13 @@
 #include<bits/stdc++.h>
 using namespace std;
 int lines=0;
+int yyparse(void);
 extern "C" {
-        int yyparse(void);
         int yylex(void);
         int yyerror(char* s)
         {
             printf("ERROR: %s Line Number: %d\n",s,lines);
-            return 0;
+            return 1;
         }
     }
 extern FILE *yyin;
@@ -74,6 +74,8 @@ T parser_string(string str){
 %type<str> NumericType IntegralType FloatingPointType ReferenceType ClassOrInterfaceType ClassType TypeVariable ArrayType
 %type<str> Dims  TypeParameter TypeBound TypeArguments TypeArgumentList CommaTypeArgumentList TypeArgument Wildcard WildcardBounds TypeName
 %type<str> ExpressionName MethodName   UnqualifiedMethodIdentifier Literal
+
+%start Assignment
 %%
 
 CompilationUnit: OrdinaryCompilationUnit
