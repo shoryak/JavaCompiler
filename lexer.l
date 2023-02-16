@@ -93,7 +93,7 @@ Literals {DecimalIntegerLiteral}|{HexIntegerLiteral}|{OctalIntegerLiteral}|{Floa
 
 
 "abstract" { yylval.str = strdup(yytext); return abstract ;}
-"continue" { yylval.str = strdup(yytext); return continue ;}
+"continue" { yylval.str = strdup(yytext); return Continue ;}
 "for" { yylval.str = strdup(yytext); return for ;}
 "new" { yylval.str = strdup(yytext); return new ;}
 "switch" { yylval.str = strdup(yytext); return switch ;}
