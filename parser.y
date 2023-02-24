@@ -75,7 +75,7 @@ T parser_string(string str){
 %type<str> Dims  TypeParameter TypeBound TypeArguments TypeArgumentList CommaTypeArgumentList TypeArgument Wildcard WildcardBounds TypeName PackageOrTypeName
 %type<str> ExpressionName MethodName   UnqualifiedMethodIdentifier Literal
 
-%start FieldDeclaration 
+%start CompilationUnit 
 
 %%
 
@@ -333,10 +333,10 @@ ExplicitConstructorInvocation:  This LeftParenthesis RightParenthesis Semicolon
 ;
 
 
-ArrayInitializer: LeftParenthesis  Comma RightParenthesis 
-| LeftParenthesis  RightParenthesis
-| LeftParenthesis VariableInitializerList Comma RightParenthesis 
-| LeftParenthesis VariableInitializerList  RightParenthesis
+ArrayInitializer: LeftCurlyBrace  Comma RightCurlyBrace
+| LeftCurlyBrace  RightCurlyBrace
+| LeftCurlyBrace VariableInitializerList Comma RightCurlyBrace
+| LeftCurlyBrace VariableInitializerList  RightCurlyBrace
 
 
 VariableInitializerList: VariableInitializer | VariableInitializer CommaVariableInitializerList
