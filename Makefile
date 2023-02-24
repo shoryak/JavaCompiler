@@ -3,8 +3,8 @@ CFLAGS = -g -std=c++2a -Wall
 OBJS = bison.o lex.o main.o
 LEXER = lexer.l
 PARSER = parser.y
-EXEC = parser
-EXEC_TEST = parser_test
+EXEC = parser.out
+EXEC_TEST = parser_test.out
 
 parser:			$(OBJS)
 				$(CC) $(CFLAGS) $(OBJS) -o $(EXEC)
