@@ -203,9 +203,7 @@ UnannReferenceType: UnannClassOrInterfaceType
 UnannClassOrInterfaceType: UnannClassType
 ;
 
-UnannClassType: TypeIdentifier TypeArguments
-| UnannClassOrInterfaceType Dot TypeIdentifier TypeArguments
-| TypeIdentifier 
+UnannClassType: UnannClassOrInterfaceType Dot TypeIdentifier TypeArguments
 | UnannClassOrInterfaceType Dot TypeIdentifier 
 ;
 
@@ -269,7 +267,6 @@ CommaExceptionTypeList : Comma ExceptionType | CommaExceptionTypeList Comma Exce
 
 
 ExceptionType: ClassType
-| TypeVariable
 ;
 
 MethodBody: Block
@@ -752,7 +749,6 @@ IntegralType:  Byte | Short | Int | Long | Char
 FloatingPointType:  Float | Double
 
 ReferenceType: ClassOrInterfaceType
-| TypeVariable
 | ArrayType
 ;
 
@@ -768,12 +764,8 @@ ClassType:  TypeIdentifier
 | ClassOrInterfaceType Dot  TypeIdentifier TypeArguments
 ;
 
-
-TypeVariable: TypeIdentifier
-
 ArrayType: PrimitiveType Dims
 | ClassOrInterfaceType Dims
-| TypeVariable Dims
 ;
 
 Dims: LeftSquareBracket RightSquareBracket 
@@ -787,8 +779,7 @@ TypeParameter:  TypeIdentifier
 
 
 
-TypeBound: Extends TypeVariable
-    | Extends ClassOrInterfaceType 
+TypeBound:Extends ClassOrInterfaceType 
 ;
 
 
