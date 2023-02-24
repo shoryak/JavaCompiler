@@ -529,12 +529,11 @@ UnqualifiedClassInstanceCreationExpression: New  ClassOrInterfaceTypeToInstantia
 
 
 
-ClassOrInterfaceTypeToInstantiate: Identifier DotIdentifierList
-|  Identifier DotIdentifierList TypeArgumentsOrDiamond
-|  Identifier DotIdentifierList
+ClassOrInterfaceTypeToInstantiate: Identifier
+| Identifier DotIdentifierList
 |  Identifier DotIdentifierList TypeArgumentsOrDiamond
 
-DotIdentifierList : Dot Identifier 
+DotIdentifierList : Dot Identifier | DotIdentifierList Dot Identifier
 
 TypeArgumentsOrDiamond: TypeArguments
 ;
