@@ -1,8 +1,9 @@
-/* A Bison parser, made by GNU Bison 3.0.4.  */
+/* A Bison parser, made by GNU Bison 3.8.2.  */
 
 /* Bison interface for Yacc-like parsers in C
 
-   Copyright (C) 1984, 1989-1990, 2000-2015 Free Software Foundation, Inc.
+   Copyright (C) 1984, 1989-1990, 2000-2015, 2018-2021 Free Software Foundation,
+   Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -15,7 +16,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* As a special exception, you may create a larger work that contains
    part or all of the Bison parser skeleton and distribute that work
@@ -30,6 +31,10 @@
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
+/* DO NOT RELY ON FEATURES THAT ARE NOT DOCUMENTED in the manual,
+   especially those whose name start with YY_ or yy_.  They are
+   private implementation details that can be changed or removed.  */
+
 #ifndef YY_YY_PARSER_TAB_H_INCLUDED
 # define YY_YY_PARSER_TAB_H_INCLUDED
 /* Debug traces.  */
@@ -40,141 +45,145 @@
 extern int yydebug;
 #endif
 
-/* Token type.  */
+/* Token kinds.  */
 #ifndef YYTOKENTYPE
 # define YYTOKENTYPE
   enum yytokentype
   {
-    Abstract = 258,
-    Continue = 259,
-    For = 260,
-    New = 261,
-    Switch = 262,
-    Assert = 263,
-    Default = 264,
-    If = 265,
-    Package = 266,
-    Synchronized = 267,
-    Boolean = 268,
-    Do = 269,
-    Goto = 270,
-    Private = 271,
-    This = 272,
-    Break = 273,
-    Double = 274,
-    Implements = 275,
-    Protected = 276,
-    Throw = 277,
-    Byte = 278,
-    Else = 279,
-    Import = 280,
-    Public = 281,
-    Throws_key = 282,
-    Case = 283,
-    Enum = 284,
-    Instanceof = 285,
-    Return = 286,
-    Transient = 287,
-    Catch = 288,
-    Extends = 289,
-    Int = 290,
-    Short = 291,
-    Try = 292,
-    Char = 293,
-    Final = 294,
-    Interface = 295,
-    Static = 296,
-    Void = 297,
-    Class = 298,
-    Finally = 299,
-    Long = 300,
-    Strictfp = 301,
-    Volatile = 302,
-    Const = 303,
-    Float = 304,
-    Native = 305,
-    Super = 306,
-    While = 307,
-    Underscore = 308,
-    Permits = 309,
-    Var = 310,
-    Yield = 311,
-    CharacterLiteral = 312,
-    BooleanLiteral = 313,
-    IntegerLiteral = 314,
-    FloatingPointLiteral = 315,
-    StringLiteral = 316,
-    TextBlock = 317,
-    NullLiteral = 318,
-    LeftParenthesis = 319,
-    RightParenthesis = 320,
-    LeftCurlyBrace = 321,
-    RightCurlyBrace = 322,
-    LeftSquareBracket = 323,
-    RightSquareBracket = 324,
-    Semicolon = 325,
-    Comma = 326,
-    Dot = 327,
-    AtSign = 328,
-    Scope = 329,
-    ellipsis = 330,
-    ASSIGN = 331,
-    GT = 332,
-    LT = 333,
-    EXCLAMATION = 334,
-    TILDE = 335,
-    QUESTIONMARK = 336,
-    COLON = 337,
-    ARROW = 338,
-    EQUAL = 339,
-    GE = 340,
-    LE = 341,
-    NOTEQUAL = 342,
-    AND = 343,
-    OR = 344,
-    INC = 345,
-    DEC = 346,
-    ADD = 347,
-    SUB = 348,
-    MUL = 349,
-    DIV = 350,
-    BITAND = 351,
-    BITOR = 352,
-    CARET = 353,
-    MOD = 354,
-    LSHIFT = 355,
-    RSHIFT = 356,
-    URSHIFT = 357,
-    ADD_ASSIGN = 358,
-    SUB_ASSIGN = 359,
-    MUL_ASSIGN = 360,
-    DIV_ASSIGN = 361,
-    AND_ASSIGN = 362,
-    OR_ASSIGN = 363,
-    XOR_ASSIGN = 364,
-    MOD_ASSIGN = 365,
-    LSHIFT_ASSIGN = 366,
-    RSHIFT_ASSIGN = 367,
-    URSHIFT_ASSIGN = 368,
-    IdentifierChars = 369
+    YYEMPTY = -2,
+    YYEOF = 0,                     /* "end of file"  */
+    YYerror = 256,                 /* error  */
+    YYUNDEF = 257,                 /* "invalid token"  */
+    Abstract = 258,                /* Abstract  */
+    Continue = 259,                /* Continue  */
+    For = 260,                     /* For  */
+    New = 261,                     /* New  */
+    Switch = 262,                  /* Switch  */
+    Assert = 263,                  /* Assert  */
+    Default = 264,                 /* Default  */
+    If = 265,                      /* If  */
+    Package = 266,                 /* Package  */
+    Synchronized = 267,            /* Synchronized  */
+    Boolean = 268,                 /* Boolean  */
+    Do = 269,                      /* Do  */
+    Goto = 270,                    /* Goto  */
+    Private = 271,                 /* Private  */
+    This = 272,                    /* This  */
+    Break = 273,                   /* Break  */
+    Double = 274,                  /* Double  */
+    Implements = 275,              /* Implements  */
+    Protected = 276,               /* Protected  */
+    Throw = 277,                   /* Throw  */
+    Byte = 278,                    /* Byte  */
+    Else = 279,                    /* Else  */
+    Import = 280,                  /* Import  */
+    Public = 281,                  /* Public  */
+    Throws_key = 282,              /* Throws_key  */
+    Case = 283,                    /* Case  */
+    Enum = 284,                    /* Enum  */
+    Instanceof = 285,              /* Instanceof  */
+    Return = 286,                  /* Return  */
+    Transient = 287,               /* Transient  */
+    Catch = 288,                   /* Catch  */
+    Extends = 289,                 /* Extends  */
+    Int = 290,                     /* Int  */
+    Short = 291,                   /* Short  */
+    Try = 292,                     /* Try  */
+    Char = 293,                    /* Char  */
+    Final = 294,                   /* Final  */
+    Interface = 295,               /* Interface  */
+    Static = 296,                  /* Static  */
+    Void = 297,                    /* Void  */
+    Class = 298,                   /* Class  */
+    Finally = 299,                 /* Finally  */
+    Long = 300,                    /* Long  */
+    Strictfp = 301,                /* Strictfp  */
+    Volatile = 302,                /* Volatile  */
+    Const = 303,                   /* Const  */
+    Float = 304,                   /* Float  */
+    Native = 305,                  /* Native  */
+    Super = 306,                   /* Super  */
+    While = 307,                   /* While  */
+    Underscore = 308,              /* Underscore  */
+    Permits = 309,                 /* Permits  */
+    Var = 310,                     /* Var  */
+    Yield = 311,                   /* Yield  */
+    CharacterLiteral = 312,        /* CharacterLiteral  */
+    BooleanLiteral = 313,          /* BooleanLiteral  */
+    IntegerLiteral = 314,          /* IntegerLiteral  */
+    FloatingPointLiteral = 315,    /* FloatingPointLiteral  */
+    StringLiteral = 316,           /* StringLiteral  */
+    TextBlock = 317,               /* TextBlock  */
+    NullLiteral = 318,             /* NullLiteral  */
+    LeftParenthesis = 319,         /* LeftParenthesis  */
+    RightParenthesis = 320,        /* RightParenthesis  */
+    LeftCurlyBrace = 321,          /* LeftCurlyBrace  */
+    RightCurlyBrace = 322,         /* RightCurlyBrace  */
+    LeftSquareBracket = 323,       /* LeftSquareBracket  */
+    RightSquareBracket = 324,      /* RightSquareBracket  */
+    Semicolon = 325,               /* Semicolon  */
+    Comma = 326,                   /* Comma  */
+    Dot = 327,                     /* Dot  */
+    AtSign = 328,                  /* AtSign  */
+    Scope = 329,                   /* Scope  */
+    ellipsis = 330,                /* ellipsis  */
+    ASSIGN = 331,                  /* ASSIGN  */
+    GT = 332,                      /* GT  */
+    LT = 333,                      /* LT  */
+    EXCLAMATION = 334,             /* EXCLAMATION  */
+    TILDE = 335,                   /* TILDE  */
+    QUESTIONMARK = 336,            /* QUESTIONMARK  */
+    COLON = 337,                   /* COLON  */
+    ARROW = 338,                   /* ARROW  */
+    EQUAL = 339,                   /* EQUAL  */
+    GE = 340,                      /* GE  */
+    LE = 341,                      /* LE  */
+    NOTEQUAL = 342,                /* NOTEQUAL  */
+    AND = 343,                     /* AND  */
+    OR = 344,                      /* OR  */
+    INC = 345,                     /* INC  */
+    DEC = 346,                     /* DEC  */
+    ADD = 347,                     /* ADD  */
+    SUB = 348,                     /* SUB  */
+    MUL = 349,                     /* MUL  */
+    DIV = 350,                     /* DIV  */
+    BITAND = 351,                  /* BITAND  */
+    BITOR = 352,                   /* BITOR  */
+    CARET = 353,                   /* CARET  */
+    MOD = 354,                     /* MOD  */
+    LSHIFT = 355,                  /* LSHIFT  */
+    RSHIFT = 356,                  /* RSHIFT  */
+    URSHIFT = 357,                 /* URSHIFT  */
+    ADD_ASSIGN = 358,              /* ADD_ASSIGN  */
+    SUB_ASSIGN = 359,              /* SUB_ASSIGN  */
+    MUL_ASSIGN = 360,              /* MUL_ASSIGN  */
+    DIV_ASSIGN = 361,              /* DIV_ASSIGN  */
+    AND_ASSIGN = 362,              /* AND_ASSIGN  */
+    OR_ASSIGN = 363,               /* OR_ASSIGN  */
+    XOR_ASSIGN = 364,              /* XOR_ASSIGN  */
+    MOD_ASSIGN = 365,              /* MOD_ASSIGN  */
+    LSHIFT_ASSIGN = 366,           /* LSHIFT_ASSIGN  */
+    RSHIFT_ASSIGN = 367,           /* RSHIFT_ASSIGN  */
+    URSHIFT_ASSIGN = 368,          /* URSHIFT_ASSIGN  */
+    IdentifierChars = 369          /* IdentifierChars  */
   };
+  typedef enum yytokentype yytoken_kind_t;
 #endif
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
-
 union YYSTYPE
 {
-#line 26 "parser.y" /* yacc.c:1909  */
+#line 26 "parser.y"
 
     char* str;
     int num;
     float float_val;
     char sym;
 
-#line 176 "parser.tab.h" /* yacc.c:1909  */
-};
+#line 185 "parser.tab.h"
 
+};
 typedef union YYSTYPE YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define YYSTYPE_IS_DECLARED 1
@@ -183,6 +192,8 @@ typedef union YYSTYPE YYSTYPE;
 
 extern YYSTYPE yylval;
 
+
 int yyparse (void);
+
 
 #endif /* !YY_YY_PARSER_TAB_H_INCLUDED  */
