@@ -1,5 +1,5 @@
 
-#line 2 "lex.yy.c"
+#line 3 "lex.yy.c"
 
 #define  YY_INT_ALIGNED short int
 
@@ -1063,8 +1063,8 @@ char *yytext;
     std::ofstream myfile;
     vector<string>v;
     //
-#line 1066 "lex.yy.c"
 #line 1067 "lex.yy.c"
+#line 1068 "lex.yy.c"
 
 #define INITIAL 0
 
@@ -1284,7 +1284,7 @@ YY_DECL
 #line 84 "lexer.l"
 
 
-#line 1287 "lex.yy.c"
+#line 1288 "lex.yy.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -1964,7 +1964,7 @@ YY_RULE_SETUP
 #line 243 "lexer.l"
 ECHO;
 	YY_BREAK
-#line 1967 "lex.yy.c"
+#line 1968 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 

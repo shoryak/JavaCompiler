@@ -51,7 +51,7 @@ T parser_string(string str){
 %type<str> TypeIdentifier TypeParameters TypeParameterList CommaTypeParameterList 
 %type<str> ThrowStatement RelationalExpression 
 %type<str> TopLevelClassOrInterfaceDeclarationList TopLevelClassOrInterfaceDeclaration NormalClassDeclaration 
-%type<str> CommaTypeNameList ClassBodyDeclaration ClassMemberDeclaration FieldDeclaration FieldModifierList VariableDeclaratorList
+%type<str> CommaTypeNameList ClassBodyDeclaration ClassMemberDeclaration FieldDeclaraFieldModifierList VariableDeclaratorList
 %type<str> CommaVariableDeclaratorList VariableDeclarator VariableDeclaratorId VariableInitializer UnannType UnannPrimitiveType UnannReferenceType
 %type<str> UnannClassOrInterfaceType UnannClassType UnannTypeVariable UnannArrayType MethodDeclaration MethodModifierList
 %type<str> MethodModifier MethodHeader Result MethodDeclarator ReceiverParameter FormalParameterList CommaFormalParameterList FormalParameter
@@ -61,7 +61,7 @@ T parser_string(string str){
 %type<str> Block BlockStatements BlockStatementList BlockStatement LocalClassOrInterfaceDeclaration LocalVariableDeclarationStatement LocalVariableDeclaration
 %type<str> LocalVariableType Statement ForStatementNoShortIf StatementWithoutTrailingSubstatement EmptyStatement LabeledStatement
 %type<str> ExpressionStatement StatementExpression IfThenStatement IfThenElseStatement IfThenElseStatementNoShortIf AssertStatement WhileStatement
-%type<str> WhileStatementNoShortIf ForStatement 
+%type<str> WhileStatementNoShortIf ForStatement ModifierList
 
 %type<str> BasicForStatement BasicForStatementNoShortIf ForInit ForUpdate StatementExpressionList CommaStatementExpressionList EnhancedForStatement EnhancedForStatementNoShortIf BreakStatement YieldStatement ContinueStatement ReturnStatement 
 %type<str> BitOrClassTypeList 
@@ -74,6 +74,7 @@ T parser_string(string str){
 %type<str> NumericType IntegralType FloatingPointType ReferenceType ClassOrInterfaceType ClassType TypeVariable ArrayType
 %type<str> Dims  TypeParameter TypeBound TypeArguments TypeArgumentList CommaTypeArgumentList TypeArgument Wildcard WildcardBounds TypeName
 %type<str> ExpressionName MethodName   UnqualifiedMethodIdentifier Literal
+%start CompilationUnit
 %%
 
 CompilationUnit: OrdinaryCompilationUnit
@@ -95,30 +96,28 @@ ClassDeclaration: NormalClassDeclaration
 ;
 
 NormalClassDeclaration :  Class TypeIdentifier ClassExtends  ClassPermits ClassBody
-| ClassModifierList Class TypeIdentifier  ClassExtends  ClassPermits ClassBody
+| ModifierList Class TypeIdentifier  ClassExtends  ClassPermits ClassBody
 | Class TypeIdentifier  ClassExtends   ClassBody
-| ClassModifierList Class TypeIdentifier  ClassExtends   ClassBody
+| ModifierList Class TypeIdentifier  ClassExtends   ClassBody
 | Class TypeIdentifier    ClassPermits ClassBody
-| ClassModifierList Class TypeIdentifier    ClassPermits ClassBody
+| ModifierList Class TypeIdentifier    ClassPermits ClassBody
 | Class TypeIdentifier     ClassBody
-| ClassModifierList Class TypeIdentifier     ClassBody
+| ModifierList Class TypeIdentifier     ClassBody
 | Class TypeIdentifier TypeParameters ClassExtends  ClassPermits ClassBody
-| ClassModifierList Class TypeIdentifier TypeParameters ClassExtends  ClassPermits ClassBody
+| ModifierList Class TypeIdentifier TypeParameters ClassExtends  ClassPermits ClassBody
 | Class TypeIdentifier TypeParameters ClassExtends   ClassBody
-| ClassModifierList Class TypeIdentifier TypeParameters ClassExtends   ClassBody
+| ModifierList Class TypeIdentifier TypeParameters ClassExtends   ClassBody
 | Class TypeIdentifier TypeParameters   ClassPermits ClassBody
-| ClassModifierList Class TypeIdentifier TypeParameters   ClassPermits ClassBody
+| ModifierList Class TypeIdentifier TypeParameters   ClassPermits ClassBody
 | Class TypeIdentifier TypeParameters    ClassBody
-| ClassModifierList Class TypeIdentifier TypeParameters    ClassBody
-;
-
-ClassModifierList : ClassModifier
-    | ClassModifierList ClassModifier
+| ModifierList Class TypeIdentifier TypeParameters    ClassBody
 ;
 
 
-ClassModifier: Public | Private | Static  
+Modifier : Public | Private | Static  
 
+
+ModifierList : ModifierList Modifier | Modifier
 
 TypeParameters: LT TypeParameterList GT
 ;
@@ -165,12 +164,9 @@ ClassMemberDeclaration: FieldDeclaration
     | Semicolon
 ;
 
-FieldDeclaration: FieldModifierList UnannType VariableDeclaratorList Semicolon
+FieldDeclaration: ModifierList UnannType VariableDeclaratorList Semicolon
 |  UnannType VariableDeclaratorList Semicolon
 
-FieldModifierList : FieldModifier | FieldModifierList FieldModifier 
-
-FieldModifier:  Public  | Private 
 
 VariableDeclaratorList: VariableDeclarator | VariableDeclarator CommaVariableDeclaratorList
 
@@ -212,9 +208,6 @@ UnannClassType: TypeIdentifier TypeArguments
 | UnannClassOrInterfaceType Dot TypeIdentifier TypeArguments
 | TypeIdentifier 
 | UnannClassOrInterfaceType Dot TypeIdentifier 
-| TypeIdentifier TypeArguments
-| UnannClassOrInterfaceType Dot  TypeIdentifier TypeArguments
-| UnannClassOrInterfaceType Dot  TypeIdentifier 
 ;
 
 
@@ -227,20 +220,17 @@ UnannArrayType: UnannPrimitiveType Dims
 ;
 
 
-MethodDeclaration: MethodModifierList MethodHeader MethodBody
+MethodDeclaration: ModifierList MethodHeader MethodBody
 |  MethodHeader MethodBody
 
-MethodModifierList : MethodModifier | MethodModifierList MethodModifier 
 
-MethodModifier: Public | Protected | Private | Static | Native | Strictfp
 
-MethodHeader: Result MethodDeclarator 
-|  Result MethodDeclarator Throws
-| TypeParameters  Result MethodDeclarator Throws
-| TypeParameters  Result MethodDeclarator 
+MethodHeader:UnannType MethodDeclarator 
+| UnannType MethodDeclarator Throws
+| Void MethodDeclarator 
+|  Void MethodDeclarator Throws
 ;
 
-Result: UnannType | Void
 
 
 MethodDeclarator: Identifier LeftParenthesis ReceiverParameter Comma RightParenthesis 
@@ -294,18 +284,12 @@ StaticInitializer: Static Block
 ;
 
 ConstructorDeclaration: ConstructorDeclarator ConstructorBody
-| ConstructorModifierList ConstructorDeclarator ConstructorBody
+| ModifierList ConstructorDeclarator ConstructorBody
 | ConstructorDeclarator Throws ConstructorBody
-| ConstructorModifierList ConstructorDeclarator Throws ConstructorBody
-;
-
-ConstructorModifierList : ConstructorModifier
-    | ConstructorModifierList ConstructorModifier
+| ModifierList ConstructorDeclarator Throws ConstructorBody
 ;
 
 
-ConstructorModifier: Public | Protected | Private
-;
 
 ConstructorDeclarator:  SimpleTypeName LeftParenthesis  RightParenthesis
 |TypeParameters SimpleTypeName LeftParenthesis  RightParenthesis
@@ -321,10 +305,10 @@ SimpleTypeName: TypeIdentifier
 ;
 
 
-ConstructorBody: LeftParenthesis  RightParenthesis
-| LeftParenthesis ExplicitConstructorInvocation RightParenthesis
-| LeftParenthesis  BlockStatements RightParenthesis
-| LeftParenthesis ExplicitConstructorInvocation BlockStatements RightParenthesis
+ConstructorBody: LeftCurlyBrace  RightCurlyBrace
+| LeftCurlyBrace ExplicitConstructorInvocation RightCurlyBrace
+| LeftCurlyBrace  BlockStatements RightCurlyBrace
+| LeftCurlyBrace ExplicitConstructorInvocation BlockStatements RightCurlyBrace
 ;
 
 
@@ -358,10 +342,10 @@ VariableInitializerList: VariableInitializer | VariableInitializer CommaVariable
 CommaVariableInitializerList :  Comma VariableInitializer | CommaVariableInitializerList Comma VariableInitializer
 
 
-Block: LeftParenthesis BlockStatements RightParenthesis
-|  LeftParenthesis RightParenthesis
+Block: LeftCurlyBrace BlockStatements RightCurlyBrace
+|  LeftCurlyBrace RightCurlyBrace
 
-BlockStatements: BlockStatementList
+BlockStatements: BlockStatements BlockStatement | BlockStatement;
 
 BlockStatementList : BlockStatement | BlockStatementList BlockStatement
 
@@ -490,11 +474,9 @@ YieldStatement: Yield Expression Semicolon
 
 ContinueStatement: Continue Semicolon
 | Continue Identifier Semicolon
-| Continue  Semicolon
 
 ReturnStatement: Return Semicolon
 | Return Expression Semicolon
-| Return  Semicolon
 
 ThrowStatement: Throw Expression Semicolon
 
@@ -833,16 +815,16 @@ WildcardBounds: Extends ReferenceType
 
 // ModuleName: Identifier | ModuleName Dot Identifier
 // PackageName: Identifier | PackageName Dot Identifier
-TypeName: TypeIdentifier 
-ExpressionName: Identifier
+TypeName: TypeIdentifier | PackageOrTypeName
+ExpressionName: Identifier | AmbiguousName Dot Identifier
 MethodName: UnqualifiedMethodIdentifier
-// PackageOrTypeName: Identifier | PackageOrTypeName Dot Identifier
-// AmbiguousName: Identifier | AmbiguousName Dot Identifier
+PackageOrTypeName: Identifier | PackageOrTypeName Dot Identifier
+AmbiguousName: Identifier | AmbiguousName Dot Identifier
 
 Identifier :  IdentifierChars
 TypeIdentifier : IdentifierChars 
 UnqualifiedMethodIdentifier : IdentifierChars 
-Literal : IntegerLiteral | FloatingPointLiteral | BooleanLiteral |CharacterLiteral
+Literal : IntegerLiteral | FloatingPointLiteral | BooleanLiteral |CharacterLiteral | NullLiteral
 
 
 %%
