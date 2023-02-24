@@ -203,7 +203,9 @@ UnannReferenceType: UnannClassOrInterfaceType
 UnannClassOrInterfaceType: UnannClassType
 ;
 
-UnannClassType: UnannClassOrInterfaceType Dot TypeIdentifier TypeArguments
+UnannClassType: TypeIdentifier TypeArguments
+| UnannClassOrInterfaceType Dot TypeIdentifier TypeArguments
+| TypeIdentifier 
 | UnannClassOrInterfaceType Dot TypeIdentifier 
 ;
 
@@ -753,7 +755,7 @@ ReferenceType: ClassOrInterfaceType
 ;
 
 
-ClassOrInterfaceType: ClassType
+ClassOrInterfaceType: UnannClassOrInterfaceType
 ;
 
 
@@ -779,7 +781,7 @@ TypeParameter:  TypeIdentifier
 
 
 
-TypeBound:Extends ClassOrInterfaceType 
+TypeBound: Extends ClassOrInterfaceType 
 ;
 
 
