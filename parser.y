@@ -50,29 +50,29 @@ T parser_string(string str){
 %type<str> TypeIdentifier 
 %type<str> ThrowStatement RelationalExpression 
 %type<str> TopLevelClassOrInterfaceDeclarationList TopLevelClassOrInterfaceDeclaration NormalClassDeclaration 
-%type<str> CommaTypeNameList ClassBodyDeclaration ClassMemberDeclaration FieldDeclaraFieldModifierList FieldDeclaration VariableDeclaratorList
-%type<str> CommaVariableDeclaratorList VariableDeclarator VariableDeclaratorId VariableInitializer UnannType UnannPrimitiveType UnannReferenceType
+%type<str>  ClassBodyDeclaration ClassMemberDeclaration FieldDeclaraFieldModifierList FieldDeclaration VariableDeclaratorList
+%type<str>  VariableDeclarator VariableDeclaratorId VariableInitializer UnannType UnannPrimitiveType UnannReferenceType
 %type<str> UnannClassOrInterfaceType UnannClassType UnannTypeVariable UnannArrayType MethodDeclaration MethodModifierList
-%type<str> MethodModifier MethodHeader Result MethodDeclarator ReceiverParameter FormalParameterList CommaFormalParameterList FormalParameter
-%type<str> VariableArityParameter VariableModifierList VariableModifier Throws ExceptionTypeList CommaExceptionTypeList ExceptionType MethodBody
+%type<str> MethodModifier MethodHeader Result MethodDeclarator ReceiverParameter FormalParameterList  FormalParameter
+%type<str> VariableArityParameter VariableModifierList VariableModifier Throws ExceptionTypeList ExceptionType MethodBody
 %type<str> InstanceInitializer StaticInitializer ConstructorDeclaration ConstructorModifierList ConstructorModifier ConstructorDeclarator
-%type<str> SimpleTypeName ConstructorBody ExplicitConstructorInvocation ArrayInitializer VariableInitializerList CommaVariableInitializerList
+%type<str> SimpleTypeName ConstructorBody ExplicitConstructorInvocation ArrayInitializer VariableInitializerList 
 %type<str> Block BlockStatements BlockStatementList BlockStatement LocalClassOrInterfaceDeclaration LocalVariableDeclarationStatement LocalVariableDeclaration
 %type<str> LocalVariableType Statement ForStatementNoShortIf StatementWithoutTrailingSubstatement EmptyStatement LabeledStatement
 %type<str> ExpressionStatement StatementExpression IfThenStatement IfThenElseStatement IfThenElseStatementNoShortIf AssertStatement WhileStatement
 %type<str> WhileStatementNoShortIf ForStatement ModifierList Modifier
 
-%type<str> BasicForStatement BasicForStatementNoShortIf ForInit ForUpdate StatementExpressionList CommaStatementExpressionList EnhancedForStatement EnhancedForStatementNoShortIf BreakStatement YieldStatement ContinueStatement ReturnStatement 
+%type<str> BasicForStatement BasicForStatementNoShortIf ForInit ForUpdate StatementExpressionList  EnhancedForStatement EnhancedForStatementNoShortIf BreakStatement YieldStatement ContinueStatement ReturnStatement 
 %type<str> BitOrClassTypeList 
 %type<str> Pattern TypePattern Primary PrimaryNoNewArray ClassLiteral LeftRightSquareList ClassInstanceCreationExpression UnqualifiedClassInstanceCreationExpression
 %type<str> Identifier AmbiguousName
-%type<str> DotIdentifierList TypeArgumentsOrDiamond FieldAccess ArrayAccess MethodInvocation ArgumentList CommaExpressionList MethodReference
+%type<str> DotIdentifierList TypeArgumentsOrDiamond FieldAccess ArrayAccess MethodInvocation ArgumentList  MethodReference
 %type<str> ArrayCreationExpression DimExprs DimExprList DimExpr Expression AssignmentExpression Assignment LeftHandSide AssignmentOperator ConditionalExpression
 %type<str> ConditionalOrExpression ConditionalAndExpression InclusiveOrExpression ExclusiveOrExpression AndExpression EqualityExpression InstanceofExpression
 %type<str> ShiftExpression AdditiveExpression MultiplicativeExpression UnaryExpression PreIncrementExpression PreDecrementExpression
 %type<str> UnaryExpressionNotPlusMinus PostfixExpression PostIncrementExpression PostDecrementExpression CastExpression ConstantExpression Type PrimitiveType
 %type<str> NumericType IntegralType FloatingPointType ReferenceType ClassOrInterfaceType ClassType TypeVariable ArrayType
-%type<str> Dims  TypeBound TypeArguments TypeArgumentList CommaTypeArgumentList TypeArgument Wildcard WildcardBounds TypeName PackageOrTypeName
+%type<str> Dims  TypeBound TypeArguments TypeArgumentList  TypeArgument Wildcard WildcardBounds TypeName PackageOrTypeName
 %type<str> ExpressionName MethodName   UnqualifiedMethodIdentifier Literal
 
 %start OrdinaryCompilationUnit
@@ -111,14 +111,6 @@ ModifierList : ModifierList Modifier | Modifier
 
 
 
-
-
-
-CommaTypeNameList : Comma TypeName
- |Comma TypeName  CommaTypeNameList 
-;
-
-
 ClassBody: LeftCurlyBrace ClassBodyDeclarationList RightCurlyBrace | LeftCurlyBrace  RightCurlyBrace
 ;
 
@@ -144,11 +136,7 @@ FieldDeclaration: ModifierList UnannType VariableDeclaratorList Semicolon
 |  UnannType VariableDeclaratorList Semicolon
 
 
-VariableDeclaratorList: VariableDeclarator | VariableDeclarator CommaVariableDeclaratorList
-
-CommaVariableDeclaratorList : Comma VariableDeclarator
-| VariableDeclaratorList Comma VariableDeclarator
-;
+VariableDeclaratorList: VariableDeclarator | VariableDeclaratorList Comma VariableDeclarator
 
 
 VariableDeclarator: VariableDeclaratorId ASSIGN VariableInitializer
@@ -219,9 +207,7 @@ ReceiverParameter: UnannType  This
 | UnannType Identifier Dot This
 
 
-FormalParameterList: FormalParameter CommaFormalParameterList | FormalParameter
-
-CommaFormalParameterList : Comma FormalParameter | CommaFormalParameterList Comma FormalParameter
+FormalParameterList: FormalParameterList Comma FormalParameter | FormalParameter
 
 FormalParameter: VariableModifierList UnannType VariableDeclaratorId
 | UnannType VariableDeclaratorId
@@ -293,9 +279,7 @@ ArrayInitializer: LeftCurlyBrace  Comma RightCurlyBrace
 | LeftCurlyBrace VariableInitializerList  RightCurlyBrace
 
 
-VariableInitializerList: VariableInitializer | VariableInitializer CommaVariableInitializerList
-
-CommaVariableInitializerList :  Comma VariableInitializer | CommaVariableInitializerList Comma VariableInitializer
+VariableInitializerList: VariableInitializer | VariableInitializerList Comma VariableInitializerList
 
 
 Block: LeftCurlyBrace BlockStatements RightCurlyBrace
@@ -412,11 +396,8 @@ ForInit: StatementExpressionList
 
 ForUpdate: StatementExpressionList
 
-StatementExpressionList: StatementExpression  | StatementExpression CommaStatementExpressionList
+StatementExpressionList: StatementExpression  | StatementExpressionList Comma StatementExpression
 
-CommaStatementExpressionList : Comma StatementExpression
-| CommaStatementExpressionList Comma StatementExpression 
-;
 
 EnhancedForStatement: For LeftParenthesis LocalVariableDeclaration COLON Expression RightParenthesis Statement
 
@@ -530,10 +511,8 @@ MethodInvocation: MethodName LeftParenthesis  RightParenthesis
 ;
 
 
-ArgumentList: Expression | Expression CommaExpressionList 
+ArgumentList: Expression | ArgumentList Comma Expression
 ;
-
-CommaExpressionList : Comma Expression | CommaExpressionList Comma Expression 
 
 MethodReference: ExpressionName Scope Identifier
 |  ExpressionName Scope TypeArguments Identifier
@@ -721,9 +700,7 @@ TypeBound: Extends UnannClassOrInterfaceType
 TypeArguments: LT TypeArgumentList GT
 
 
-TypeArgumentList: TypeArgument CommaTypeArgumentList | TypeArgument
-
-CommaTypeArgumentList :  Comma TypeArgument |  TypeArgumentList Comma TypeArgument
+TypeArgumentList: TypeArgumentList Comma TypeArgument | TypeArgument
 
 TypeArgument: UnannReferenceType
 | Wildcard
