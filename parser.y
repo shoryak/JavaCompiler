@@ -105,7 +105,7 @@ struct Node{
 %type<node> TypeIdentifier 
 %type<node> ThrowStatement RelationalExpression 
 %type<node> TopLevelClassOrInterfaceDeclarationList TopLevelClassOrInterfaceDeclaration NormalClassDeclaration 
-%type<node>  ClassBodyDeclaration ClassMemberDeclaration FieldDeclaraFieldModifierList FieldDeclaration VariableDeclaratorList
+%type<node>  ClassBodyDeclaration  ClassBodyDeclarationList ClassMemberDeclaration FieldDeclaraFieldModifierList FieldDeclaration VariableDeclaratorList
 %type<node>  VariableDeclarator VariableDeclaratorId VariableInitializer UnannType UnannPrimitiveType UnannReferenceType
 %type<node> UnannClassOrInterfaceType UnannClassType UnannTypeVariable UnannArrayType MethodDeclaration MethodModifierList
 %type<node> MethodModifier MethodHeader Result MethodDeclarator ReceiverParameter FormalParameterList  FormalParameter
@@ -135,14 +135,22 @@ struct Node{
 
 %%
 
-CompilationUnit: OrdinaryCompilationUnit {}
+CompilationUnit: OrdinaryCompilationUnit { cout<<"abcd"<<endl; root= $$; buildTree(root,-1,0);}
 ;
 
-OrdinaryCompilationUnit: TopLevelClassOrInterfaceDeclarationList
+OrdinaryCompilationUnit: TopLevelClassOrInterfaceDeclarationList 
 ;
 
 TopLevelClassOrInterfaceDeclarationList: TopLevelClassOrInterfaceDeclaration
-    | TopLevelClassOrInterfaceDeclarationList TopLevelClassOrInterfaceDeclaration
+{
+    vector<Node*> v;
+    v.push_back($1);
+    $$ = createNode("JAVA-PROGRAM" , v);
+}
+| TopLevelClassOrInterfaceDeclarationList TopLevelClassOrInterfaceDeclaration {
+    $$ = $1;
+    $$->children.push_back($2);
+}
 ;
 
 
@@ -153,25 +161,51 @@ TopLevelClassOrInterfaceDeclaration: ClassDeclaration
 ClassDeclaration: NormalClassDeclaration
 ;
 
-NormalClassDeclaration : Class TypeIdentifier     ClassBody
-| ModifierList Class TypeIdentifier     ClassBody
+NormalClassDeclaration : Class TypeIdentifier     ClassBody{
+    vector<Node*> v;
+    v.push_back($2);
+    v.push_back($3);
+    $$ = createNode("class" , v);
+}
+| ModifierList Class TypeIdentifier     ClassBody{
+    vector<Node*> v;
+    for(auto i : $1->children){
+        v.push_back(i);
+    }
+    v.push_back($3);
+    v.push_back($4);
+    $$ = createNode("class" , v);
+
+}
 ;
 
 
 Modifier : Public | Private | Static  
 
 
-ModifierList : ModifierList Modifier | Modifier
+ModifierList : ModifierList Modifier  { $$ = $1 , $$->children.push_back($2);}
+| Modifier {
+    $$ = createNode("ModifierList");
+    $$->children.push_back($1);
+} 
 
 
 
 
 
-ClassBody: LeftCurlyBrace ClassBodyDeclarationList RightCurlyBrace | LeftCurlyBrace  RightCurlyBrace
+ClassBody: LeftCurlyBrace ClassBodyDeclarationList RightCurlyBrace  { $$ = $2;}
+| LeftCurlyBrace  RightCurlyBrace { $$ = createNode("ClassBody");}
 ;
 
-ClassBodyDeclarationList : ClassBodyDeclaration
-| ClassBodyDeclarationList ClassBodyDeclaration
+ClassBodyDeclarationList : ClassBodyDeclaration{
+    vector<Node*> v;
+    v.push_back($1);
+    $$ = createNode("ClassBody" , v);
+}
+| ClassBodyDeclarationList ClassBodyDeclaration{
+    $$ = $1;
+    $$->children.push_back($2);
+}
 ;
 
 
@@ -192,16 +226,27 @@ FieldDeclaration: ModifierList UnannType VariableDeclaratorList Semicolon
 |  UnannType VariableDeclaratorList Semicolon
 
 
-VariableDeclaratorList: VariableDeclarator | VariableDeclaratorList Comma VariableDeclarator
+VariableDeclaratorList: VariableDeclarator{
+    $$ = createNode("Variables");
+    $$->children.push_back($1);
+} 
+| VariableDeclaratorList Comma VariableDeclarator{
+    $$ = $1;
+    $$->children.push_back($3);
+}
 
 
-VariableDeclarator: VariableDeclaratorId ASSIGN VariableInitializer
-| VariableDeclaratorId
+VariableDeclarator: VariableDeclaratorId ASSIGN VariableInitializer {
+    $$ = createNode("=" );
+    $$->children.push_back($1);
+    $$->children.push_back($3);
+}
+| VariableDeclaratorId 
 ;
 
 
 VariableDeclaratorId: Identifier Dims
-| Identifier
+| Identifier 
 
 
 
@@ -237,13 +282,20 @@ UnannArrayType: UnannPrimitiveType Dims
 ;
 
 
-MethodDeclaration: ModifierList MethodHeader MethodBody
+MethodDeclaration: ModifierList MethodHeader MethodBody {
+    vector<Node*> v;
+    for(auto child : $1->children){
+        v.push_back(child);
+    }
+    v.push_back($3);
+    $$ = createNode($2->val , v);
+}
 |  MethodHeader MethodBody
 
 
 
-MethodHeader:UnannType MethodDeclarator 
-| Void MethodDeclarator 
+MethodHeader:UnannType MethodDeclarator {$$ = $2;}
+| Void MethodDeclarator {$$ = $2; }
 ;
 
 
@@ -336,16 +388,21 @@ ArrayInitializer: LeftCurlyBrace  Comma RightCurlyBrace
 VariableInitializerList: VariableInitializer | VariableInitializerList Comma VariableInitializerList
 
 
-Block: LeftCurlyBrace BlockStatements RightCurlyBrace
-|  LeftCurlyBrace RightCurlyBrace
+Block: LeftCurlyBrace BlockStatements RightCurlyBrace { $$ = $2;}
+|  LeftCurlyBrace RightCurlyBrace { $$ = createNode("Block");}
 
-BlockStatements: BlockStatements BlockStatement | BlockStatement;
-
-BlockStatementList : BlockStatement | BlockStatementList BlockStatement
+BlockStatements: BlockStatements BlockStatement {
+    $$ = $1;
+    $$->children.push_back($2);
+}
+| BlockStatement{
+    $$ = createNode("Block");
+    $$->children.push_back($1);
+}
 
 BlockStatement: LocalClassOrInterfaceDeclaration
 | LocalVariableDeclarationStatement
-| Statement { cout<<"abcd"<<endl;}
+| Statement { }
 ;
 LocalClassOrInterfaceDeclaration: ClassDeclaration
 ;
@@ -355,7 +412,9 @@ LocalVariableDeclarationStatement: LocalVariableDeclaration Semicolon
 
 LocalVariableDeclaration: LocalVariableType 
 | VariableModifierList LocalVariableType 
-| LocalVariableType VariableDeclaratorList
+| LocalVariableType VariableDeclaratorList {
+    $$ = $2;
+}
 | VariableModifierList LocalVariableType VariableDeclaratorList
 
 
@@ -390,7 +449,7 @@ EmptyStatement: Semicolon
 
 LabeledStatement: Identifier COLON Statement
 
-ExpressionStatement: StatementExpression Semicolon {cout<<"abcd"<<endl;}
+ExpressionStatement: StatementExpression Semicolon {}
 
 StatementExpression: Assignment { $$ = $1;}
 | PreIncrementExpression
@@ -605,7 +664,9 @@ DimExprList : DimExpr | DimExprList DimExpr
 
 DimExpr: LeftSquareBracket Expression RightSquareBracket
 
-Expression: AssignmentExpression
+Expression: AssignmentExpression { cout<<"_______"<<endl;
+    // printf("%s\n", $$->val);
+}
 ;
 
 
@@ -614,7 +675,12 @@ AssignmentExpression: ConditionalExpression { }
 ;
 
 
-Assignment: LeftHandSide AssignmentOperator Expression
+Assignment: LeftHandSide AssignmentOperator Expression {
+    $$ = createNode("=");
+    $$->children.push_back($1);
+    $$->children.push_back($2);
+
+}
 
 LeftHandSide: ExpressionName
 | FieldAccess
@@ -781,7 +847,7 @@ MethodName: Identifier
 Identifier :  IdentifierChars 
 TypeIdentifier : Identifier 
 // UnqualifiedMethodIdentifier : IdentifierChars 
-Literal : IntegerLiteral { }
+Literal : IntegerLiteral  {printf("%s\n", $$->val);}
 | FloatingPointLiteral | BooleanLiteral |CharacterLiteral | NullLiteral| StringLiteral
 
 

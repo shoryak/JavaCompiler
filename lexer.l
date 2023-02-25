@@ -228,11 +228,11 @@ Literals {DecimalIntegerLiteral}|{HexIntegerLiteral}|{OctalIntegerLiteral}|{Floa
 }
 
 
-{DecimalIntegerLiteral}|{HexIntegerLiteral}|{OctalIntegerLiteral}|{BinaryIntegerLiteral} {yylval.str=strdup(yytext); return IntegerLiteral; }
-{FloatingPointLiteral} {yylval.str=strdup(yytext); return FloatingPointLiteral;}
-{BooleanLiteral} {yylval.str=strdup(yytext); return BooleanLiteral;}
-{CharLiteral} {yylval.str=strdup(yytext); return CharacterLiteral;}
-{NullLiteral} {yylval.str=strdup(yytext); return NullLiteral;}
+{DecimalIntegerLiteral}|{HexIntegerLiteral}|{OctalIntegerLiteral}|{BinaryIntegerLiteral} {yylval.node =createNode(strdup(yytext)); return IntegerLiteral; }
+{FloatingPointLiteral} {yylval.node=createNode(strdup(yytext)); return FloatingPointLiteral;}
+{BooleanLiteral} {yylval.node=createNode(strdup(yytext)); return BooleanLiteral;}
+{CharLiteral} {yylval.node=createNode(strdup(yytext)); return CharacterLiteral;}
+{NullLiteral} {yylval.node=createNode(strdup(yytext)); return NullLiteral;}
 
 
 [a-zA-Z$_]+[$_a-zA-Z0-9]* {mp1[yytext]="Identifier";mp2[yytext]++;if(mp2[yytext]!=1){} else v.push_back(yytext); yylval.node = createNode(strdup(yytext)) ;return IdentifierChars;}
