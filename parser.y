@@ -2,8 +2,9 @@
 #include<bits/stdc++.h>
 using namespace std;
 int lines=0;
-int yyparse(void);
+int yyparse();
 extern "C" {
+        
         int yylex(void);
         int yyerror(char* s)
         {
@@ -21,9 +22,63 @@ T parser_string(string str){
     ss >> result;
     return result;
 }
+struct Node{
+        char* val;
+        vector<Node*> children;
+        char* data;
+    };
+
+    Node* root;
+    Node* createNode(char* value, vector<Node*> children)
+    {
+        Node* temp= new Node();
+        temp->val=value;
+        temp->children=children;
+        return temp;
+    }
+    Node* createNode(char* value)
+    {
+        Node* temp= new Node();
+        temp->val=value;
+        return temp;
+    }
+   
+
+    int buildTree(Node* node, int parentno, int co) 
+    {
+        if(node==NULL)
+        return co;
+
+        int nodeno=co++;
+        printf(" node%d [label=\"%s\"]\n",nodeno,node->val);
+        if(parentno>=0) 
+            printf(" node%d -> node%d\n",parentno,nodeno);
+        
+        int n=node->children.size();
+        vector<Node*> children=node->children;
+        for(int i=0;i<n;i++)
+        {
+            co=buildTree(children[i],nodeno,co);
+        }
+        return co;
+    }
 %}
 
+%code requires {
+    #include <bits/stdc++.h>
+    #include <string>
+    #include <vector>
+    #include <cstdio>
+
+    struct Node;
+    using namespace std;
+    Node* createNode(char* value, vector<Node*> children);
+    Node* createNode(char* value);
+    int buildTree(Node* , int parentno , int co);
+}
+
 %union {
+    Node* node;
     char* str;
     int num;
     float float_val;
@@ -31,55 +86,56 @@ T parser_string(string str){
 }
 
 
-%token<str> Abstract Continue For New Switch Assert Default If Package Synchronized Boolean Do Goto Private This Break Double Implements Protected Throw Byte Else Import Public Throws_key Case Enum Instanceof Return Transient Catch Extends Int Short Try Char Final Interface Static Void Class Finally Long Strictfp Volatile Const Float Native Super While Underscore Permits Var Yield
-%token<str> CharacterLiteral 
-%token<str> BooleanLiteral
-%token<str> IntegerLiteral
-%token<str> FloatingPointLiteral 
-%token<str> StringLiteral
-%token<str> TextBlock 
-%token<str> NullLiteral
-%token<str> LeftParenthesis  RightParenthesis  LeftCurlyBrace RightCurlyBrace LeftSquareBracket  RightSquareBracket
-%token<str> Semicolon Comma  Dot  AtSign 
-%token<str> Scope ellipsis 
-%token<str> ASSIGN GT LT EXCLAMATION TILDE QUESTIONMARK COLON ARROW EQUAL GE LE NOTEQUAL AND OR INC DEC ADD SUB MUL DIV BITAND BITOR CARET MOD LSHIFT RSHIFT URSHIFT ADD_ASSIGN SUB_ASSIGN MUL_ASSIGN DIV_ASSIGN AND_ASSIGN OR_ASSIGN XOR_ASSIGN MOD_ASSIGN LSHIFT_ASSIGN RSHIFT_ASSIGN URSHIFT_ASSIGN 
-%token<str> IdentifierChars
+%token<node> Abstract Continue For New Switch Assert Default If Package Synchronized Boolean Do Goto Private This Break Double Implements Protected Throw Byte Else Import Public Throws_key Case Enum Instanceof Return Transient Catch Extends Int Short Try Char Final Interface Static Void Class Finally Long Strictfp Volatile Const Float Native Super While Underscore Permits Var Yield
+%token<node> CharacterLiteral 
+%token<node> BooleanLiteral
+%token<node> IntegerLiteral
+%token<node> FloatingPointLiteral 
+%token<node> StringLiteral
+%token<node> TextBlock 
+%token<node> NullLiteral
+%token<node> LeftParenthesis  RightParenthesis  LeftCurlyBrace RightCurlyBrace LeftSquareBracket  RightSquareBracket
+%token<node> Semicolon Comma  Dot  AtSign 
+%token<node> Scope ellipsis 
+%token<node> ASSIGN GT LT EXCLAMATION TILDE QUESTIONMARK COLON ARROW EQUAL GE LE NOTEQUAL AND OR INC DEC ADD SUB MUL DIV BITAND BITOR CARET MOD LSHIFT RSHIFT URSHIFT ADD_ASSIGN SUB_ASSIGN MUL_ASSIGN DIV_ASSIGN AND_ASSIGN OR_ASSIGN XOR_ASSIGN MOD_ASSIGN LSHIFT_ASSIGN RSHIFT_ASSIGN URSHIFT_ASSIGN 
+%token<node> IdentifierChars
 
-%type<str> CompilationUnit  OrdinaryCompilationUnit  
-%type<str> ClassDeclaration  ClassBody ClassExtends  ClassModifier ClassModifierList ClassPermits
-%type<str> TypeIdentifier 
-%type<str> ThrowStatement RelationalExpression 
-%type<str> TopLevelClassOrInterfaceDeclarationList TopLevelClassOrInterfaceDeclaration NormalClassDeclaration 
-%type<str>  ClassBodyDeclaration ClassMemberDeclaration FieldDeclaraFieldModifierList FieldDeclaration VariableDeclaratorList
-%type<str>  VariableDeclarator VariableDeclaratorId VariableInitializer UnannType UnannPrimitiveType UnannReferenceType
-%type<str> UnannClassOrInterfaceType UnannClassType UnannTypeVariable UnannArrayType MethodDeclaration MethodModifierList
-%type<str> MethodModifier MethodHeader Result MethodDeclarator ReceiverParameter FormalParameterList  FormalParameter
-%type<str> VariableArityParameter VariableModifierList VariableModifier Throws ExceptionTypeList ExceptionType MethodBody
-%type<str> InstanceInitializer StaticInitializer ConstructorDeclaration ConstructorModifierList ConstructorModifier ConstructorDeclarator
-%type<str> SimpleTypeName ConstructorBody ExplicitConstructorInvocation ArrayInitializer VariableInitializerList 
-%type<str> Block BlockStatements BlockStatementList BlockStatement LocalClassOrInterfaceDeclaration LocalVariableDeclarationStatement LocalVariableDeclaration
-%type<str> LocalVariableType Statement ForStatementNoShortIf StatementWithoutTrailingSubstatement EmptyStatement LabeledStatement
-%type<str> ExpressionStatement StatementExpression IfThenStatement IfThenElseStatement IfThenElseStatementNoShortIf AssertStatement WhileStatement
-%type<str> WhileStatementNoShortIf ForStatement ModifierList Modifier
+%type<node> CompilationUnit  OrdinaryCompilationUnit  
+%type<node> ClassDeclaration  ClassBody ClassExtends  ClassModifier ClassModifierList ClassPermits
+%type<node> TypeIdentifier 
+%type<node> ThrowStatement RelationalExpression 
+%type<node> TopLevelClassOrInterfaceDeclarationList TopLevelClassOrInterfaceDeclaration NormalClassDeclaration 
+%type<node>  ClassBodyDeclaration ClassMemberDeclaration FieldDeclaraFieldModifierList FieldDeclaration VariableDeclaratorList
+%type<node>  VariableDeclarator VariableDeclaratorId VariableInitializer UnannType UnannPrimitiveType UnannReferenceType
+%type<node> UnannClassOrInterfaceType UnannClassType UnannTypeVariable UnannArrayType MethodDeclaration MethodModifierList
+%type<node> MethodModifier MethodHeader Result MethodDeclarator ReceiverParameter FormalParameterList  FormalParameter
+%type<node> VariableArityParameter VariableModifierList VariableModifier Throws ExceptionTypeList ExceptionType MethodBody
+%type<node> InstanceInitializer StaticInitializer ConstructorDeclaration ConstructorModifierList ConstructorModifier ConstructorDeclarator
+%type<node> SimpleTypeName ConstructorBody ExplicitConstructorInvocation ArrayInitializer VariableInitializerList 
+%type<node> Block BlockStatements BlockStatementList BlockStatement LocalClassOrInterfaceDeclaration LocalVariableDeclarationStatement LocalVariableDeclaration
+%type<node> LocalVariableType Statement ForStatementNoShortIf StatementWithoutTrailingSubstatement EmptyStatement LabeledStatement
+%type<node> ExpressionStatement StatementExpression IfThenStatement IfThenElseStatement IfThenElseStatementNoShortIf AssertStatement WhileStatement
+%type<node> WhileStatementNoShortIf ForStatement ModifierList Modifier
 
-%type<str> BasicForStatement BasicForStatementNoShortIf ForInit ForUpdate StatementExpressionList  EnhancedForStatement EnhancedForStatementNoShortIf BreakStatement YieldStatement ContinueStatement ReturnStatement 
-%type<str> BitOrClassTypeList 
-%type<str> Pattern TypePattern Primary PrimaryNoNewArray ClassLiteral LeftRightSquareList ClassInstanceCreationExpression UnqualifiedClassInstanceCreationExpression
-%type<str> Identifier AmbiguousName
-%type<str> DotIdentifierList TypeArgumentsOrDiamond FieldAccess ArrayAccess MethodInvocation ArgumentList  MethodReference
-%type<str> ArrayCreationExpression DimExprs DimExprList DimExpr Expression AssignmentExpression Assignment LeftHandSide AssignmentOperator ConditionalExpression
-%type<str> ConditionalOrExpression ConditionalAndExpression InclusiveOrExpression ExclusiveOrExpression AndExpression EqualityExpression InstanceofExpression
-%type<str> ShiftExpression AdditiveExpression MultiplicativeExpression UnaryExpression PreIncrementExpression PreDecrementExpression
-%type<str> UnaryExpressionNotPlusMinus PostfixExpression PostIncrementExpression PostDecrementExpression CastExpression ConstantExpression Type PrimitiveType
-%type<str> NumericType IntegralType FloatingPointType ReferenceType ClassOrInterfaceType ClassType TypeVariable ArrayType
-%type<str> Dims  TypeBound TypeArguments TypeArgumentList  TypeArgument Wildcard WildcardBounds TypeName PackageOrTypeName
-%type<str> ExpressionName MethodName   UnqualifiedMethodIdentifier Literal
+%type<node> BasicForStatement BasicForStatementNoShortIf ForInit ForUpdate StatementExpressionList  EnhancedForStatement EnhancedForStatementNoShortIf BreakStatement YieldStatement ContinueStatement ReturnStatement 
+%type<node> BitOrClassTypeList 
+%type<node> Pattern TypePattern Primary PrimaryNoNewArray ClassLiteral LeftRightSquareList ClassInstanceCreationExpression UnqualifiedClassInstanceCreationExpression
+%type<node> Identifier AmbiguousName
+%type<node> DotIdentifierList TypeArgumentsOrDiamond FieldAccess ArrayAccess MethodInvocation ArgumentList  MethodReference
+%type<node> ArrayCreationExpression DimExprs DimExprList DimExpr Expression AssignmentExpression Assignment LeftHandSide AssignmentOperator ConditionalExpression
+%type<node> ConditionalOrExpression ConditionalAndExpression InclusiveOrExpression ExclusiveOrExpression AndExpression EqualityExpression InstanceofExpression
+%type<node> ShiftExpression AdditiveExpression MultiplicativeExpression UnaryExpression PreIncrementExpression PreDecrementExpression
+%type<node> UnaryExpressionNotPlusMinus PostfixExpression PostIncrementExpression PostDecrementExpression CastExpression ConstantExpression Type PrimitiveType
+%type<node> NumericType IntegralType FloatingPointType ReferenceType ClassOrInterfaceType ClassType TypeVariable ArrayType
+%type<node> Dims  TypeBound TypeArguments TypeArgumentList  TypeArgument Wildcard WildcardBounds TypeName PackageOrTypeName
+%type<node> ExpressionName MethodName   UnqualifiedMethodIdentifier 
+%type<node> Literal
 
-%start OrdinaryCompilationUnit
+%start CompilationUnit
 
 %%
 
-CompilationUnit: OrdinaryCompilationUnit
+CompilationUnit: OrdinaryCompilationUnit {}
 ;
 
 OrdinaryCompilationUnit: TopLevelClassOrInterfaceDeclarationList
@@ -289,7 +345,7 @@ BlockStatementList : BlockStatement | BlockStatementList BlockStatement
 
 BlockStatement: LocalClassOrInterfaceDeclaration
 | LocalVariableDeclarationStatement
-| Statement
+| Statement { cout<<"abcd"<<endl;}
 ;
 LocalClassOrInterfaceDeclaration: ClassDeclaration
 ;
@@ -334,9 +390,9 @@ EmptyStatement: Semicolon
 
 LabeledStatement: Identifier COLON Statement
 
-ExpressionStatement: StatementExpression Semicolon
+ExpressionStatement: StatementExpression Semicolon {cout<<"abcd"<<endl;}
 
-StatementExpression: Assignment
+StatementExpression: Assignment { $$ = $1;}
 | PreIncrementExpression
 | PreDecrementExpression
 | PostIncrementExpression
@@ -419,9 +475,11 @@ TypePattern: LocalVariableDeclaration
 
 
 
-Primary: PrimaryNoNewArray | ArrayCreationExpression
+Primary: PrimaryNoNewArray  {$$ = $1;}
+| ArrayCreationExpression
 
-PrimaryNoNewArray: Literal | ClassLiteral | This
+PrimaryNoNewArray: Literal {$$ = $1;}
+| ClassLiteral | This
 | TypeName Dot This
 | LeftParenthesis Expression RightParenthesis
 | ClassInstanceCreationExpression
@@ -551,7 +609,7 @@ Expression: AssignmentExpression
 ;
 
 
-AssignmentExpression: ConditionalExpression
+AssignmentExpression: ConditionalExpression { }
 | Assignment
 ;
 
@@ -566,7 +624,7 @@ LeftHandSide: ExpressionName
 
 AssignmentOperator: ASSIGN | MUL_ASSIGN  | DIV_ASSIGN |  MOD_ASSIGN | ADD_ASSIGN | SUB_ASSIGN | LSHIFT_ASSIGN | RSHIFT_ASSIGN | URSHIFT_ASSIGN | AND_ASSIGN | XOR_ASSIGN | OR_ASSIGN
 
-ConditionalExpression: ConditionalOrExpression
+ConditionalExpression: ConditionalOrExpression { }
 | ConditionalOrExpression QUESTIONMARK Expression COLON ConditionalExpression
 ;
 
@@ -595,7 +653,7 @@ EqualityExpression: RelationalExpression
 | EqualityExpression NOTEQUAL RelationalExpression
 ;
 
-RelationalExpression: ShiftExpression
+RelationalExpression: ShiftExpression 
 | RelationalExpression LT ShiftExpression
 | RelationalExpression GT ShiftExpression
 | RelationalExpression LE ShiftExpression
@@ -723,7 +781,8 @@ MethodName: Identifier
 Identifier :  IdentifierChars 
 TypeIdentifier : Identifier 
 // UnqualifiedMethodIdentifier : IdentifierChars 
-Literal : IntegerLiteral | FloatingPointLiteral | BooleanLiteral |CharacterLiteral | NullLiteral| StringLiteral
+Literal : IntegerLiteral { }
+| FloatingPointLiteral | BooleanLiteral |CharacterLiteral | NullLiteral| StringLiteral
 
 
 %%
