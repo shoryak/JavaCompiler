@@ -75,7 +75,7 @@ T parser_string(string str){
 %type<str> Dims  TypeParameter TypeBound TypeArguments TypeArgumentList CommaTypeArgumentList TypeArgument Wildcard WildcardBounds TypeName PackageOrTypeName
 %type<str> ExpressionName MethodName   UnqualifiedMethodIdentifier Literal
 
-%start CompilationUnit 
+%start OrdinaryCompilationUnit
 
 %%
 
@@ -131,7 +131,7 @@ CommaTypeParameterList : Comma TypeParameter
 
 
 
-ClassExtends: Extends ClassType;
+ClassExtends: Extends UnannClassType;
 
 
 
@@ -199,7 +199,7 @@ UnannPrimitiveType: NumericType
 ;
 
 UnannReferenceType: UnannClassOrInterfaceType
-| UnannTypeVariable
+| TypeIdentifier
 | UnannArrayType
 ;
 
@@ -208,7 +208,6 @@ UnannClassOrInterfaceType: UnannClassType
 
 UnannClassType: TypeIdentifier TypeArguments
 | UnannClassOrInterfaceType Dot TypeIdentifier TypeArguments
-| TypeIdentifier 
 | UnannClassOrInterfaceType Dot TypeIdentifier 
 ;
 
@@ -228,9 +227,7 @@ MethodDeclaration: ModifierList MethodHeader MethodBody
 
 
 MethodHeader:UnannType MethodDeclarator 
-| UnannType MethodDeclarator Throws
 | Void MethodDeclarator 
-|  Void MethodDeclarator Throws
 ;
 
 
@@ -264,16 +261,6 @@ VariableModifierList : VariableModifier| VariableModifierList VariableModifier
 
 VariableModifier: Final
 
-Throws: Throws_key ExceptionTypeList
-
-ExceptionTypeList: ExceptionType CommaExceptionTypeList | ExceptionType
-
-CommaExceptionTypeList : Comma ExceptionType | CommaExceptionTypeList Comma ExceptionType
-
-
-ExceptionType: ClassType
-;
-
 MethodBody: Block
 | Semicolon
 ;
@@ -286,8 +273,6 @@ StaticInitializer: Static Block
 
 ConstructorDeclaration: ConstructorDeclarator ConstructorBody
 | ModifierList ConstructorDeclarator ConstructorBody
-| ConstructorDeclarator Throws ConstructorBody
-| ModifierList ConstructorDeclarator Throws ConstructorBody
 ;
 
 
@@ -390,7 +375,6 @@ StatementWithoutTrailingSubstatement: Block
 | BreakStatement
 | ContinueStatement
 | ReturnStatement
-| ThrowStatement
 | YieldStatement
 ;
 
@@ -478,11 +462,6 @@ ContinueStatement: Continue Semicolon
 
 ReturnStatement: Return Semicolon
 | Return Expression Semicolon
-
-ThrowStatement: Throw Expression Semicolon
-
-BitOrClassTypeList : BITOR ClassType
-| BitOrClassTypeList BITOR ClassType
 
 
 Pattern: TypePattern 
@@ -591,8 +570,8 @@ MethodReference: ExpressionName Scope Identifier
 | Primary Scope Identifier
 |  Primary Scope TypeArguments 
 
-| ReferenceType Scope Identifier
-|  ReferenceType Scope TypeArguments Identifier
+| UnannReferenceType Scope Identifier
+|  UnannReferenceType Scope TypeArguments Identifier
 
 | Super Scope Identifier
 |  Super Scope TypeArguments Identifier
@@ -600,17 +579,17 @@ MethodReference: ExpressionName Scope Identifier
 | TypeName Dot Super Scope Identifier
 |  TypeName Dot Super Scope TypeArguments Identifier
 
-| ClassType Scope  New
-| ClassType Scope TypeArguments New
+| UnannClassType Scope  New
+| UnannClassType Scope TypeArguments New
 | ArrayType Scope New
 ;
 
 
 
 ArrayCreationExpression: New PrimitiveType DimExprs 
-| New ClassOrInterfaceType DimExprs 
+| New UnannClassOrInterfaceType DimExprs 
 | New PrimitiveType DimExprs Dims
-| New ClassOrInterfaceType DimExprs Dims
+| New UnannClassOrInterfaceType DimExprs Dims
 ;
 
 
@@ -676,7 +655,7 @@ RelationalExpression: ShiftExpression
 | InstanceofExpression
 
 
-InstanceofExpression: RelationalExpression Instanceof ReferenceType
+InstanceofExpression: RelationalExpression Instanceof UnannReferenceType
 | RelationalExpression Instanceof Pattern
 ;
 
@@ -728,14 +707,14 @@ PostDecrementExpression: PostfixExpression DEC
 
 
 CastExpression: LeftParenthesis PrimitiveType RightParenthesis UnaryExpression
-| LeftParenthesis ReferenceType  RightParenthesis UnaryExpressionNotPlusMinus
+| LeftParenthesis UnannReferenceType  RightParenthesis UnaryExpressionNotPlusMinus
 ;
 
 ConstantExpression: Expression
 
 
 Type: PrimitiveType
-| ReferenceType
+| UnannReferenceType
 ;
 
 
@@ -753,24 +732,9 @@ IntegralType:  Byte | Short | Int | Long | Char
 
 FloatingPointType:  Float | Double
 
-ReferenceType: ClassOrInterfaceType
-| ArrayType
-;
 
 
-ClassOrInterfaceType: UnannClassOrInterfaceType
-;
-
-
-
-ClassType:  TypeIdentifier 
-| TypeIdentifier TypeArguments
-| ClassOrInterfaceType Dot  TypeIdentifier 
-| ClassOrInterfaceType Dot  TypeIdentifier TypeArguments
-;
-
-ArrayType: PrimitiveType Dims
-| ClassOrInterfaceType Dims
+ArrayType: UnannArrayType
 ;
 
 Dims: LeftSquareBracket RightSquareBracket 
@@ -784,7 +748,7 @@ TypeParameter:  TypeIdentifier
 
 
 
-TypeBound: Extends ClassOrInterfaceType 
+TypeBound: Extends UnannClassOrInterfaceType 
 ;
 
 
@@ -796,15 +760,15 @@ TypeArgumentList: TypeArgument CommaTypeArgumentList | TypeArgument
 
 CommaTypeArgumentList :  Comma TypeArgument |  TypeArgumentList Comma TypeArgument
 
-TypeArgument: ReferenceType
+TypeArgument: UnannReferenceType
 | Wildcard
 ;
 
 Wildcard: QUESTIONMARK 
 | QUESTIONMARK WildcardBounds
 
-WildcardBounds: Extends ReferenceType
-| Super ReferenceType
+WildcardBounds: Extends UnannReferenceType
+| Super UnannReferenceType
 ;
 
 // ModuleName: Identifier | ModuleName Dot Identifier
