@@ -31,7 +31,8 @@ T parser_string(string str){
 }
 
 
-%token<str> Abstract Continue For New Switch Assert Default If Package Synchronized Boolean Do Goto Private This Break Double Implements Protected Throw Byte Else Import Public Throws_key Case Enum Instanceof Return Transient Catch Extends Int Short Try Char Final Interface Static Void Class Finally Long Strictfp Volatile Const Float Native Super While Underscore Permits Var Yield
+%token<str> ABSTRACT CONTINUE FOR NEW SWITCH ASSERT DEFAULT IF PACKAGE SYNCHRONIZED BOOLEAN DO GOTO PRIVATE THIS BREAK DOUBLE IMPLEMENTS PROTECTED THROW BYTE ELSE IMPORT PUBLIC THROWS CASE ENUM INSTANCEOF RETURN TRANSIENT CATCH EXTENDS INT SHORT TRY CHAR FINAL INTERFACE STATIC VOID CLASS FINALLY LONG STRICTFP VOLATILE CONST FLOAT NATIVE SUPER WHILE UNDERSCORE
+%token<str> EXPORTS OPENS REQUIRES USES MODULE PERMITS SEALED VAR PROVIDES TO WITH OPEN RECORD TRANSITIVE YIELD
 %token<str> CharacterLiteral 
 %token<str> BooleanLiteral
 %token<str> IntegerLiteral
@@ -75,7 +76,10 @@ T parser_string(string str){
 %type<str> Dims  TypeParameter TypeBound TypeArguments TypeArgumentList CommaTypeArgumentList TypeArgument Wildcard WildcardBounds TypeName PackageOrTypeName
 %type<str> ExpressionName MethodName   UnqualifiedMethodIdentifier Literal
 
-%start CompilationUnit 
+%type<str> ContextualKeywords TypeIdentifierKeywords
+%type<str> DotId
+
+%start MethodInvocation
 
 %%
 
@@ -97,26 +101,26 @@ TopLevelClassOrInterfaceDeclaration: ClassDeclaration
 ClassDeclaration: NormalClassDeclaration
 ;
 
-NormalClassDeclaration :  Class TypeIdentifier ClassExtends  ClassPermits ClassBody
-| ModifierList Class TypeIdentifier  ClassExtends  ClassPermits ClassBody
-| Class TypeIdentifier  ClassExtends   ClassBody
-| ModifierList Class TypeIdentifier  ClassExtends   ClassBody
-| Class TypeIdentifier    ClassPermits ClassBody
-| ModifierList Class TypeIdentifier    ClassPermits ClassBody
-| Class TypeIdentifier     ClassBody
-| ModifierList Class TypeIdentifier     ClassBody
-| Class TypeIdentifier TypeParameters ClassExtends  ClassPermits ClassBody
-| ModifierList Class TypeIdentifier TypeParameters ClassExtends  ClassPermits ClassBody
-| Class TypeIdentifier TypeParameters ClassExtends   ClassBody
-| ModifierList Class TypeIdentifier TypeParameters ClassExtends   ClassBody
-| Class TypeIdentifier TypeParameters   ClassPermits ClassBody
-| ModifierList Class TypeIdentifier TypeParameters   ClassPermits ClassBody
-| Class TypeIdentifier TypeParameters    ClassBody
-| ModifierList Class TypeIdentifier TypeParameters    ClassBody
+NormalClassDeclaration :  CLASS TypeIdentifier ClassExtends  ClassPermits ClassBody
+| ModifierList CLASS TypeIdentifier  ClassExtends  ClassPermits ClassBody
+| CLASS TypeIdentifier  ClassExtends   ClassBody
+| ModifierList CLASS TypeIdentifier  ClassExtends   ClassBody
+| CLASS TypeIdentifier    ClassPermits ClassBody
+| ModifierList CLASS TypeIdentifier    ClassPermits ClassBody
+| CLASS TypeIdentifier     ClassBody
+| ModifierList CLASS TypeIdentifier     ClassBody
+| CLASS TypeIdentifier TypeParameters ClassExtends  ClassPermits ClassBody
+| ModifierList CLASS TypeIdentifier TypeParameters ClassExtends  ClassPermits ClassBody
+| CLASS TypeIdentifier TypeParameters ClassExtends   ClassBody
+| ModifierList CLASS TypeIdentifier TypeParameters ClassExtends   ClassBody
+| CLASS TypeIdentifier TypeParameters   ClassPermits ClassBody
+| ModifierList CLASS TypeIdentifier TypeParameters   ClassPermits ClassBody
+| CLASS TypeIdentifier TypeParameters    ClassBody
+| ModifierList CLASS TypeIdentifier TypeParameters    ClassBody
 ;
 
 
-Modifier : Public | Private | Static  
+Modifier : PUBLIC | PRIVATE | STATIC  
 
 
 ModifierList : ModifierList Modifier | Modifier
@@ -131,14 +135,14 @@ CommaTypeParameterList : Comma TypeParameter
 
 
 
-ClassExtends: Extends ClassType;
+ClassExtends: EXTENDS ClassType;
 
 
 
 
 
 
-ClassPermits: Permits TypeName CommaTypeNameList | Permits TypeName
+ClassPermits: PERMITS TypeName CommaTypeNameList | PERMITS TypeName
 
 CommaTypeNameList : Comma TypeName
  |Comma TypeName  CommaTypeNameList 
@@ -195,7 +199,7 @@ UnannType: UnannPrimitiveType
 | UnannReferenceType
 ;
 UnannPrimitiveType: NumericType
-| Boolean
+| BOOLEAN
 ;
 
 UnannReferenceType: UnannClassOrInterfaceType
@@ -229,8 +233,8 @@ MethodDeclaration: ModifierList MethodHeader MethodBody
 
 MethodHeader:UnannType MethodDeclarator 
 | UnannType MethodDeclarator Throws
-| Void MethodDeclarator 
-|  Void MethodDeclarator Throws
+| VOID MethodDeclarator 
+|  VOID MethodDeclarator Throws
 ;
 
 
@@ -244,8 +248,8 @@ MethodDeclarator: Identifier LeftParenthesis ReceiverParameter Comma RightParent
 | Identifier LeftParenthesis ReceiverParameter Comma FormalParameterList RightParenthesis Dims
 | Identifier LeftParenthesis FormalParameterList RightParenthesis Dims
 
-ReceiverParameter: UnannType  This
-| UnannType Identifier Dot This
+ReceiverParameter: UnannType  THIS
+| UnannType Identifier Dot THIS
 
 
 FormalParameterList: FormalParameter CommaFormalParameterList | FormalParameter
@@ -262,9 +266,9 @@ VariableArityParameter:  UnannType  ellipsis Identifier
 
 VariableModifierList : VariableModifier| VariableModifierList VariableModifier 
 
-VariableModifier: Final
+VariableModifier: FINAL
 
-Throws: Throws_key ExceptionTypeList
+Throws: THROWS ExceptionTypeList
 
 ExceptionTypeList: ExceptionType CommaExceptionTypeList | ExceptionType
 
@@ -281,7 +285,7 @@ MethodBody: Block
 InstanceInitializer: Block
 ;
 
-StaticInitializer: Static Block
+StaticInitializer: STATIC Block
 ;
 
 ConstructorDeclaration: ConstructorDeclarator ConstructorBody
@@ -313,22 +317,22 @@ ConstructorBody: LeftCurlyBrace  RightCurlyBrace
 ;
 
 
-ExplicitConstructorInvocation:  This LeftParenthesis RightParenthesis Semicolon
-| TypeArguments This LeftParenthesis RightParenthesis Semicolon
-| This LeftParenthesis ArgumentList RightParenthesis Semicolon
-| TypeArguments This LeftParenthesis ArgumentList RightParenthesis Semicolon
-| TypeArguments Super LeftParenthesis ArgumentList RightParenthesis Semicolon
-| Super LeftParenthesis RightParenthesis Semicolon
-| Super LeftParenthesis ArgumentList RightParenthesis Semicolon
-| TypeArguments Super LeftParenthesis  RightParenthesis Semicolon    
-| ExpressionName Dot TypeArguments Super LeftParenthesis ArgumentList RightParenthesis Semicolon
-| ExpressionName Dot TypeArguments Super LeftParenthesis RightParenthesis Semicolon
-| ExpressionName Dot Super LeftParenthesis ArgumentList RightParenthesis Semicolon
-| ExpressionName Dot Super LeftParenthesis RightParenthesis Semicolon     
-| Primary Dot  Super LeftParenthesis RightParenthesis Semicolon
-| Primary Dot TypeArguments Super LeftParenthesis RightParenthesis Semicolon
-| Primary Dot  Super LeftParenthesis ArgumentList RightParenthesis Semicolon
-| Primary Dot TypeArguments Super LeftParenthesis ArgumentList RightParenthesis Semicolon
+ExplicitConstructorInvocation:  THIS LeftParenthesis RightParenthesis Semicolon
+| TypeArguments THIS LeftParenthesis RightParenthesis Semicolon
+| THIS LeftParenthesis ArgumentList RightParenthesis Semicolon
+| TypeArguments THIS LeftParenthesis ArgumentList RightParenthesis Semicolon
+| TypeArguments SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
+| SUPER LeftParenthesis RightParenthesis Semicolon
+| SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
+| TypeArguments SUPER LeftParenthesis  RightParenthesis Semicolon    
+| ExpressionName Dot TypeArguments SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
+| ExpressionName Dot TypeArguments SUPER LeftParenthesis RightParenthesis Semicolon
+| ExpressionName Dot SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
+| ExpressionName Dot SUPER LeftParenthesis RightParenthesis Semicolon     
+| Primary Dot  SUPER LeftParenthesis RightParenthesis Semicolon
+| Primary Dot TypeArguments SUPER LeftParenthesis RightParenthesis Semicolon
+| Primary Dot  SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
+| Primary Dot TypeArguments SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
 ;
 
 
@@ -348,8 +352,6 @@ Block: LeftCurlyBrace BlockStatements RightCurlyBrace
 
 BlockStatements: BlockStatements BlockStatement | BlockStatement;
 
-BlockStatementList : BlockStatement | BlockStatementList BlockStatement
-
 BlockStatement: LocalClassOrInterfaceDeclaration
 | LocalVariableDeclarationStatement
 | Statement
@@ -367,7 +369,7 @@ LocalVariableDeclaration: LocalVariableType
 
 
 
-LocalVariableType: UnannType | Var
+LocalVariableType: UnannType | VAR
 
 Statement: StatementWithoutTrailingSubstatement
 | LabeledStatement
@@ -409,19 +411,19 @@ StatementExpression: Assignment
 | ClassInstanceCreationExpression
 ;
 
-IfThenStatement: If LeftParenthesis Expression RightParenthesis Statement
+IfThenStatement: IF LeftParenthesis Expression RightParenthesis Statement
 
-IfThenElseStatement: If LeftParenthesis Expression RightParenthesis StatementNoShortIf Else Statement
+IfThenElseStatement: IF LeftParenthesis Expression RightParenthesis StatementNoShortIf ELSE Statement
 
-IfThenElseStatementNoShortIf: If LeftParenthesis Expression RightParenthesis StatementNoShortIf Else StatementNoShortIf
+IfThenElseStatementNoShortIf: IF LeftParenthesis Expression RightParenthesis StatementNoShortIf ELSE StatementNoShortIf
 
-AssertStatement: Assert Expression Semicolon
-| Assert Expression COLON Expression Semicolon
+AssertStatement: ASSERT Expression Semicolon
+| ASSERT Expression COLON Expression Semicolon
 
 
-WhileStatement: While LeftParenthesis Expression RightParenthesis Statement
+WhileStatement: WHILE LeftParenthesis Expression RightParenthesis Statement
 
-WhileStatementNoShortIf: While LeftParenthesis Expression RightParenthesis StatementNoShortIf
+WhileStatementNoShortIf: WHILE LeftParenthesis Expression RightParenthesis StatementNoShortIf
 
 ForStatement: BasicForStatement
 | EnhancedForStatement
@@ -431,25 +433,25 @@ ForStatementNoShortIf: BasicForStatementNoShortIf
 | EnhancedForStatementNoShortIf
 ;
 
-BasicForStatement: For LeftParenthesis  Semicolon  Semicolon  RightParenthesis Statement
-| For LeftParenthesis ForInit Semicolon  Semicolon  RightParenthesis Statement
-| For LeftParenthesis  Semicolon  Semicolon ForUpdate RightParenthesis Statement
-| For LeftParenthesis ForInit Semicolon  Semicolon ForUpdate RightParenthesis Statement
-| For LeftParenthesis  Semicolon Expression Semicolon  RightParenthesis Statement
-| For LeftParenthesis ForInit Semicolon Expression Semicolon  RightParenthesis Statement
-| For LeftParenthesis  Semicolon Expression Semicolon ForUpdate RightParenthesis Statement
-| For LeftParenthesis ForInit Semicolon Expression Semicolon ForUpdate RightParenthesis Statement
+BasicForStatement: FOR LeftParenthesis  Semicolon  Semicolon  RightParenthesis Statement
+| FOR LeftParenthesis ForInit Semicolon  Semicolon  RightParenthesis Statement
+| FOR LeftParenthesis  Semicolon  Semicolon ForUpdate RightParenthesis Statement
+| FOR LeftParenthesis ForInit Semicolon  Semicolon ForUpdate RightParenthesis Statement
+| FOR LeftParenthesis  Semicolon Expression Semicolon  RightParenthesis Statement
+| FOR LeftParenthesis ForInit Semicolon Expression Semicolon  RightParenthesis Statement
+| FOR LeftParenthesis  Semicolon Expression Semicolon ForUpdate RightParenthesis Statement
+| FOR LeftParenthesis ForInit Semicolon Expression Semicolon ForUpdate RightParenthesis Statement
 
 
 
-BasicForStatementNoShortIf: For LeftParenthesis  Semicolon  Semicolon RightParenthesis StatementNoShortIf
-| For LeftParenthesis ForInit Semicolon  Semicolon RightParenthesis StatementNoShortIf
-| For LeftParenthesis  Semicolon Expression Semicolon RightParenthesis StatementNoShortIf
-| For LeftParenthesis ForInit Semicolon Expression Semicolon RightParenthesis StatementNoShortIf
-| For LeftParenthesis  Semicolon  Semicolon ForUpdate RightParenthesis StatementNoShortIf
-| For LeftParenthesis ForInit Semicolon  Semicolon ForUpdate RightParenthesis StatementNoShortIf
-| For LeftParenthesis  Semicolon Expression Semicolon ForUpdate RightParenthesis StatementNoShortIf
-| For LeftParenthesis ForInit Semicolon Expression Semicolon ForUpdate RightParenthesis StatementNoShortIf
+BasicForStatementNoShortIf: FOR LeftParenthesis  Semicolon  Semicolon RightParenthesis StatementNoShortIf
+| FOR LeftParenthesis ForInit Semicolon  Semicolon RightParenthesis StatementNoShortIf
+| FOR LeftParenthesis  Semicolon Expression Semicolon RightParenthesis StatementNoShortIf
+| FOR LeftParenthesis ForInit Semicolon Expression Semicolon RightParenthesis StatementNoShortIf
+| FOR LeftParenthesis  Semicolon  Semicolon ForUpdate RightParenthesis StatementNoShortIf
+| FOR LeftParenthesis ForInit Semicolon  Semicolon ForUpdate RightParenthesis StatementNoShortIf
+| FOR LeftParenthesis  Semicolon Expression Semicolon ForUpdate RightParenthesis StatementNoShortIf
+| FOR LeftParenthesis ForInit Semicolon Expression Semicolon ForUpdate RightParenthesis StatementNoShortIf
 
 
 ForInit: StatementExpressionList
@@ -464,22 +466,22 @@ CommaStatementExpressionList : Comma StatementExpression
 | CommaStatementExpressionList Comma StatementExpression 
 ;
 
-EnhancedForStatement: For LeftParenthesis LocalVariableDeclaration COLON Expression RightParenthesis Statement
+EnhancedForStatement: FOR LeftParenthesis LocalVariableDeclaration COLON Expression RightParenthesis Statement
 
-EnhancedForStatementNoShortIf: For LeftParenthesis LocalVariableDeclaration COLON Expression RightParenthesis StatementNoShortIf
+EnhancedForStatementNoShortIf: FOR LeftParenthesis LocalVariableDeclaration COLON Expression RightParenthesis StatementNoShortIf
 
-BreakStatement: Break Identifier Semicolon
-| Break  Semicolon
+BreakStatement: BREAK Identifier Semicolon
+| BREAK  Semicolon
 
-YieldStatement: Yield Expression Semicolon
+YieldStatement: YIELD Expression Semicolon
 
-ContinueStatement: Continue Semicolon
-| Continue Identifier Semicolon
+ContinueStatement: CONTINUE Semicolon
+| CONTINUE Identifier Semicolon
 
-ReturnStatement: Return Semicolon
-| Return Expression Semicolon
+ReturnStatement: RETURN Semicolon
+| RETURN Expression Semicolon
 
-ThrowStatement: Throw Expression Semicolon
+ThrowStatement: THROW Expression Semicolon
 
 BitOrClassTypeList : BITOR ClassType
 | BitOrClassTypeList BITOR ClassType
@@ -493,8 +495,8 @@ TypePattern: LocalVariableDeclaration
 
 Primary: PrimaryNoNewArray | ArrayCreationExpression
 
-PrimaryNoNewArray: Literal | ClassLiteral | This
-| TypeName Dot This
+PrimaryNoNewArray: Literal | ClassLiteral | THIS
+| TypeName Dot THIS
 | LeftParenthesis Expression RightParenthesis
 | ClassInstanceCreationExpression
 | FieldAccess
@@ -503,13 +505,13 @@ PrimaryNoNewArray: Literal | ClassLiteral | This
 | MethodReference
 ;
 
-ClassLiteral: TypeName  Dot Class
-| NumericType  Dot Class
-| Boolean  Dot Class
-| Void Dot Class
-| TypeName LeftRightSquareList Dot Class
-| NumericType LeftRightSquareList Dot Class
-| Boolean LeftRightSquareList Dot Class
+ClassLiteral: TypeName  Dot CLASS
+| NumericType  Dot CLASS
+| BOOLEAN  Dot CLASS
+| VOID Dot CLASS
+| TypeName LeftRightSquareList Dot CLASS
+| NumericType LeftRightSquareList Dot CLASS
+| BOOLEAN LeftRightSquareList Dot CLASS
 ;
 
 LeftRightSquareList:  LeftSquareBracket RightSquareBracket | LeftRightSquareList LeftSquareBracket RightSquareBracket
@@ -519,14 +521,14 @@ ClassInstanceCreationExpression: UnqualifiedClassInstanceCreationExpression
 | Primary Dot UnqualifiedClassInstanceCreationExpression
 ;
 
-UnqualifiedClassInstanceCreationExpression: New  ClassOrInterfaceTypeToInstantiate LeftParenthesis  RightParenthesis 
-| New TypeArguments ClassOrInterfaceTypeToInstantiate LeftParenthesis  RightParenthesis 
-| New  ClassOrInterfaceTypeToInstantiate LeftParenthesis ArgumentList RightParenthesis 
-| New TypeArguments ClassOrInterfaceTypeToInstantiate LeftParenthesis ArgumentList RightParenthesis 
-| New  ClassOrInterfaceTypeToInstantiate LeftParenthesis  RightParenthesis ClassBody
-| New TypeArguments ClassOrInterfaceTypeToInstantiate LeftParenthesis  RightParenthesis ClassBody
-| New  ClassOrInterfaceTypeToInstantiate LeftParenthesis ArgumentList RightParenthesis ClassBody
-| New TypeArguments ClassOrInterfaceTypeToInstantiate LeftParenthesis ArgumentList RightParenthesis ClassBody
+UnqualifiedClassInstanceCreationExpression: NEW  ClassOrInterfaceTypeToInstantiate LeftParenthesis  RightParenthesis 
+| NEW TypeArguments ClassOrInterfaceTypeToInstantiate LeftParenthesis  RightParenthesis 
+| NEW  ClassOrInterfaceTypeToInstantiate LeftParenthesis ArgumentList RightParenthesis 
+| NEW TypeArguments ClassOrInterfaceTypeToInstantiate LeftParenthesis ArgumentList RightParenthesis 
+| NEW  ClassOrInterfaceTypeToInstantiate LeftParenthesis  RightParenthesis ClassBody
+| NEW TypeArguments ClassOrInterfaceTypeToInstantiate LeftParenthesis  RightParenthesis ClassBody
+| NEW  ClassOrInterfaceTypeToInstantiate LeftParenthesis ArgumentList RightParenthesis ClassBody
+| NEW TypeArguments ClassOrInterfaceTypeToInstantiate LeftParenthesis ArgumentList RightParenthesis ClassBody
 
 
 
@@ -540,26 +542,28 @@ TypeArgumentsOrDiamond: TypeArguments
 ;
 
 FieldAccess: Primary Dot Identifier
-| Super Dot Identifier
-| TypeName Dot Super Dot Identifier
+| SUPER Dot Identifier
+| TypeName Dot SUPER Dot Identifier
 ;
 
 ArrayAccess:ExpressionName LeftSquareBracket Expression RightSquareBracket
 | PrimaryNoNewArray LeftSquareBracket Expression RightSquareBracket
 ;
 
+DotId:  Dot Identifier
+
 MethodInvocation: MethodName LeftParenthesis  RightParenthesis
 | MethodName LeftParenthesis ArgumentList RightParenthesis
 
-| TypeName Dot  Identifier LeftParenthesis  RightParenthesis
+| TypeName Dot Identifier LeftParenthesis  RightParenthesis
 | TypeName Dot TypeArguments Identifier LeftParenthesis  RightParenthesis
-| TypeName Dot  Identifier LeftParenthesis ArgumentList RightParenthesis
+| TypeName Dot Identifier LeftParenthesis ArgumentList RightParenthesis
 | TypeName Dot TypeArguments Identifier LeftParenthesis ArgumentList RightParenthesis
 
 
-| ExpressionName Dot  Identifier LeftParenthesis  RightParenthesis
-| ExpressionName Dot TypeArguments Identifier LeftParenthesis  RightParenthesis
-| ExpressionName Dot  Identifier LeftParenthesis ArgumentList RightParenthesis
+| ExpressionName DotId LeftParenthesis RightParenthesis
+| ExpressionName Dot TypeArguments Identifier LeftParenthesis RightParenthesis
+| ExpressionName DotId LeftParenthesis ArgumentList RightParenthesis
 | ExpressionName Dot TypeArguments Identifier LeftParenthesis ArgumentList RightParenthesis
 
 
@@ -568,16 +572,16 @@ MethodInvocation: MethodName LeftParenthesis  RightParenthesis
 | Primary Dot  Identifier LeftParenthesis ArgumentList RightParenthesis
 | Primary Dot TypeArguments Identifier LeftParenthesis ArgumentList RightParenthesis
 
-| Super Dot  Identifier LeftParenthesis  RightParenthesis
-| Super Dot TypeArguments Identifier LeftParenthesis  RightParenthesis
-| Super Dot  Identifier LeftParenthesis ArgumentList RightParenthesis
-| Super Dot TypeArguments Identifier LeftParenthesis ArgumentList RightParenthesis
+| SUPER Dot  Identifier LeftParenthesis  RightParenthesis
+| SUPER Dot TypeArguments Identifier LeftParenthesis  RightParenthesis
+| SUPER Dot  Identifier LeftParenthesis ArgumentList RightParenthesis
+| SUPER Dot TypeArguments Identifier LeftParenthesis ArgumentList RightParenthesis
 
 
-| TypeName Dot Super Dot  Identifier LeftParenthesis  RightParenthesis
-| TypeName Dot Super Dot TypeArguments Identifier LeftParenthesis  RightParenthesis
-| TypeName Dot Super Dot  Identifier LeftParenthesis ArgumentList RightParenthesis
-| TypeName Dot Super Dot TypeArguments Identifier LeftParenthesis ArgumentList RightParenthesis
+| TypeName Dot SUPER Dot  Identifier LeftParenthesis  RightParenthesis
+| TypeName Dot SUPER Dot TypeArguments Identifier LeftParenthesis  RightParenthesis
+| TypeName Dot SUPER Dot  Identifier LeftParenthesis ArgumentList RightParenthesis
+| TypeName Dot SUPER Dot TypeArguments Identifier LeftParenthesis ArgumentList RightParenthesis
 ;
 
 
@@ -594,23 +598,23 @@ MethodReference: ExpressionName Scope Identifier
 | ReferenceType Scope Identifier
 |  ReferenceType Scope TypeArguments Identifier
 
-| Super Scope Identifier
-|  Super Scope TypeArguments Identifier
+| SUPER Scope Identifier
+|  SUPER Scope TypeArguments Identifier
 
-| TypeName Dot Super Scope Identifier
-|  TypeName Dot Super Scope TypeArguments Identifier
+| TypeName Dot SUPER Scope Identifier
+|  TypeName Dot SUPER Scope TypeArguments Identifier
 
-| ClassType Scope  New
-| ClassType Scope TypeArguments New
-| ArrayType Scope New
+| ClassType Scope  NEW
+| ClassType Scope TypeArguments NEW
+| ArrayType Scope NEW
 ;
 
 
 
-ArrayCreationExpression: New PrimitiveType DimExprs 
-| New ClassOrInterfaceType DimExprs 
-| New PrimitiveType DimExprs Dims
-| New ClassOrInterfaceType DimExprs Dims
+ArrayCreationExpression: NEW PrimitiveType DimExprs 
+| NEW ClassOrInterfaceType DimExprs 
+| NEW PrimitiveType DimExprs Dims
+| NEW ClassOrInterfaceType DimExprs Dims
 ;
 
 
@@ -676,8 +680,8 @@ RelationalExpression: ShiftExpression
 | InstanceofExpression
 
 
-InstanceofExpression: RelationalExpression Instanceof ReferenceType
-| RelationalExpression Instanceof Pattern
+InstanceofExpression: RelationalExpression INSTANCEOF ReferenceType
+| RelationalExpression INSTANCEOF Pattern
 ;
 
 ShiftExpression: AdditiveExpression
@@ -740,7 +744,7 @@ Type: PrimitiveType
 
 
 PrimitiveType:  NumericType
-|  Boolean
+|  BOOLEAN
 ;
 
 
@@ -749,9 +753,9 @@ NumericType: IntegralType
 | FloatingPointType
 ;
 
-IntegralType:  Byte | Short | Int | Long | Char
+IntegralType:  BYTE | SHORT | INT | LONG | CHAR
 
-FloatingPointType:  Float | Double
+FloatingPointType:  FLOAT | DOUBLE
 
 ReferenceType: ClassOrInterfaceType
 | ArrayType
@@ -784,7 +788,7 @@ TypeParameter:  TypeIdentifier
 
 
 
-TypeBound: Extends ClassOrInterfaceType 
+TypeBound: EXTENDS ClassOrInterfaceType 
 ;
 
 
@@ -803,22 +807,25 @@ TypeArgument: ReferenceType
 Wildcard: QUESTIONMARK 
 | QUESTIONMARK WildcardBounds
 
-WildcardBounds: Extends ReferenceType
-| Super ReferenceType
+WildcardBounds: EXTENDS ReferenceType
+| SUPER ReferenceType
 ;
 
 // ModuleName: Identifier | ModuleName Dot Identifier
 // PackageName: Identifier | PackageName Dot Identifier
 TypeName: TypeIdentifier | PackageOrTypeName
-ExpressionName: Identifier | AmbiguousName Dot Identifier
+ExpressionName: AmbiguousName
 MethodName: UnqualifiedMethodIdentifier
 PackageOrTypeName: Identifier | PackageOrTypeName Dot Identifier
-AmbiguousName: Identifier | AmbiguousName Dot Identifier
+AmbiguousName: Identifier | AmbiguousName DotId
+
+ContextualKeywords: EXPORTS | OPENS | REQUIRES | USES | MODULE | PERMITS | SEALED | VAR | PROVIDES | TO | WITH | OPEN | RECORD | TRANSITIVE | YIELD ;
+
+TypeIdentifierKeywords: EXPORTS | OPENS | REQUIRES | USES | MODULE | PROVIDES | TO | WITH | OPEN | TRANSITIVE ;
 
 Identifier :  IdentifierChars
-TypeIdentifier : IdentifierChars 
-UnqualifiedMethodIdentifier : IdentifierChars 
+TypeIdentifier: IdentifierChars | TypeIdentifierKeywords
+UnqualifiedMethodIdentifier : IdentifierChars | ContextualKeywords
 Literal : IntegerLiteral | FloatingPointLiteral | BooleanLiteral |CharacterLiteral | NullLiteral
-
 
 %%
