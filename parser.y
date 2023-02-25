@@ -97,20 +97,8 @@ TopLevelClassOrInterfaceDeclaration: ClassDeclaration
 ClassDeclaration: NormalClassDeclaration
 ;
 
-NormalClassDeclaration :  Class TypeIdentifier ClassExtends  ClassPermits ClassBody
-| ModifierList Class TypeIdentifier  ClassExtends  ClassPermits ClassBody
-| Class TypeIdentifier  ClassExtends   ClassBody
-| ModifierList Class TypeIdentifier  ClassExtends   ClassBody
-| Class TypeIdentifier    ClassPermits ClassBody
-| ModifierList Class TypeIdentifier    ClassPermits ClassBody
-| Class TypeIdentifier     ClassBody
+NormalClassDeclaration : Class TypeIdentifier     ClassBody
 | ModifierList Class TypeIdentifier     ClassBody
-| Class TypeIdentifier TypeParameters ClassExtends  ClassPermits ClassBody
-| ModifierList Class TypeIdentifier TypeParameters ClassExtends  ClassPermits ClassBody
-| Class TypeIdentifier TypeParameters ClassExtends   ClassBody
-| ModifierList Class TypeIdentifier TypeParameters ClassExtends   ClassBody
-| Class TypeIdentifier TypeParameters   ClassPermits ClassBody
-| ModifierList Class TypeIdentifier TypeParameters   ClassPermits ClassBody
 | Class TypeIdentifier TypeParameters    ClassBody
 | ModifierList Class TypeIdentifier TypeParameters    ClassBody
 ;
@@ -131,14 +119,10 @@ CommaTypeParameterList : Comma TypeParameter
 
 
 
-ClassExtends: Extends UnannClassType;
 
 
 
 
-
-
-ClassPermits: Permits TypeName CommaTypeNameList | Permits TypeName
 
 CommaTypeNameList : Comma TypeName
  |Comma TypeName  CommaTypeNameList 
