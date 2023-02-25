@@ -115,7 +115,7 @@ struct Node{
 %type<node> Block BlockStatements BlockStatementList BlockStatement LocalClassOrInterfaceDeclaration LocalVariableDeclarationStatement LocalVariableDeclaration
 %type<node> LocalVariableType Statement ForStatementNoShortIf StatementWithoutTrailingSubstatement EmptyStatement LabeledStatement
 %type<node> ExpressionStatement StatementExpression IfThenStatement IfThenElseStatement IfThenElseStatementNoShortIf AssertStatement WhileStatement
-%type<node> WhileStatementNoShortIf ForStatement ModifierList Modifier
+%type<node> WhileStatementNoShortIf ForStatement ModifierList Modifier StatementNoShortIf 
 
 %type<node> BasicForStatement BasicForStatementNoShortIf ForInit ForUpdate StatementExpressionList  EnhancedForStatement EnhancedForStatementNoShortIf BreakStatement YieldStatement ContinueStatement ReturnStatement 
 %type<node> BitOrClassTypeList 
@@ -129,7 +129,7 @@ struct Node{
 %type<node> NumericType IntegralType FloatingPointType ReferenceType ClassOrInterfaceType ClassType TypeVariable ArrayType
 %type<node> Dims  TypeBound TypeArguments TypeArgumentList  TypeArgument Wildcard WildcardBounds TypeName PackageOrTypeName
 %type<node> ExpressionName MethodName   UnqualifiedMethodIdentifier 
-%type<node> Literal
+%type<node> Literal ClassOrInterfaceTypeToInstantiate
 
 %start CompilationUnit
 
@@ -194,7 +194,8 @@ ModifierList : ModifierList Modifier  { $$ = $1 , $$->children.push_back($2);}
 
 
 ClassBody: LeftCurlyBrace ClassBodyDeclarationList RightCurlyBrace  { $$ = $2;}
-| LeftCurlyBrace  RightCurlyBrace { $$ = createNode("ClassBody");}
+| LeftCurlyBrace  RightCurlyBrace { $$ = createNode("ClassBody");
+}
 ;
 
 ClassBodyDeclarationList : ClassBodyDeclaration{
@@ -222,8 +223,19 @@ ClassMemberDeclaration: FieldDeclaration
     | Semicolon
 ;
 
-FieldDeclaration: ModifierList UnannType VariableDeclaratorList Semicolon
-|  UnannType VariableDeclaratorList Semicolon
+FieldDeclaration: ModifierList UnannType VariableDeclaratorList Semicolon {
+    $$ = createNode("FieldDeclaration");
+    $$->children.push_back($1);
+    $$->children.push_back($2);
+    $$->children.push_back($3);
+    $$->children.push_back($4);
+}
+|  UnannType VariableDeclaratorList Semicolon {
+    $$ = createNode("FieldDeclaration");
+    $$->children.push_back($1);
+    $$->children.push_back($2);
+    $$->children.push_back($3);
+}
 
 
 VariableDeclaratorList: VariableDeclarator{
@@ -245,7 +257,10 @@ VariableDeclarator: VariableDeclaratorId ASSIGN VariableInitializer {
 ;
 
 
-VariableDeclaratorId: Identifier Dims
+VariableDeclaratorId: Identifier Dims {
+    $$= $1;
+    $$->children.push_back($2);
+}
 | Identifier 
 
 
@@ -287,15 +302,27 @@ MethodDeclaration: ModifierList MethodHeader MethodBody {
     for(auto child : $1->children){
         v.push_back(child);
     }
+    v.push_back($2);
     v.push_back($3);
-    $$ = createNode($2->val , v);
+    $$ = createNode("MethodDeclaration" , v);
 }
-|  MethodHeader MethodBody
+|  MethodHeader MethodBody{
+    vector<Node*> v;
+    v.push_back($1);
+    v.push_back($2);
+    $$ = createNode("MethodDeclaration" , v);
+}
 
 
 
-MethodHeader:UnannType MethodDeclarator {$$ = $2;}
-| Void MethodDeclarator {$$ = $2; }
+MethodHeader:UnannType MethodDeclarator { $$ = createNode("MethodHeader");
+    $$->children.push_back($1);
+    $$->children.push_back($2);
+}
+| Void MethodDeclarator {
+    $$ = createNode("MethodHeader");
+    $$->children.push_back($1);
+    $$->children.push_back($2);}
 ;
 
 
@@ -310,7 +337,7 @@ MethodDeclarator: Identifier LeftParenthesis ReceiverParameter Comma RightParent
 | Identifier LeftParenthesis FormalParameterList RightParenthesis Dims
 
 ReceiverParameter: UnannType  This
-| UnannType Identifier Dot This
+| UnannType Identifier Dot This 
 
 
 FormalParameterList: FormalParameterList Comma FormalParameter | FormalParameter
@@ -334,11 +361,22 @@ MethodBody: Block
 InstanceInitializer: Block
 ;
 
-StaticInitializer: Static Block
+StaticInitializer: Static Block { $$ = createNode("StaticInitializer");
+$$->children.push_back($1);
+$$->children.push_back($2);}
 ;
 
-ConstructorDeclaration: ConstructorDeclarator ConstructorBody
-| ModifierList ConstructorDeclarator ConstructorBody
+ConstructorDeclaration: ConstructorDeclarator ConstructorBody {
+    $$ = createNode("ConstructorDeclaration");
+    $$->children.push_back($1);
+    $$->children.push_back($2);
+}
+| ModifierList ConstructorDeclarator ConstructorBody {
+    $$ = createNode("ConstructorDeclaration");
+    $$->children.push_back($1);
+    $$->children.push_back($2);
+    $$->children.push_back($3);
+}
 ;
 
 
@@ -353,10 +391,22 @@ SimpleTypeName: TypeIdentifier
 ;
 
 
-ConstructorBody: LeftCurlyBrace  RightCurlyBrace
-| LeftCurlyBrace ExplicitConstructorInvocation RightCurlyBrace
-| LeftCurlyBrace  BlockStatements RightCurlyBrace
-| LeftCurlyBrace ExplicitConstructorInvocation BlockStatements RightCurlyBrace
+ConstructorBody: LeftCurlyBrace  RightCurlyBrace {
+    createNode("ConstructorBody");
+}
+| LeftCurlyBrace ExplicitConstructorInvocation RightCurlyBrace {
+     createNode("ConstructorBody");
+     $$->children.push_back($2);
+}
+| LeftCurlyBrace  BlockStatements RightCurlyBrace{
+    createNode("ConstructorBody");
+     $$->children.push_back($2);
+}
+| LeftCurlyBrace ExplicitConstructorInvocation BlockStatements RightCurlyBrace {
+    $$ = createNode("ConstructorBody");
+    $$->children.push_back($2);
+    $$->children.push_back($3);
+}
 ;
 
 
@@ -379,13 +429,28 @@ ExplicitConstructorInvocation:  This LeftParenthesis RightParenthesis Semicolon
 ;
 
 
-ArrayInitializer: LeftCurlyBrace  Comma RightCurlyBrace
-| LeftCurlyBrace  RightCurlyBrace
-| LeftCurlyBrace VariableInitializerList Comma RightCurlyBrace
-| LeftCurlyBrace VariableInitializerList  RightCurlyBrace
+ArrayInitializer: LeftCurlyBrace  Comma RightCurlyBrace {
+    $$ = createNode("ArrayInitializer");
+    $$->children.push_back($2);
+}
+| LeftCurlyBrace  RightCurlyBrace {$$=createNode("ArrayInitializer");}
+| LeftCurlyBrace VariableInitializerList Comma RightCurlyBrace {
+    $$=createNode("ArrayInitializer");
+    $$->children.push_back($2);
+    $$->children.push_back($3);
+}
+| LeftCurlyBrace VariableInitializerList  RightCurlyBrace {
+    $$=createNode("ArrayInitializer");
+    $$->children.push_back($2);
+}
 
 
-VariableInitializerList: VariableInitializer | VariableInitializerList Comma VariableInitializerList
+VariableInitializerList: VariableInitializer
+ | VariableInitializerList Comma VariableInitializer {
+     $$= $1;
+     $$->children.push_back($3);
+     
+ }
 
 
 Block: LeftCurlyBrace BlockStatements RightCurlyBrace { $$ = $2;}
@@ -411,11 +476,23 @@ LocalClassOrInterfaceDeclaration: ClassDeclaration
 LocalVariableDeclarationStatement: LocalVariableDeclaration Semicolon
 
 LocalVariableDeclaration: LocalVariableType 
-| VariableModifierList LocalVariableType 
-| LocalVariableType VariableDeclaratorList {
-    $$ = $2;
+| VariableModifierList LocalVariableType {
+    $$ = createNode("LocalVariableDeclaration");
+    $$->children.push_back($1);
+    $$->children.push_back($2);
 }
-| VariableModifierList LocalVariableType VariableDeclaratorList
+| LocalVariableType VariableDeclaratorList {
+    $$ = createNode("LocalVariableDeclaration");
+    $$->children.push_back($1);
+    $$->children.push_back($2);
+}
+| VariableModifierList LocalVariableType VariableDeclaratorList {
+    $$ = createNode("LocalVariableDeclaration");
+    $$->children.push_back($1);
+    $$->children.push_back($2);
+    $$->children.push_back($3);
+    
+}
 
 
 
@@ -447,9 +524,17 @@ StatementWithoutTrailingSubstatement: Block
 
 EmptyStatement: Semicolon
 
-LabeledStatement: Identifier COLON Statement
+LabeledStatement: Identifier COLON Statement {
+    $$ =createNode("LabeledStatement");
+    $$->children.push_back($1);
+    $$->children.push_back($2);
+    $$->children.push_back($3);
+}
 
-ExpressionStatement: StatementExpression Semicolon {}
+ExpressionStatement: StatementExpression Semicolon {
+    $$ = createNode("ExpressionStatement");
+    $$->children.push_back($1);
+}
 
 StatementExpression: Assignment { $$ = $1;}
 | PreIncrementExpression
@@ -460,19 +545,51 @@ StatementExpression: Assignment { $$ = $1;}
 | ClassInstanceCreationExpression
 ;
 
-IfThenStatement: If LeftParenthesis Expression RightParenthesis Statement
+IfThenStatement: If LeftParenthesis Expression RightParenthesis Statement {
+    $$ = createNode("IfThenStatement");
+    $$->children.push_back($3);
+    $$->children.push_back($5);
+}
 
-IfThenElseStatement: If LeftParenthesis Expression RightParenthesis StatementNoShortIf Else Statement
+IfThenElseStatement: If LeftParenthesis Expression RightParenthesis StatementNoShortIf Else Statement {
+    $$ = createNode("IfThenElseStatement");
+    $$->children.push_back($3);
+    $$->children.push_back($5);
+    $$->children.push_back($7); 
+}
 
-IfThenElseStatementNoShortIf: If LeftParenthesis Expression RightParenthesis StatementNoShortIf Else StatementNoShortIf
+IfThenElseStatementNoShortIf: If LeftParenthesis Expression RightParenthesis StatementNoShortIf Else StatementNoShortIf{
+    $$ = createNode("IfThenElseStatementNoShortIf");
+    $$->children.push_back($3);
+    $$->children.push_back($5);
+     $$->children.push_back($7);
+}
 
-AssertStatement: Assert Expression Semicolon
-| Assert Expression COLON Expression Semicolon
+AssertStatement: Assert Expression Semicolon {
+    $$ = createNode("Assert");
+     $$->children.push_back($2);
+      $$->children.push_back($3);
+    
+}
+| Assert Expression COLON Expression Semicolon {
+    $$ = createNode("Assert");
+    $$->children.push_back($2);
+    $$->children.push_back($4);
+}
 
 
-WhileStatement: While LeftParenthesis Expression RightParenthesis Statement
+WhileStatement: While LeftParenthesis Expression RightParenthesis Statement {
+    $$ = createNode("While");
+    $$->children.push_back($3);
+    $$->children.push_back($5);
+}
 
-WhileStatementNoShortIf: While LeftParenthesis Expression RightParenthesis StatementNoShortIf
+WhileStatementNoShortIf: While LeftParenthesis Expression RightParenthesis StatementNoShortIf {
+    $$ = createNode("While");
+    $$->children.push_back($3);
+    $$->children.push_back($5);
+
+}
 
 ForStatement: BasicForStatement
 | EnhancedForStatement
@@ -482,25 +599,97 @@ ForStatementNoShortIf: BasicForStatementNoShortIf
 | EnhancedForStatementNoShortIf
 ;
 
-BasicForStatement: For LeftParenthesis  Semicolon  Semicolon  RightParenthesis Statement
-| For LeftParenthesis ForInit Semicolon  Semicolon  RightParenthesis Statement
-| For LeftParenthesis  Semicolon  Semicolon ForUpdate RightParenthesis Statement
-| For LeftParenthesis ForInit Semicolon  Semicolon ForUpdate RightParenthesis Statement
-| For LeftParenthesis  Semicolon Expression Semicolon  RightParenthesis Statement
-| For LeftParenthesis ForInit Semicolon Expression Semicolon  RightParenthesis Statement
-| For LeftParenthesis  Semicolon Expression Semicolon ForUpdate RightParenthesis Statement
-| For LeftParenthesis ForInit Semicolon Expression Semicolon ForUpdate RightParenthesis Statement
+BasicForStatement: For LeftParenthesis  Semicolon  Semicolon  RightParenthesis Statement {
+    $$ = createNode("For");
+    $$->children.push_back($6);
+}
+| For LeftParenthesis ForInit Semicolon  Semicolon  RightParenthesis Statement {
+    $$ = createNode("For");
+    $$->children.push_back($7);
+}
+| For LeftParenthesis  Semicolon  Semicolon ForUpdate RightParenthesis Statement{
+    $$ = createNode("For");
+    $$->children.push_back($5);
+    $$->children.push_back($7);
+    
+}
+| For LeftParenthesis ForInit Semicolon  Semicolon ForUpdate RightParenthesis Statement{
+    $$ = createNode("For");
+    $$->children.push_back($3);
+    $$->children.push_back($6);
+    $$->children.push_back($8);
+    
+}
+| For LeftParenthesis  Semicolon Expression Semicolon  RightParenthesis Statement{
+    $$ = createNode("For");
+    $$->children.push_back($4);
+    $$->children.push_back($7);
+}
+| For LeftParenthesis ForInit Semicolon Expression Semicolon  RightParenthesis Statement{
+    $$ = createNode("For");
+    $$->children.push_back($3);
+    $$->children.push_back($5);
+    $$->children.push_back($8);
+}
+| For LeftParenthesis  Semicolon Expression Semicolon ForUpdate RightParenthesis Statement{
+    $$ = createNode("For");
+    $$->children.push_back($4);
+    $$->children.push_back($6);
+    $$->children.push_back($8);
+}
+| For LeftParenthesis ForInit Semicolon Expression Semicolon ForUpdate RightParenthesis Statement{
+    $$ = createNode("For");
+    $$->children.push_back($3);
+    $$->children.push_back($5);
+    $$->children.push_back($7);
+    $$->children.push_back($9);
+}
 
 
 
-BasicForStatementNoShortIf: For LeftParenthesis  Semicolon  Semicolon RightParenthesis StatementNoShortIf
-| For LeftParenthesis ForInit Semicolon  Semicolon RightParenthesis StatementNoShortIf
-| For LeftParenthesis  Semicolon Expression Semicolon RightParenthesis StatementNoShortIf
-| For LeftParenthesis ForInit Semicolon Expression Semicolon RightParenthesis StatementNoShortIf
-| For LeftParenthesis  Semicolon  Semicolon ForUpdate RightParenthesis StatementNoShortIf
-| For LeftParenthesis ForInit Semicolon  Semicolon ForUpdate RightParenthesis StatementNoShortIf
-| For LeftParenthesis  Semicolon Expression Semicolon ForUpdate RightParenthesis StatementNoShortIf
-| For LeftParenthesis ForInit Semicolon Expression Semicolon ForUpdate RightParenthesis StatementNoShortIf
+BasicForStatementNoShortIf: For LeftParenthesis  Semicolon  Semicolon RightParenthesis StatementNoShortIf {
+        $$ = createNode("For");
+    $$->children.push_back($6);
+}
+| For LeftParenthesis ForInit Semicolon  Semicolon RightParenthesis StatementNoShortIf {
+        $$ = createNode("For");
+    $$->children.push_back($7);
+}
+| For LeftParenthesis  Semicolon Expression Semicolon RightParenthesis StatementNoShortIf{
+        $$ = createNode("For");
+    $$->children.push_back($4);
+    $$->children.push_back($7);
+}
+| For LeftParenthesis ForInit Semicolon Expression Semicolon RightParenthesis StatementNoShortIf{
+        $$ = createNode("For");
+    $$->children.push_back($3);
+    $$->children.push_back($5);
+    $$->children.push_back($8);
+}
+| For LeftParenthesis  Semicolon  Semicolon ForUpdate RightParenthesis StatementNoShortIf {
+       $$ = createNode("For");
+    $$->children.push_back($5);
+    $$->children.push_back($7);
+}
+| For LeftParenthesis ForInit Semicolon  Semicolon ForUpdate RightParenthesis StatementNoShortIf{
+        $$ = createNode("For");
+    $$->children.push_back($3);
+    $$->children.push_back($6);
+    $$->children.push_back($8);
+}
+| For LeftParenthesis  Semicolon Expression Semicolon ForUpdate RightParenthesis StatementNoShortIf {
+        $$ = createNode("For");
+    $$->children.push_back($4);
+    $$->children.push_back($6);
+    $$->children.push_back($8);
+}
+| For LeftParenthesis ForInit Semicolon Expression Semicolon ForUpdate RightParenthesis StatementNoShortIf{
+        $$ = createNode("For");
+    $$->children.push_back($3);
+    $$->children.push_back($5);
+    $$->children.push_back($7);
+    $$->children.push_back($9);
+}
 
 
 ForInit: StatementExpressionList
@@ -509,23 +698,47 @@ ForInit: StatementExpressionList
 
 ForUpdate: StatementExpressionList
 
-StatementExpressionList: StatementExpression  | StatementExpressionList Comma StatementExpression
+StatementExpressionList: StatementExpression  
+| StatementExpressionList Comma StatementExpression {
+    $$ = $1;
+    $$->children.push_back($3);
+}
 
 
-EnhancedForStatement: For LeftParenthesis LocalVariableDeclaration COLON Expression RightParenthesis Statement
+EnhancedForStatement: For LeftParenthesis LocalVariableDeclaration COLON Expression RightParenthesis Statement {
+    $$ = createNode("For");
+    $$->children.push_back($3);
+    $$->children.push_back($5);
+    $$->children.push_back($7);
+}
 
-EnhancedForStatementNoShortIf: For LeftParenthesis LocalVariableDeclaration COLON Expression RightParenthesis StatementNoShortIf
+EnhancedForStatementNoShortIf: For LeftParenthesis LocalVariableDeclaration COLON Expression RightParenthesis StatementNoShortIf{
+    $$ = createNode("For");
+    $$->children.push_back($3);
+    $$->children.push_back($5);
+    $$->children.push_back($7);
+}
 
-BreakStatement: Break Identifier Semicolon
+BreakStatement: Break Identifier Semicolon 
 | Break  Semicolon
 
-YieldStatement: Yield Expression Semicolon
+YieldStatement: Yield Expression Semicolon {
+    $$ = $1;
+    $$->children.push_back($2);
+    
+}
 
 ContinueStatement: Continue Semicolon
-| Continue Identifier Semicolon
+| Continue Identifier Semicolon{
+    $$ = $1;
+    $$->children.push_back($2);
+}
 
 ReturnStatement: Return Semicolon
-| Return Expression Semicolon
+| Return Expression Semicolon{
+    $$ = $1;
+    $$->children.push_back($2);
+}
 
 
 Pattern: TypePattern 
@@ -548,7 +761,7 @@ PrimaryNoNewArray: Literal {$$ = $1;}
 | MethodReference
 ;
 
-ClassLiteral: TypeName  Dot Class
+ClassLiteral: TypeName  Dot Class 
 | NumericType  Dot Class
 | Boolean  Dot Class
 | Void Dot Class
@@ -560,27 +773,34 @@ ClassLiteral: TypeName  Dot Class
 LeftRightSquareList:  LeftSquareBracket RightSquareBracket | LeftRightSquareList LeftSquareBracket RightSquareBracket
 
 ClassInstanceCreationExpression: UnqualifiedClassInstanceCreationExpression
-| ExpressionName Dot UnqualifiedClassInstanceCreationExpression
+| ExpressionName Dot UnqualifiedClassInstanceCreationExpression 
 | Primary Dot UnqualifiedClassInstanceCreationExpression
 ;
 
 
-UnqualifiedClassInstanceCreationExpression: New  ClassOrInterfaceTypeToInstantiate LeftParenthesis  RightParenthesis 
-| New TypeArguments ClassOrInterfaceTypeToInstantiate LeftParenthesis  RightParenthesis 
-| New  ClassOrInterfaceTypeToInstantiate LeftParenthesis ArgumentList RightParenthesis 
-| New TypeArguments ClassOrInterfaceTypeToInstantiate LeftParenthesis ArgumentList RightParenthesis 
-| New  ClassOrInterfaceTypeToInstantiate LeftParenthesis  RightParenthesis ClassBody
-| New TypeArguments ClassOrInterfaceTypeToInstantiate LeftParenthesis  RightParenthesis ClassBody
-| New  ClassOrInterfaceTypeToInstantiate LeftParenthesis ArgumentList RightParenthesis ClassBody
-| New TypeArguments ClassOrInterfaceTypeToInstantiate LeftParenthesis ArgumentList RightParenthesis ClassBody
+UnqualifiedClassInstanceCreationExpression: New  ClassOrInterfaceTypeToInstantiate LeftParenthesis  RightParenthesis {
+    $$ = $2;
+}
+| New TypeArguments ClassOrInterfaceTypeToInstantiate LeftParenthesis  RightParenthesis {$$ = $3;}
+| New  ClassOrInterfaceTypeToInstantiate LeftParenthesis ArgumentList RightParenthesis { $$ = $2;}
+| New TypeArguments ClassOrInterfaceTypeToInstantiate LeftParenthesis ArgumentList RightParenthesis { $$ = $3;}
+| New  ClassOrInterfaceTypeToInstantiate LeftParenthesis  RightParenthesis ClassBody { $$ = $2;}
+| New TypeArguments ClassOrInterfaceTypeToInstantiate LeftParenthesis  RightParenthesis ClassBody { $$ = $3;}
+| New  ClassOrInterfaceTypeToInstantiate LeftParenthesis ArgumentList RightParenthesis ClassBody { $$ = $2;}
+| New TypeArguments ClassOrInterfaceTypeToInstantiate LeftParenthesis ArgumentList RightParenthesis ClassBody { $$ = $2;}
 
 
 
 ClassOrInterfaceTypeToInstantiate: Identifier
-| Identifier DotIdentifierList
-|  Identifier DotIdentifierList TypeArgumentsOrDiamond
+| ClassOrInterfaceTypeToInstantiate Dot Identifier {
+    $$ = $1;
+    $$->children.push_back($3);
+}
+|  ClassOrInterfaceTypeToInstantiate Dot Identifier TypeArgumentsOrDiamond {
+    $$ = $1;
+    $$->children.push_back($3);
+}
 
-DotIdentifierList : Dot Identifier | DotIdentifierList Dot Identifier
 
 TypeArgumentsOrDiamond: TypeArguments
 ;
@@ -768,7 +988,7 @@ UnaryExpressionNotPlusMinus: PostfixExpression
 ;
 
 PostfixExpression: Primary
-| ExpressionName
+| ExpressionName 
 | PostIncrementExpression
 | PostDecrementExpression
 
@@ -839,7 +1059,8 @@ WildcardBounds: Extends UnannReferenceType
 // ModuleName: Identifier | ModuleName Dot Identifier
 // PackageName: Identifier | PackageName Dot Identifier
 TypeName: TypeIdentifier 
-ExpressionName: Identifier | ExpressionName Dot Identifier
+ExpressionName: Identifier 
+| ExpressionName Dot Identifier {}
 MethodName: Identifier
 // PackageOrTypeName: Identifier | PackageOrTypeName Dot Identifier
 // AmbiguousName: Identifier | AmbiguousName Dot Identifier
