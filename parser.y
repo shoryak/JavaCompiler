@@ -174,12 +174,10 @@ UnannClassType: TypeIdentifier TypeArguments
 ;
 
 
-UnannTypeVariable: TypeIdentifier
-
 
 UnannArrayType: UnannPrimitiveType Dims
 | UnannClassOrInterfaceType Dims
-| UnannTypeVariable Dims
+| TypeIdentifier Dims
 ;
 
 
@@ -449,6 +447,7 @@ ClassInstanceCreationExpression: UnqualifiedClassInstanceCreationExpression
 | Primary Dot UnqualifiedClassInstanceCreationExpression
 ;
 
+
 UnqualifiedClassInstanceCreationExpression: New  ClassOrInterfaceTypeToInstantiate LeftParenthesis  RightParenthesis 
 | New TypeArguments ClassOrInterfaceTypeToInstantiate LeftParenthesis  RightParenthesis 
 | New  ClassOrInterfaceTypeToInstantiate LeftParenthesis ArgumentList RightParenthesis 
@@ -715,16 +714,16 @@ WildcardBounds: Extends UnannReferenceType
 
 // ModuleName: Identifier | ModuleName Dot Identifier
 // PackageName: Identifier | PackageName Dot Identifier
-TypeName: TypeIdentifier | PackageOrTypeName
-ExpressionName: Identifier | AmbiguousName Dot Identifier
-MethodName: UnqualifiedMethodIdentifier
-PackageOrTypeName: Identifier | PackageOrTypeName Dot Identifier
-AmbiguousName: Identifier | AmbiguousName Dot Identifier
+TypeName: TypeIdentifier 
+ExpressionName: Identifier | ExpressionName Dot Identifier
+MethodName: Identifier
+// PackageOrTypeName: Identifier | PackageOrTypeName Dot Identifier
+// AmbiguousName: Identifier | AmbiguousName Dot Identifier
 
-Identifier :  IdentifierChars
-TypeIdentifier : IdentifierChars 
-UnqualifiedMethodIdentifier : IdentifierChars 
-Literal : IntegerLiteral | FloatingPointLiteral | BooleanLiteral |CharacterLiteral | NullLiteral
+Identifier :  IdentifierChars 
+TypeIdentifier : Identifier 
+// UnqualifiedMethodIdentifier : IdentifierChars 
+Literal : IntegerLiteral | FloatingPointLiteral | BooleanLiteral |CharacterLiteral | NullLiteral| StringLiteral
 
 
 %%
