@@ -2,8 +2,9 @@
 #include<bits/stdc++.h>
 using namespace std;
 int lines=0;
-int yyparse(void);
+int yyparse();
 extern "C" {
+        
         int yylex(void);
         int yyerror(char* s)
         {
@@ -21,9 +22,63 @@ T parser_string(string str){
     ss >> result;
     return result;
 }
+struct Node{
+        char* val;
+        vector<Node*> children;
+        char* data;
+    };
+
+    Node* root;
+    Node* createNode(char* value, vector<Node*> children)
+    {
+        Node* temp= new Node();
+        temp->val=value;
+        temp->children=children;
+        return temp;
+    }
+    Node* createNode(char* value)
+    {
+        Node* temp= new Node();
+        temp->val=value;
+        return temp;
+    }
+   
+
+    int buildTree(Node* node, int parentno, int co) 
+    {
+        if(node==NULL)
+        return co;
+
+        int nodeno=co++;
+        printf(" node%d [label=\"%s\"]\n",nodeno,node->val);
+        if(parentno>=0) 
+            printf(" node%d -> node%d\n",parentno,nodeno);
+        
+        int n=node->children.size();
+        vector<Node*> children=node->children;
+        for(int i=0;i<n;i++)
+        {
+            co=buildTree(children[i],nodeno,co);
+        }
+        return co;
+    }
 %}
 
+%code requires {
+    #include <bits/stdc++.h>
+    #include <string>
+    #include <vector>
+    #include <cstdio>
+
+    struct Node;
+    using namespace std;
+    Node* createNode(char* value, vector<Node*> children);
+    Node* createNode(char* value);
+    int buildTree(Node* , int parentno , int co);
+}
+
 %union {
+    Node* node;
     char* str;
     int num;
     float float_val;
@@ -46,35 +101,36 @@ T parser_string(string str){
 %token<str> ASSIGN GT LT EXCLAMATION TILDE QUESTIONMARK COLON ARROW EQUAL GE LE NOTEQUAL AND OR INC DEC ADD SUB MUL DIV BITAND BITOR CARET MOD LSHIFT RSHIFT URSHIFT ADD_ASSIGN SUB_ASSIGN MUL_ASSIGN DIV_ASSIGN AND_ASSIGN OR_ASSIGN XOR_ASSIGN MOD_ASSIGN LSHIFT_ASSIGN RSHIFT_ASSIGN URSHIFT_ASSIGN 
 %token<str> IdentifierChars
 
-%type<str> CompilationUnit  OrdinaryCompilationUnit  
-%type<str> ClassDeclaration  ClassBody ClassExtends  ClassModifier ClassModifierList ClassPermits
-%type<str> TypeIdentifier TypeParameters TypeParameterList CommaTypeParameterList 
-%type<str> ThrowStatement RelationalExpression 
-%type<str> TopLevelClassOrInterfaceDeclarationList TopLevelClassOrInterfaceDeclaration NormalClassDeclaration 
-%type<str> CommaTypeNameList ClassBodyDeclaration ClassMemberDeclaration FieldDeclaraFieldModifierList FieldDeclaration VariableDeclaratorList
-%type<str> CommaVariableDeclaratorList VariableDeclarator VariableDeclaratorId VariableInitializer UnannType UnannPrimitiveType UnannReferenceType
-%type<str> UnannClassOrInterfaceType UnannClassType UnannTypeVariable UnannArrayType MethodDeclaration MethodModifierList
-%type<str> MethodModifier MethodHeader Result MethodDeclarator ReceiverParameter FormalParameterList CommaFormalParameterList FormalParameter
-%type<str> VariableArityParameter VariableModifierList VariableModifier Throws ExceptionTypeList CommaExceptionTypeList ExceptionType MethodBody
-%type<str> InstanceInitializer StaticInitializer ConstructorDeclaration ConstructorModifierList ConstructorModifier ConstructorDeclarator
-%type<str> SimpleTypeName ConstructorBody ExplicitConstructorInvocation ArrayInitializer VariableInitializerList CommaVariableInitializerList
-%type<str> Block BlockStatements BlockStatementList BlockStatement LocalClassOrInterfaceDeclaration LocalVariableDeclarationStatement LocalVariableDeclaration
-%type<str> LocalVariableType Statement ForStatementNoShortIf StatementWithoutTrailingSubstatement EmptyStatement LabeledStatement
-%type<str> ExpressionStatement StatementExpression IfThenStatement IfThenElseStatement IfThenElseStatementNoShortIf AssertStatement WhileStatement
-%type<str> WhileStatementNoShortIf ForStatement ModifierList Modifier
+%type<node> CompilationUnit  OrdinaryCompilationUnit  
+%type<node> ClassDeclaration  ClassBody ClassExtends  ClassModifier ClassModifierList ClassPermits
+%type<node> TypeIdentifier 
+%type<node> ThrowStatement RelationalExpression 
+%type<node> TopLevelClassOrInterfaceDeclarationList TopLevelClassOrInterfaceDeclaration NormalClassDeclaration 
+%type<node>  ClassBodyDeclaration  ClassBodyDeclarationList ClassMemberDeclaration FieldDeclaraFieldModifierList FieldDeclaration VariableDeclaratorList
+%type<node>  VariableDeclarator VariableDeclaratorId VariableInitializer UnannType UnannPrimitiveType UnannReferenceType
+%type<node> UnannClassOrInterfaceType UnannClassType UnannTypeVariable UnannArrayType MethodDeclaration MethodModifierList
+%type<node> MethodModifier MethodHeader Result MethodDeclarator ReceiverParameter FormalParameterList  FormalParameter
+%type<node> VariableArityParameter VariableModifierList VariableModifier Throws ExceptionTypeList ExceptionType MethodBody
+%type<node> InstanceInitializer StaticInitializer ConstructorDeclaration ConstructorModifierList ConstructorModifier ConstructorDeclarator
+%type<node> SimpleTypeName ConstructorBody ExplicitConstructorInvocation ArrayInitializer VariableInitializerList 
+%type<node> Block BlockStatements BlockStatementList BlockStatement LocalClassOrInterfaceDeclaration LocalVariableDeclarationStatement LocalVariableDeclaration
+%type<node> LocalVariableType Statement ForStatementNoShortIf StatementWithoutTrailingSubstatement EmptyStatement LabeledStatement
+%type<node> ExpressionStatement StatementExpression IfThenStatement IfThenElseStatement IfThenElseStatementNoShortIf AssertStatement WhileStatement
+%type<node> WhileStatementNoShortIf ForStatement ModifierList Modifier
 
-%type<str> BasicForStatement BasicForStatementNoShortIf ForInit ForUpdate StatementExpressionList CommaStatementExpressionList EnhancedForStatement EnhancedForStatementNoShortIf BreakStatement YieldStatement ContinueStatement ReturnStatement 
-%type<str> BitOrClassTypeList 
-%type<str> Pattern TypePattern Primary PrimaryNoNewArray ClassLiteral LeftRightSquareList ClassInstanceCreationExpression UnqualifiedClassInstanceCreationExpression
-%type<str> Identifier AmbiguousName
-%type<str> DotIdentifierList TypeArgumentsOrDiamond FieldAccess ArrayAccess MethodInvocation ArgumentList CommaExpressionList MethodReference
-%type<str> ArrayCreationExpression DimExprs DimExprList DimExpr Expression AssignmentExpression Assignment LeftHandSide AssignmentOperator ConditionalExpression
-%type<str> ConditionalOrExpression ConditionalAndExpression InclusiveOrExpression ExclusiveOrExpression AndExpression EqualityExpression InstanceofExpression
-%type<str> ShiftExpression AdditiveExpression MultiplicativeExpression UnaryExpression PreIncrementExpression PreDecrementExpression
-%type<str> UnaryExpressionNotPlusMinus PostfixExpression PostIncrementExpression PostDecrementExpression CastExpression ConstantExpression Type PrimitiveType
-%type<str> NumericType IntegralType FloatingPointType ReferenceType ClassOrInterfaceType ClassType TypeVariable ArrayType
-%type<str> Dims  TypeParameter TypeBound TypeArguments TypeArgumentList CommaTypeArgumentList TypeArgument Wildcard WildcardBounds TypeName PackageOrTypeName
-%type<str> ExpressionName MethodName   UnqualifiedMethodIdentifier Literal
+%type<node> BasicForStatement BasicForStatementNoShortIf ForInit ForUpdate StatementExpressionList  EnhancedForStatement EnhancedForStatementNoShortIf BreakStatement YieldStatement ContinueStatement ReturnStatement 
+%type<node> BitOrClassTypeList 
+%type<node> Pattern TypePattern Primary PrimaryNoNewArray ClassLiteral LeftRightSquareList ClassInstanceCreationExpression UnqualifiedClassInstanceCreationExpression
+%type<node> Identifier AmbiguousName
+%type<node> DotIdentifierList TypeArgumentsOrDiamond FieldAccess ArrayAccess MethodInvocation ArgumentList  MethodReference
+%type<node> ArrayCreationExpression DimExprs DimExprList DimExpr Expression AssignmentExpression Assignment LeftHandSide AssignmentOperator ConditionalExpression
+%type<node> ConditionalOrExpression ConditionalAndExpression InclusiveOrExpression ExclusiveOrExpression AndExpression EqualityExpression InstanceofExpression
+%type<node> ShiftExpression AdditiveExpression MultiplicativeExpression UnaryExpression PreIncrementExpression PreDecrementExpression
+%type<node> UnaryExpressionNotPlusMinus PostfixExpression PostIncrementExpression PostDecrementExpression CastExpression ConstantExpression Type PrimitiveType
+%type<node> NumericType IntegralType FloatingPointType ReferenceType ClassOrInterfaceType ClassType TypeVariable ArrayType
+%type<node> Dims  TypeBound TypeArguments TypeArgumentList  TypeArgument Wildcard WildcardBounds TypeName PackageOrTypeName
+%type<node> ExpressionName MethodName   UnqualifiedMethodIdentifier 
+%type<node> Literal
 
 %type<str> ContextualKeywords TypeIdentifierKeywords
 %type<str> DotId
@@ -83,14 +139,22 @@ T parser_string(string str){
 
 %%
 
-CompilationUnit: OrdinaryCompilationUnit
+CompilationUnit: OrdinaryCompilationUnit { cout<<"abcd"<<endl; root= $$; buildTree(root,-1,0);}
 ;
 
-OrdinaryCompilationUnit: TopLevelClassOrInterfaceDeclarationList
+OrdinaryCompilationUnit: TopLevelClassOrInterfaceDeclarationList 
 ;
 
 TopLevelClassOrInterfaceDeclarationList: TopLevelClassOrInterfaceDeclaration
-    | TopLevelClassOrInterfaceDeclarationList TopLevelClassOrInterfaceDeclaration
+{
+    vector<Node*> v;
+    v.push_back($1);
+    $$ = createNode("JAVA-PROGRAM" , v);
+}
+| TopLevelClassOrInterfaceDeclarationList TopLevelClassOrInterfaceDeclaration {
+    $$ = $1;
+    $$->children.push_back($2);
+}
 ;
 
 
@@ -101,59 +165,51 @@ TopLevelClassOrInterfaceDeclaration: ClassDeclaration
 ClassDeclaration: NormalClassDeclaration
 ;
 
-NormalClassDeclaration :  CLASS TypeIdentifier ClassExtends  ClassPermits ClassBody
-| ModifierList CLASS TypeIdentifier  ClassExtends  ClassPermits ClassBody
-| CLASS TypeIdentifier  ClassExtends   ClassBody
-| ModifierList CLASS TypeIdentifier  ClassExtends   ClassBody
-| CLASS TypeIdentifier    ClassPermits ClassBody
-| ModifierList CLASS TypeIdentifier    ClassPermits ClassBody
-| CLASS TypeIdentifier     ClassBody
-| ModifierList CLASS TypeIdentifier     ClassBody
-| CLASS TypeIdentifier TypeParameters ClassExtends  ClassPermits ClassBody
-| ModifierList CLASS TypeIdentifier TypeParameters ClassExtends  ClassPermits ClassBody
-| CLASS TypeIdentifier TypeParameters ClassExtends   ClassBody
-| ModifierList CLASS TypeIdentifier TypeParameters ClassExtends   ClassBody
-| CLASS TypeIdentifier TypeParameters   ClassPermits ClassBody
-| ModifierList CLASS TypeIdentifier TypeParameters   ClassPermits ClassBody
-| CLASS TypeIdentifier TypeParameters    ClassBody
-| ModifierList CLASS TypeIdentifier TypeParameters    ClassBody
+NormalClassDeclaration : CLASS TypeIdentifier     ClassBody{
+    vector<Node*> v;
+    v.push_back($2);
+    v.push_back($3);
+    $$ = createNode("class" , v);
+}
+| ModifierList CLASS TypeIdentifier     ClassBody{
+    vector<Node*> v;
+    for(auto i : $1->children){
+        v.push_back(i);
+    }
+    v.push_back($3);
+    v.push_back($4);
+    $$ = createNode("class" , v);
+
+}
 ;
 
 
 Modifier : PUBLIC | PRIVATE | STATIC  
 
 
-ModifierList : ModifierList Modifier | Modifier
+ModifierList : ModifierList Modifier  { $$ = $1 , $$->children.push_back($2);}
+| Modifier {
+    $$ = createNode("ModifierList");
+    $$->children.push_back($1);
+} 
 
-TypeParameters: LT TypeParameterList GT
+
+
+
+
+ClassBody: LeftCurlyBrace ClassBodyDeclarationList RightCurlyBrace  { $$ = $2;}
+| LeftCurlyBrace  RightCurlyBrace { $$ = createNode("ClassBody");}
 ;
 
-TypeParameterList: TypeParameter CommaTypeParameterList | TypeParameter
-
-CommaTypeParameterList : Comma TypeParameter
-    | Comma TypeParameter CommaTypeParameterList
-
-
-
-ClassExtends: EXTENDS ClassType;
-
-
-
-
-
-
-ClassPermits: PERMITS TypeName CommaTypeNameList | PERMITS TypeName
-
-CommaTypeNameList : Comma TypeName
- |Comma TypeName  CommaTypeNameList 
-;
-
-
-ClassBody: LeftCurlyBrace ClassBodyDeclarationList RightCurlyBrace | LeftCurlyBrace  RightCurlyBrace
-;
-
-ClassBodyDeclarationList : ClassBodyDeclaration
-| ClassBodyDeclarationList ClassBodyDeclaration
+ClassBodyDeclarationList : ClassBodyDeclaration{
+    vector<Node*> v;
+    v.push_back($1);
+    $$ = createNode("ClassBody" , v);
+}
+| ClassBodyDeclarationList ClassBodyDeclaration{
+    $$ = $1;
+    $$->children.push_back($2);
+}
 ;
 
 
@@ -174,20 +230,27 @@ FieldDeclaration: ModifierList UnannType VariableDeclaratorList Semicolon
 |  UnannType VariableDeclaratorList Semicolon
 
 
-VariableDeclaratorList: VariableDeclarator | VariableDeclarator CommaVariableDeclaratorList
+VariableDeclaratorList: VariableDeclarator{
+    $$ = createNode("Variables");
+    $$->children.push_back($1);
+} 
+| VariableDeclaratorList Comma VariableDeclarator{
+    $$ = $1;
+    $$->children.push_back($3);
+}
 
-CommaVariableDeclaratorList : Comma VariableDeclarator
-| VariableDeclaratorList Comma VariableDeclarator
-;
 
-
-VariableDeclarator: VariableDeclaratorId ASSIGN VariableInitializer
-| VariableDeclaratorId
+VariableDeclarator: VariableDeclaratorId ASSIGN VariableInitializer {
+    $$ = createNode("=" );
+    $$->children.push_back($1);
+    $$->children.push_back($3);
+}
+| VariableDeclaratorId 
 ;
 
 
 VariableDeclaratorId: Identifier Dims
-| Identifier
+| Identifier 
 
 
 
@@ -203,7 +266,7 @@ UnannPrimitiveType: NumericType
 ;
 
 UnannReferenceType: UnannClassOrInterfaceType
-| UnannTypeVariable
+| TypeIdentifier
 | UnannArrayType
 ;
 
@@ -212,29 +275,31 @@ UnannClassOrInterfaceType: UnannClassType
 
 UnannClassType: TypeIdentifier TypeArguments
 | UnannClassOrInterfaceType Dot TypeIdentifier TypeArguments
-| TypeIdentifier 
 | UnannClassOrInterfaceType Dot TypeIdentifier 
 ;
 
 
-UnannTypeVariable: TypeIdentifier
-
 
 UnannArrayType: UnannPrimitiveType Dims
 | UnannClassOrInterfaceType Dims
-| UnannTypeVariable Dims
+| TypeIdentifier Dims
 ;
 
 
-MethodDeclaration: ModifierList MethodHeader MethodBody
+MethodDeclaration: ModifierList MethodHeader MethodBody {
+    vector<Node*> v;
+    for(auto child : $1->children){
+        v.push_back(child);
+    }
+    v.push_back($3);
+    $$ = createNode($2->val , v);
+}
 |  MethodHeader MethodBody
 
 
 
-MethodHeader:UnannType MethodDeclarator 
-| UnannType MethodDeclarator Throws
-| VOID MethodDeclarator 
-|  VOID MethodDeclarator Throws
+MethodHeader:UnannType MethodDeclarator {$$ = $2;}
+| VOID MethodDeclarator {$$ = $2; }
 ;
 
 
@@ -252,9 +317,7 @@ ReceiverParameter: UnannType  THIS
 | UnannType Identifier Dot THIS
 
 
-FormalParameterList: FormalParameter CommaFormalParameterList | FormalParameter
-
-CommaFormalParameterList : Comma FormalParameter | CommaFormalParameterList Comma FormalParameter
+FormalParameterList: FormalParameterList Comma FormalParameter | FormalParameter
 
 FormalParameter: VariableModifierList UnannType VariableDeclaratorId
 | UnannType VariableDeclaratorId
@@ -268,16 +331,6 @@ VariableModifierList : VariableModifier| VariableModifierList VariableModifier
 
 VariableModifier: FINAL
 
-Throws: THROWS ExceptionTypeList
-
-ExceptionTypeList: ExceptionType CommaExceptionTypeList | ExceptionType
-
-CommaExceptionTypeList : Comma ExceptionType | CommaExceptionTypeList Comma ExceptionType
-
-
-ExceptionType: ClassType
-;
-
 MethodBody: Block
 | Semicolon
 ;
@@ -290,20 +343,14 @@ StaticInitializer: STATIC Block
 
 ConstructorDeclaration: ConstructorDeclarator ConstructorBody
 | ModifierList ConstructorDeclarator ConstructorBody
-| ConstructorDeclarator Throws ConstructorBody
-| ModifierList ConstructorDeclarator Throws ConstructorBody
 ;
 
 
 
 ConstructorDeclarator:  SimpleTypeName LeftParenthesis  RightParenthesis
-|TypeParameters SimpleTypeName LeftParenthesis  RightParenthesis
 | SimpleTypeName LeftParenthesis ReceiverParameter Comma RightParenthesis
-|TypeParameters SimpleTypeName LeftParenthesis ReceiverParameter Comma RightParenthesis
 | SimpleTypeName LeftParenthesis  FormalParameterList RightParenthesis
-|TypeParameters SimpleTypeName LeftParenthesis  FormalParameterList RightParenthesis
 | SimpleTypeName LeftParenthesis ReceiverParameter Comma FormalParameterList RightParenthesis
-|TypeParameters SimpleTypeName LeftParenthesis ReceiverParameter Comma FormalParameterList RightParenthesis
 ;
 
 SimpleTypeName: TypeIdentifier
@@ -342,19 +389,24 @@ ArrayInitializer: LeftCurlyBrace  Comma RightCurlyBrace
 | LeftCurlyBrace VariableInitializerList  RightCurlyBrace
 
 
-VariableInitializerList: VariableInitializer | VariableInitializer CommaVariableInitializerList
-
-CommaVariableInitializerList :  Comma VariableInitializer | CommaVariableInitializerList Comma VariableInitializer
+VariableInitializerList: VariableInitializer | VariableInitializerList Comma VariableInitializerList
 
 
-Block: LeftCurlyBrace BlockStatements RightCurlyBrace
-|  LeftCurlyBrace RightCurlyBrace
+Block: LeftCurlyBrace BlockStatements RightCurlyBrace { $$ = $2;}
+|  LeftCurlyBrace RightCurlyBrace { $$ = createNode("Block");}
 
-BlockStatements: BlockStatements BlockStatement | BlockStatement;
+BlockStatements: BlockStatements BlockStatement {
+    $$ = $1;
+    $$->children.push_back($2);
+}
+| BlockStatement{
+    $$ = createNode("Block");
+    $$->children.push_back($1);
+}
 
 BlockStatement: LocalClassOrInterfaceDeclaration
 | LocalVariableDeclarationStatement
-| Statement
+| Statement { }
 ;
 LocalClassOrInterfaceDeclaration: ClassDeclaration
 ;
@@ -364,7 +416,9 @@ LocalVariableDeclarationStatement: LocalVariableDeclaration Semicolon
 
 LocalVariableDeclaration: LocalVariableType 
 | VariableModifierList LocalVariableType 
-| LocalVariableType VariableDeclaratorList
+| LocalVariableType VariableDeclaratorList {
+    $$ = $2;
+}
 | VariableModifierList LocalVariableType VariableDeclaratorList
 
 
@@ -392,7 +446,6 @@ StatementWithoutTrailingSubstatement: Block
 | BreakStatement
 | ContinueStatement
 | ReturnStatement
-| ThrowStatement
 | YieldStatement
 ;
 
@@ -400,9 +453,9 @@ EmptyStatement: Semicolon
 
 LabeledStatement: Identifier COLON Statement
 
-ExpressionStatement: StatementExpression Semicolon
+ExpressionStatement: StatementExpression Semicolon {}
 
-StatementExpression: Assignment
+StatementExpression: Assignment { $$ = $1;}
 | PreIncrementExpression
 | PreDecrementExpression
 | PostIncrementExpression
@@ -460,11 +513,8 @@ ForInit: StatementExpressionList
 
 ForUpdate: StatementExpressionList
 
-StatementExpressionList: StatementExpression  | StatementExpression CommaStatementExpressionList
+StatementExpressionList: StatementExpression  | StatementExpressionList Comma StatementExpression
 
-CommaStatementExpressionList : Comma StatementExpression
-| CommaStatementExpressionList Comma StatementExpression 
-;
 
 EnhancedForStatement: FOR LeftParenthesis LocalVariableDeclaration COLON Expression RightParenthesis Statement
 
@@ -481,11 +531,6 @@ ContinueStatement: CONTINUE Semicolon
 ReturnStatement: RETURN Semicolon
 | RETURN Expression Semicolon
 
-ThrowStatement: THROW Expression Semicolon
-
-BitOrClassTypeList : BITOR ClassType
-| BitOrClassTypeList BITOR ClassType
-
 
 Pattern: TypePattern 
 
@@ -493,9 +538,11 @@ TypePattern: LocalVariableDeclaration
 
 
 
-Primary: PrimaryNoNewArray | ArrayCreationExpression
+Primary: PrimaryNoNewArray  {$$ = $1;}
+| ArrayCreationExpression
 
-PrimaryNoNewArray: Literal | ClassLiteral | THIS
+PrimaryNoNewArray: Literal {$$ = $1;}
+| ClassLiteral | THIS
 | TypeName Dot THIS
 | LeftParenthesis Expression RightParenthesis
 | ClassInstanceCreationExpression
@@ -521,11 +568,12 @@ ClassInstanceCreationExpression: UnqualifiedClassInstanceCreationExpression
 | Primary Dot UnqualifiedClassInstanceCreationExpression
 ;
 
+
 UnqualifiedClassInstanceCreationExpression: NEW  ClassOrInterfaceTypeToInstantiate LeftParenthesis  RightParenthesis 
 | NEW TypeArguments ClassOrInterfaceTypeToInstantiate LeftParenthesis  RightParenthesis 
-| NEW  ClassOrInterfaceTypeToInstantiate LeftParenthesis ArgumentList RightParenthesis 
+| NEW ClassOrInterfaceTypeToInstantiate LeftParenthesis ArgumentList RightParenthesis 
 | NEW TypeArguments ClassOrInterfaceTypeToInstantiate LeftParenthesis ArgumentList RightParenthesis 
-| NEW  ClassOrInterfaceTypeToInstantiate LeftParenthesis  RightParenthesis ClassBody
+| NEW ClassOrInterfaceTypeToInstantiate LeftParenthesis  RightParenthesis ClassBody
 | NEW TypeArguments ClassOrInterfaceTypeToInstantiate LeftParenthesis  RightParenthesis ClassBody
 | NEW  ClassOrInterfaceTypeToInstantiate LeftParenthesis ArgumentList RightParenthesis ClassBody
 | NEW TypeArguments ClassOrInterfaceTypeToInstantiate LeftParenthesis ArgumentList RightParenthesis ClassBody
@@ -550,8 +598,6 @@ ArrayAccess:ExpressionName LeftSquareBracket Expression RightSquareBracket
 | PrimaryNoNewArray LeftSquareBracket Expression RightSquareBracket
 ;
 
-DotId:  Dot Identifier
-
 MethodInvocation: MethodName LeftParenthesis  RightParenthesis
 | MethodName LeftParenthesis ArgumentList RightParenthesis
 
@@ -561,42 +607,40 @@ MethodInvocation: MethodName LeftParenthesis  RightParenthesis
 | TypeName Dot TypeArguments Identifier LeftParenthesis ArgumentList RightParenthesis
 
 
-| ExpressionName DotId LeftParenthesis RightParenthesis
+| ExpressionName Dot Identifier LeftParenthesis RightParenthesis
 | ExpressionName Dot TypeArguments Identifier LeftParenthesis RightParenthesis
-| ExpressionName DotId LeftParenthesis ArgumentList RightParenthesis
+| ExpressionName Dot Identifier LeftParenthesis ArgumentList RightParenthesis
 | ExpressionName Dot TypeArguments Identifier LeftParenthesis ArgumentList RightParenthesis
 
 
-| Primary Dot  Identifier LeftParenthesis  RightParenthesis
+| Primary Dot Identifier LeftParenthesis  RightParenthesis
 | Primary Dot TypeArguments Identifier LeftParenthesis  RightParenthesis
-| Primary Dot  Identifier LeftParenthesis ArgumentList RightParenthesis
+| Primary Dot Identifier LeftParenthesis ArgumentList RightParenthesis
 | Primary Dot TypeArguments Identifier LeftParenthesis ArgumentList RightParenthesis
 
-| SUPER Dot  Identifier LeftParenthesis  RightParenthesis
+| SUPER Dot Identifier LeftParenthesis  RightParenthesis
 | SUPER Dot TypeArguments Identifier LeftParenthesis  RightParenthesis
-| SUPER Dot  Identifier LeftParenthesis ArgumentList RightParenthesis
+| SUPER Dot Identifier LeftParenthesis ArgumentList RightParenthesis
 | SUPER Dot TypeArguments Identifier LeftParenthesis ArgumentList RightParenthesis
 
 
-| TypeName Dot SUPER Dot  Identifier LeftParenthesis  RightParenthesis
+| TypeName Dot SUPER Dot Identifier LeftParenthesis  RightParenthesis
 | TypeName Dot SUPER Dot TypeArguments Identifier LeftParenthesis  RightParenthesis
-| TypeName Dot SUPER Dot  Identifier LeftParenthesis ArgumentList RightParenthesis
+| TypeName Dot SUPER Dot Identifier LeftParenthesis ArgumentList RightParenthesis
 | TypeName Dot SUPER Dot TypeArguments Identifier LeftParenthesis ArgumentList RightParenthesis
 ;
 
 
-ArgumentList: Expression | Expression CommaExpressionList 
+ArgumentList: Expression | ArgumentList Comma Expression
 ;
-
-CommaExpressionList : Comma Expression | CommaExpressionList Comma Expression 
 
 MethodReference: ExpressionName Scope Identifier
 |  ExpressionName Scope TypeArguments Identifier
 | Primary Scope Identifier
 |  Primary Scope TypeArguments 
 
-| ReferenceType Scope Identifier
-|  ReferenceType Scope TypeArguments Identifier
+| UnannReferenceType Scope Identifier
+|  UnannReferenceType Scope TypeArguments Identifier
 
 | SUPER Scope Identifier
 |  SUPER Scope TypeArguments Identifier
@@ -604,17 +648,17 @@ MethodReference: ExpressionName Scope Identifier
 | TypeName Dot SUPER Scope Identifier
 |  TypeName Dot SUPER Scope TypeArguments Identifier
 
-| ClassType Scope  NEW
-| ClassType Scope TypeArguments NEW
+| UnannClassType Scope NEW
+| UnannClassType Scope TypeArguments NEW
 | ArrayType Scope NEW
 ;
 
 
 
 ArrayCreationExpression: NEW PrimitiveType DimExprs 
-| NEW ClassOrInterfaceType DimExprs 
+| NEW UnannClassOrInterfaceType DimExprs 
 | NEW PrimitiveType DimExprs Dims
-| NEW ClassOrInterfaceType DimExprs Dims
+| NEW UnannClassOrInterfaceType DimExprs Dims
 ;
 
 
@@ -624,16 +668,23 @@ DimExprList : DimExpr | DimExprList DimExpr
 
 DimExpr: LeftSquareBracket Expression RightSquareBracket
 
-Expression: AssignmentExpression
+Expression: AssignmentExpression { cout<<"_______"<<endl;
+    // printf("%s\n", $$->val);
+}
 ;
 
 
-AssignmentExpression: ConditionalExpression
+AssignmentExpression: ConditionalExpression { }
 | Assignment
 ;
 
 
-Assignment: LeftHandSide AssignmentOperator Expression
+Assignment: LeftHandSide AssignmentOperator Expression {
+    $$ = createNode("=");
+    $$->children.push_back($1);
+    $$->children.push_back($2);
+
+}
 
 LeftHandSide: ExpressionName
 | FieldAccess
@@ -643,7 +694,7 @@ LeftHandSide: ExpressionName
 
 AssignmentOperator: ASSIGN | MUL_ASSIGN  | DIV_ASSIGN |  MOD_ASSIGN | ADD_ASSIGN | SUB_ASSIGN | LSHIFT_ASSIGN | RSHIFT_ASSIGN | URSHIFT_ASSIGN | AND_ASSIGN | XOR_ASSIGN | OR_ASSIGN
 
-ConditionalExpression: ConditionalOrExpression
+ConditionalExpression: ConditionalOrExpression { }
 | ConditionalOrExpression QUESTIONMARK Expression COLON ConditionalExpression
 ;
 
@@ -672,7 +723,7 @@ EqualityExpression: RelationalExpression
 | EqualityExpression NOTEQUAL RelationalExpression
 ;
 
-RelationalExpression: ShiftExpression
+RelationalExpression: ShiftExpression 
 | RelationalExpression LT ShiftExpression
 | RelationalExpression GT ShiftExpression
 | RelationalExpression LE ShiftExpression
@@ -732,14 +783,14 @@ PostDecrementExpression: PostfixExpression DEC
 
 
 CastExpression: LeftParenthesis PrimitiveType RightParenthesis UnaryExpression
-| LeftParenthesis ReferenceType  RightParenthesis UnaryExpressionNotPlusMinus
+| LeftParenthesis UnannReferenceType  RightParenthesis UnaryExpressionNotPlusMinus
 ;
 
 ConstantExpression: Expression
 
 
 Type: PrimitiveType
-| ReferenceType
+| UnannReferenceType
 ;
 
 
@@ -757,24 +808,9 @@ IntegralType:  BYTE | SHORT | INT | LONG | CHAR
 
 FloatingPointType:  FLOAT | DOUBLE
 
-ReferenceType: ClassOrInterfaceType
-| ArrayType
-;
 
 
-ClassOrInterfaceType: UnannClassOrInterfaceType
-;
-
-
-
-ClassType:  TypeIdentifier 
-| TypeIdentifier TypeArguments
-| ClassOrInterfaceType Dot  TypeIdentifier 
-| ClassOrInterfaceType Dot  TypeIdentifier TypeArguments
-;
-
-ArrayType: PrimitiveType Dims
-| ClassOrInterfaceType Dims
+ArrayType: UnannArrayType
 ;
 
 Dims: LeftSquareBracket RightSquareBracket 
@@ -782,13 +818,8 @@ Dims: LeftSquareBracket RightSquareBracket
 
 
 
-TypeParameter:  TypeIdentifier 
-| TypeIdentifier TypeBound
 
-
-
-
-TypeBound: EXTENDS ClassOrInterfaceType 
+TypeBound: EXTENDS UnannClassOrInterfaceType 
 ;
 
 
@@ -796,36 +827,30 @@ TypeBound: EXTENDS ClassOrInterfaceType
 TypeArguments: LT TypeArgumentList GT
 
 
-TypeArgumentList: TypeArgument CommaTypeArgumentList | TypeArgument
+TypeArgumentList: TypeArgumentList Comma TypeArgument | TypeArgument
 
-CommaTypeArgumentList :  Comma TypeArgument |  TypeArgumentList Comma TypeArgument
-
-TypeArgument: ReferenceType
+TypeArgument: UnannReferenceType
 | Wildcard
 ;
 
 Wildcard: QUESTIONMARK 
 | QUESTIONMARK WildcardBounds
 
-WildcardBounds: EXTENDS ReferenceType
-| SUPER ReferenceType
+WildcardBounds: EXTENDS UnannReferenceType
+| SUPER UnannReferenceType
 ;
 
 // ModuleName: Identifier | ModuleName Dot Identifier
 // PackageName: Identifier | PackageName Dot Identifier
-TypeName: TypeIdentifier | PackageOrTypeName
-ExpressionName: AmbiguousName
-MethodName: UnqualifiedMethodIdentifier
-PackageOrTypeName: Identifier | PackageOrTypeName Dot Identifier
-AmbiguousName: Identifier | AmbiguousName DotId
-
 ContextualKeywords: EXPORTS | OPENS | REQUIRES | USES | MODULE | PERMITS | SEALED | VAR | PROVIDES | TO | WITH | OPEN | RECORD | TRANSITIVE | YIELD ;
 
 TypeIdentifierKeywords: EXPORTS | OPENS | REQUIRES | USES | MODULE | PROVIDES | TO | WITH | OPEN | TRANSITIVE ;
 
 Identifier :  IdentifierChars
 TypeIdentifier: IdentifierChars | TypeIdentifierKeywords
-UnqualifiedMethodIdentifier : IdentifierChars | ContextualKeywords
-Literal : IntegerLiteral | FloatingPointLiteral | BooleanLiteral |CharacterLiteral | NullLiteral
+MethodName: IdentifierChars | ContextualKeywords
+
+Literal : IntegerLiteral  {printf("%s\n", $$->val);}
+| FloatingPointLiteral | BooleanLiteral |CharacterLiteral | NullLiteral| StringLiteral
 
 %%
