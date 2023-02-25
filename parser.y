@@ -47,7 +47,7 @@ T parser_string(string str){
 
 %type<str> CompilationUnit  OrdinaryCompilationUnit  
 %type<str> ClassDeclaration  ClassBody ClassExtends  ClassModifier ClassModifierList ClassPermits
-%type<str> TypeIdentifier TypeParameters TypeParameterList CommaTypeParameterList 
+%type<str> TypeIdentifier 
 %type<str> ThrowStatement RelationalExpression 
 %type<str> TopLevelClassOrInterfaceDeclarationList TopLevelClassOrInterfaceDeclaration NormalClassDeclaration 
 %type<str> CommaTypeNameList ClassBodyDeclaration ClassMemberDeclaration FieldDeclaraFieldModifierList FieldDeclaration VariableDeclaratorList
@@ -72,7 +72,7 @@ T parser_string(string str){
 %type<str> ShiftExpression AdditiveExpression MultiplicativeExpression UnaryExpression PreIncrementExpression PreDecrementExpression
 %type<str> UnaryExpressionNotPlusMinus PostfixExpression PostIncrementExpression PostDecrementExpression CastExpression ConstantExpression Type PrimitiveType
 %type<str> NumericType IntegralType FloatingPointType ReferenceType ClassOrInterfaceType ClassType TypeVariable ArrayType
-%type<str> Dims  TypeParameter TypeBound TypeArguments TypeArgumentList CommaTypeArgumentList TypeArgument Wildcard WildcardBounds TypeName PackageOrTypeName
+%type<str> Dims  TypeBound TypeArguments TypeArgumentList CommaTypeArgumentList TypeArgument Wildcard WildcardBounds TypeName PackageOrTypeName
 %type<str> ExpressionName MethodName   UnqualifiedMethodIdentifier Literal
 
 %start OrdinaryCompilationUnit
@@ -99,8 +99,6 @@ ClassDeclaration: NormalClassDeclaration
 
 NormalClassDeclaration : Class TypeIdentifier     ClassBody
 | ModifierList Class TypeIdentifier     ClassBody
-| Class TypeIdentifier TypeParameters    ClassBody
-| ModifierList Class TypeIdentifier TypeParameters    ClassBody
 ;
 
 
@@ -108,14 +106,6 @@ Modifier : Public | Private | Static
 
 
 ModifierList : ModifierList Modifier | Modifier
-
-TypeParameters: LT TypeParameterList GT
-;
-
-TypeParameterList: TypeParameter CommaTypeParameterList | TypeParameter
-
-CommaTypeParameterList : Comma TypeParameter
-    | Comma TypeParameter CommaTypeParameterList
 
 
 
@@ -262,13 +252,9 @@ ConstructorDeclaration: ConstructorDeclarator ConstructorBody
 
 
 ConstructorDeclarator:  SimpleTypeName LeftParenthesis  RightParenthesis
-|TypeParameters SimpleTypeName LeftParenthesis  RightParenthesis
 | SimpleTypeName LeftParenthesis ReceiverParameter Comma RightParenthesis
-|TypeParameters SimpleTypeName LeftParenthesis ReceiverParameter Comma RightParenthesis
 | SimpleTypeName LeftParenthesis  FormalParameterList RightParenthesis
-|TypeParameters SimpleTypeName LeftParenthesis  FormalParameterList RightParenthesis
 | SimpleTypeName LeftParenthesis ReceiverParameter Comma FormalParameterList RightParenthesis
-|TypeParameters SimpleTypeName LeftParenthesis ReceiverParameter Comma FormalParameterList RightParenthesis
 ;
 
 SimpleTypeName: TypeIdentifier
@@ -723,11 +709,6 @@ ArrayType: UnannArrayType
 
 Dims: LeftSquareBracket RightSquareBracket 
 | LeftSquareBracket RightSquareBracket LeftRightSquareList
-
-
-
-TypeParameter:  TypeIdentifier 
-| TypeIdentifier TypeBound
 
 
 
