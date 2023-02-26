@@ -259,7 +259,6 @@ VariableDeclarator: VariableDeclaratorId ASSIGN VariableInitializer {
 
 VariableDeclaratorId: Identifier Dims {
     $$= $1;
-    $$->children.push_back($2);
 }
 | Identifier 
 
@@ -392,14 +391,14 @@ SimpleTypeName: TypeIdentifier
 
 
 ConstructorBody: LeftCurlyBrace  RightCurlyBrace {
-    createNode("ConstructorBody");
+    $$ = createNode("ConstructorBody");
 }
 | LeftCurlyBrace ExplicitConstructorInvocation RightCurlyBrace {
-     createNode("ConstructorBody");
+     $$ = createNode("ConstructorBody");
      $$->children.push_back($2);
 }
 | LeftCurlyBrace  BlockStatements RightCurlyBrace{
-    createNode("ConstructorBody");
+    $$ = createNode("ConstructorBody");
      $$->children.push_back($2);
 }
 | LeftCurlyBrace ExplicitConstructorInvocation BlockStatements RightCurlyBrace {
@@ -445,7 +444,10 @@ ArrayInitializer: LeftCurlyBrace  Comma RightCurlyBrace {
 }
 
 
-VariableInitializerList: VariableInitializer
+VariableInitializerList: VariableInitializer{
+    $$ = createNode("VariableInitializerList");
+    $$->children.push_back($1);
+}
  | VariableInitializerList Comma VariableInitializer {
      $$= $1;
      $$->children.push_back($3);
@@ -467,7 +469,7 @@ BlockStatements: BlockStatements BlockStatement {
 
 BlockStatement: LocalClassOrInterfaceDeclaration
 | LocalVariableDeclarationStatement
-| Statement { }
+| Statement 
 ;
 LocalClassOrInterfaceDeclaration: ClassDeclaration
 ;
@@ -753,7 +755,7 @@ Primary: PrimaryNoNewArray  {$$ = $1;}
 PrimaryNoNewArray: Literal {$$ = $1;}
 | ClassLiteral | This
 | TypeName Dot This
-| LeftParenthesis Expression RightParenthesis
+| LeftParenthesis Expression RightParenthesis { $$ = $2;}
 | ClassInstanceCreationExpression
 | FieldAccess
 | ArrayAccess
@@ -805,19 +807,32 @@ ClassOrInterfaceTypeToInstantiate: Identifier
 TypeArgumentsOrDiamond: TypeArguments
 ;
 
-FieldAccess: Primary Dot Identifier
-| Super Dot Identifier
-| TypeName Dot Super Dot Identifier
+FieldAccess: Primary Dot Identifier {
+    $$ = createNode("FieldAccess");
+    $$->children.push_back($1);
+    $$->children.push_back($3);
+}
+| Super Dot Identifier{
+    $$ = createNode("FieldAccess");
+    $$->children.push_back($1);
+    $$->children.push_back($3);
+}
+| TypeName Dot Super Dot Identifier{
+    $$ = createNode("FieldAccess");
+    $$->children.push_back($1);
+    $$->children.push_back($3);
+    $$->children.push_back($5);
+}
 ;
 
 ArrayAccess:ExpressionName LeftSquareBracket Expression RightSquareBracket
 | PrimaryNoNewArray LeftSquareBracket Expression RightSquareBracket
 ;
 
-MethodInvocation: MethodName LeftParenthesis  RightParenthesis
-| MethodName LeftParenthesis ArgumentList RightParenthesis
+MethodInvocation: Identifier LeftParenthesis  RightParenthesis 
+| Identifier LeftParenthesis ArgumentList RightParenthesis
 
-| TypeName Dot  Identifier LeftParenthesis  RightParenthesis
+| TypeName Dot  Identifier LeftParenthesis  RightParenthesis 
 | TypeName Dot TypeArguments Identifier LeftParenthesis  RightParenthesis
 | TypeName Dot  Identifier LeftParenthesis ArgumentList RightParenthesis
 | TypeName Dot TypeArguments Identifier LeftParenthesis ArgumentList RightParenthesis
@@ -871,10 +886,22 @@ MethodReference: ExpressionName Scope Identifier
 
 
 
-ArrayCreationExpression: New PrimitiveType DimExprs 
-| New UnannClassOrInterfaceType DimExprs 
-| New PrimitiveType DimExprs Dims
-| New UnannClassOrInterfaceType DimExprs Dims
+ArrayCreationExpression: New PrimitiveType DimExprs {
+    $$ = createNode("ArrayCreationExpression");
+    $$->children.push_back($2);
+}
+| New UnannClassOrInterfaceType DimExprs {
+    $$ = createNode("ArrayCreationExpression");
+    $$->children.push_back($2);
+}
+| New PrimitiveType DimExprs Dims {
+    $$ = createNode("ArrayCreationExpression");
+    $$->children.push_back($2);
+}
+| New UnannClassOrInterfaceType DimExprs Dims {
+    $$ = createNode("ArrayCreationExpression");
+    $$->children.push_back($2);
+}
 ;
 
 
@@ -884,21 +911,19 @@ DimExprList : DimExpr | DimExprList DimExpr
 
 DimExpr: LeftSquareBracket Expression RightSquareBracket
 
-Expression: AssignmentExpression { cout<<"_______"<<endl;
-    // printf("%s\n", $$->val);
-}
+Expression: AssignmentExpression 
 ;
 
 
-AssignmentExpression: ConditionalExpression { }
+AssignmentExpression: ConditionalExpression 
 | Assignment
 ;
 
 
 Assignment: LeftHandSide AssignmentOperator Expression {
-    $$ = createNode("=");
+    $$ = createNode($2->val);
     $$->children.push_back($1);
-    $$->children.push_back($2);
+    $$->children.push_back($3);
 
 }
 
@@ -910,63 +935,152 @@ LeftHandSide: ExpressionName
 
 AssignmentOperator: ASSIGN | MUL_ASSIGN  | DIV_ASSIGN |  MOD_ASSIGN | ADD_ASSIGN | SUB_ASSIGN | LSHIFT_ASSIGN | RSHIFT_ASSIGN | URSHIFT_ASSIGN | AND_ASSIGN | XOR_ASSIGN | OR_ASSIGN
 
-ConditionalExpression: ConditionalOrExpression { }
-| ConditionalOrExpression QUESTIONMARK Expression COLON ConditionalExpression
+ConditionalExpression: ConditionalOrExpression 
+| ConditionalOrExpression QUESTIONMARK Expression COLON ConditionalExpression {
+    $$ = createNode("Ternary");
+    $$->children.push_back($1);
+    $$->children.push_back($3);
+    $$->children.push_back($5);
+}
 ;
 
-ConditionalOrExpression: ConditionalAndExpression
-| ConditionalOrExpression OR ConditionalAndExpression
+ConditionalOrExpression: ConditionalAndExpression 
+| ConditionalOrExpression OR ConditionalAndExpression {
+    $$ = createNode("||");
+    $$->children.push_back($1);
+    $$->children.push_back($3);
+}
 ;
 
 ConditionalAndExpression: InclusiveOrExpression
-| ConditionalAndExpression AND InclusiveOrExpression
+| ConditionalAndExpression AND InclusiveOrExpression{
+    $$ = createNode("&&");
+    $$->children.push_back($1);
+    $$->children.push_back($3);
+}
 ;
 
 InclusiveOrExpression: ExclusiveOrExpression
-| InclusiveOrExpression BITOR ExclusiveOrExpression 
+| InclusiveOrExpression BITOR ExclusiveOrExpression {
+    $$ = createNode("|");
+    $$->children.push_back($1);
+    $$->children.push_back($3);
+}
 ;
 
 ExclusiveOrExpression: AndExpression
-| ExclusiveOrExpression CARET AndExpression
+| ExclusiveOrExpression CARET AndExpression {
+    $$ = createNode("^");
+    $$->children.push_back($1);
+    $$->children.push_back($3);
+}
 ;
 
 AndExpression: EqualityExpression
-| AndExpression BITAND EqualityExpression
+| AndExpression BITAND EqualityExpression {
+    $$ = createNode("&");
+    $$->children.push_back($1);
+    $$->children.push_back($3);
+}
 ;
 
 EqualityExpression: RelationalExpression
-| EqualityExpression EQUAL RelationalExpression
-| EqualityExpression NOTEQUAL RelationalExpression
+| EqualityExpression EQUAL RelationalExpression {
+    $$ = createNode("==");
+    $$->children.push_back($1);
+    $$->children.push_back($3);
+}
+| EqualityExpression NOTEQUAL RelationalExpression {
+    $$ = createNode("!=");
+    $$->children.push_back($1);
+    $$->children.push_back($3);
+}
 ;
 
 RelationalExpression: ShiftExpression 
-| RelationalExpression LT ShiftExpression
-| RelationalExpression GT ShiftExpression
-| RelationalExpression LE ShiftExpression
-| RelationalExpression GE ShiftExpression
+| RelationalExpression LT ShiftExpression {
+    $$ = createNode("<");
+    $$->children.push_back($1);
+    $$->children.push_back($3);
+}
+| RelationalExpression GT ShiftExpression{
+    $$ = createNode(">");
+    $$->children.push_back($1);
+    $$->children.push_back($3);
+}
+| RelationalExpression LE ShiftExpression {
+    $$ = createNode("<=");
+    $$->children.push_back($1);
+    $$->children.push_back($3);
+}
+| RelationalExpression GE ShiftExpression{
+    $$ = createNode(">=");
+    $$->children.push_back($1);
+    $$->children.push_back($3);
+}
 | InstanceofExpression
 
 
-InstanceofExpression: RelationalExpression Instanceof UnannReferenceType
-| RelationalExpression Instanceof Pattern
+InstanceofExpression: RelationalExpression Instanceof UnannReferenceType {
+    $$ = createNode("instanceof");
+    $$->children.push_back($1);
+    $$->children.push_back($3);
+}
+| RelationalExpression Instanceof Pattern{
+    $$ = createNode("instanceof");
+    $$->children.push_back($1);
+    $$->children.push_back($3);
+}
 ;
 
 ShiftExpression: AdditiveExpression
-| ShiftExpression LSHIFT AdditiveExpression
-| ShiftExpression RSHIFT AdditiveExpression
-| ShiftExpression URSHIFT AdditiveExpression
+| ShiftExpression LSHIFT AdditiveExpression {
+    $$ = createNode("<<");
+    $$->children.push_back($1); 
+    $$->children.push_back($3);
+}
+| ShiftExpression RSHIFT AdditiveExpression {
+    $$ = createNode(">>");
+    $$->children.push_back($1);
+    $$->children.push_back($3);
+}
+| ShiftExpression URSHIFT AdditiveExpression{
+    $$ = createNode(">>>");
+    $$->children.push_back($1);
+    $$->children.push_back($3);
+}
 ;
 
 
 AdditiveExpression: MultiplicativeExpression
-| AdditiveExpression ADD MultiplicativeExpression
-| AdditiveExpression SUB MultiplicativeExpression
+| AdditiveExpression ADD MultiplicativeExpression {
+    $$ = createNode("+");
+    $$->children.push_back($1);
+    $$->children.push_back($3);
+}
+| AdditiveExpression SUB MultiplicativeExpression{
+    $$ = createNode("-");
+    $$->children.push_back($1);
+    $$->children.push_back($3);
+}
 ;
 
 MultiplicativeExpression: UnaryExpression
-| MultiplicativeExpression MUL UnaryExpression
-| MultiplicativeExpression DIV UnaryExpression
-| MultiplicativeExpression MOD UnaryExpression
+| MultiplicativeExpression MUL UnaryExpression{
+    $$ = createNode("*");
+    $$->children.push_back($1);
+    $$->children.push_back($3);
+}
+| MultiplicativeExpression DIV UnaryExpression{
+    $$ = createNode("/");
+    $$->children.push_back($1);
+    $$->children.push_back($3);
+}
+| MultiplicativeExpression MOD UnaryExpression{
+    $$ = createNode("%");
+    $$->children.push_back($1);
+    $$->children.push_back($3);
+}
 ;
 
 UnaryExpression: PreIncrementExpression
@@ -976,9 +1090,17 @@ UnaryExpression: PreIncrementExpression
 | UnaryExpressionNotPlusMinus
 ;
 
-PreIncrementExpression: INC UnaryExpression
+PreIncrementExpression: INC UnaryExpression {
+    $$ = createNode("PreIncrementExpression");
+    $$->children.push_back($1);
+    $$->children.push_back($2);
+}
 
-PreDecrementExpression: DEC UnaryExpression
+PreDecrementExpression: DEC UnaryExpression {
+    $$ = createNode("PreDecrementExpression");
+    $$->children.push_back($1);
+    $$->children.push_back($2);
+}
 ;
 
 UnaryExpressionNotPlusMinus: PostfixExpression
@@ -992,14 +1114,30 @@ PostfixExpression: Primary
 | PostIncrementExpression
 | PostDecrementExpression
 
-PostIncrementExpression:  PostfixExpression INC
+PostIncrementExpression:  PostfixExpression INC{
+    $$ = createNode("PostIncrementExpression");
+    $$->children.push_back($1);
+    $$->children.push_back($2);
+}
 
 
-PostDecrementExpression: PostfixExpression DEC
+PostDecrementExpression: PostfixExpression DEC {
+    $$ = createNode("PostDecrementExpression");
+    $$->children.push_back($1);
+    $$->children.push_back($2);
+}
 
 
-CastExpression: LeftParenthesis PrimitiveType RightParenthesis UnaryExpression
-| LeftParenthesis UnannReferenceType  RightParenthesis UnaryExpressionNotPlusMinus
+CastExpression: LeftParenthesis PrimitiveType RightParenthesis UnaryExpression{
+    $$ = createNode("CastExpression");
+    $$->children.push_back($2);
+    $$->children.push_back($4);
+}
+| LeftParenthesis UnannReferenceType  RightParenthesis UnaryExpressionNotPlusMinus{
+      $$ = createNode("CastExpression");
+    $$->children.push_back($2);
+    $$->children.push_back($4);
+}
 ;
 
 ConstantExpression: Expression
@@ -1060,8 +1198,15 @@ WildcardBounds: Extends UnannReferenceType
 // PackageName: Identifier | PackageName Dot Identifier
 TypeName: TypeIdentifier 
 ExpressionName: Identifier 
-| ExpressionName Dot Identifier {}
-MethodName: Identifier
+| ExpressionName Dot Identifier {
+    Node* temp = $1;
+    while(temp->children.size()>0){
+        temp = temp->children[0];
+    }
+    temp->children.push_back($3);
+    $$ = $1;
+}
+// MethodName: Identifier
 // PackageOrTypeName: Identifier | PackageOrTypeName Dot Identifier
 // AmbiguousName: Identifier | AmbiguousName Dot Identifier
 
