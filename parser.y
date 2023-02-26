@@ -961,17 +961,52 @@ ArrayAccess:    ExpressionName LeftSquareBracket Expression RightSquareBracket
                 ;
 
 MethodInvocation:   Identifier LeftParenthesis  RightParenthesis
+                    {
+                        $$ = createNode("MethodInvocation");
+                        $$->children.push_back($1);
+                    }
                     | Identifier LeftParenthesis ArgumentList RightParenthesis
+                    {
+                        $$ = createNode("MethodInvocation");
+                        $$->children.push_back($1);
+                        $$->children.push_back($3);
+                    }
 
-                    | TypeName Dot Identifier LeftParenthesis  RightParenthesis
-                    | TypeName Dot TypeArguments Identifier LeftParenthesis  RightParenthesis
+                    | TypeName Dot Identifier LeftParenthesis RightParenthesis
+                    | TypeName Dot TypeArguments Identifier LeftParenthesis RightParenthesis
                     | TypeName Dot Identifier LeftParenthesis ArgumentList RightParenthesis
                     | TypeName Dot TypeArguments Identifier LeftParenthesis ArgumentList RightParenthesis
                     
                     | ExpressionName Dot Identifier LeftParenthesis RightParenthesis
+                    {
+                        $$ = createNode("MethodInvocation");
+                        $2->children.push_back($1);
+                        $2->children.push_back($3);
+                        $$->children.push_back($2);
+                    }
                     | ExpressionName Dot TypeArguments Identifier LeftParenthesis RightParenthesis
+                    {
+                        $$ = createNode("MethodInvocation");
+                        $2->children.push_back($1);
+                        $2->children.push_back($4);
+                        $$->children.push_back($2);
+                    }
                     | ExpressionName Dot Identifier LeftParenthesis ArgumentList RightParenthesis
+                    {
+                        $$ = createNode("MethodInvocation");
+                        $2->children.push_back($1);
+                        $2->children.push_back($3);
+                        $$->children.push_back($2);
+                        $$->children.push_back($5);
+                    }
                     | ExpressionName Dot TypeArguments Identifier LeftParenthesis ArgumentList RightParenthesis
+                    {
+                        $$ = createNode("MethodInvocation");
+                        $2->children.push_back($1);
+                        $2->children.push_back($4);
+                        $$->children.push_back($2);
+                        $$->children.push_back($5);
+                    }
                     
                     | Primary Dot Identifier LeftParenthesis RightParenthesis
                     | Primary Dot TypeArguments Identifier LeftParenthesis RightParenthesis
@@ -990,7 +1025,15 @@ MethodInvocation:   Identifier LeftParenthesis  RightParenthesis
                     ;
 
 ArgumentList:   Expression
+                {
+                    $$ = createNode("Arguments");
+                    $$->children.push_back($1);
+                }
                 | ArgumentList Comma Expression
+                {
+                    $$ = $1;
+                    $$->children.push_back($3);
+                }
                 ;
 
 MethodReference:    ExpressionName Scope Identifier
@@ -1406,20 +1449,13 @@ TypeIdentifier: IdentifierChars
 ExpressionName: Identifier
                 | ExpressionName Dot Identifier
                 {
-                    Node* temp = $1;
-                    while(temp->children.size()>0){
-                        temp = temp->children[0];
-                    }
-                    temp->children.push_back($3);
-                    $$ = $1;
+                    $$ = createNode(".");
+                    $$->children.push_back($1);
+                    $$->children.push_back($3);
                 }
                 ;
 
 TypeName:   TypeIdentifier
-            ;
-
-MethodName: IdentifierChars
-            | ContextualKeywords
             ;
 
 Literal:    IntegerLiteral 

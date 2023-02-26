@@ -213,18 +213,19 @@ Literals {DecimalIntegerLiteral}|{HexIntegerLiteral}|{OctalIntegerLiteral}|{Floa
 
 
 
-
-(\"\"\")[ ]*([\n\r]|[\r][\n])([^\\]|(\\\\))*(\"\"\") {mp1[yytext]="Literal";mp2[yytext]++;if(mp2[yytext]!=1){} else v.push_back(yytext); yylval.node = createNode(strdup(yytext)); return TextBlock;}
-
-
-[\"]([^\"\\\n]|(\\\")|(\\\\))*[\"] {
+\"([^\"\\]|\\.)*\" {
 
     mp1[yytext]="Literal";
     mp2[yytext]++; 
     if(mp2[yytext]!=1){} else v.push_back(yytext);
     yylval.node = createNode(strdup(yytext));
+    cout<<"abcd"<<endl;
     return StringLiteral;
 }
+
+
+
+(\"\"\")[ ]*([\n\r]|[\r][\n])([^\\]|(\\\\))*(\"\"\") {mp1[yytext]="Literal";mp2[yytext]++;if(mp2[yytext]!=1){} else v.push_back(yytext); yylval.node = createNode(strdup(yytext)); return TextBlock;}
 
 
 [\'][\\][\'] {cout<<yytext<<" "<<" Line number is "<<yylineno<< " Illegal Character is "<<yytext[0]<<endl; mp1[yytext]="Illegal";mp2[yytext]++;}
@@ -250,7 +251,7 @@ Literals {DecimalIntegerLiteral}|{HexIntegerLiteral}|{OctalIntegerLiteral}|{Floa
 
 
 [a-zA-Z$_]+[$_a-zA-Z0-9]* {mp1[yytext]="Identifier";mp2[yytext]++;if(mp2[yytext]!=1){} else v.push_back(yytext); yylval.node = createNode(strdup(yytext)) ;return IdentifierChars;}
-\".*\" { cout<<yytext<<" "<<" Line number is "<<yylineno<< " Illegal Character is "<<yytext[0]<<endl; }
+
 
 . {cout<<yytext<<" "<<" Line number is "<<yylineno<< " Illegal Character is "<<yytext[0]<<endl; mp1[yytext]="Illegal";mp2[yytext]++;}
 
