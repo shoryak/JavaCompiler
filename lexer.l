@@ -1,26 +1,25 @@
 %{
-    #include<bits/stdc++.h>
-  
-    #include "token.h"
-  #include<string.h>
-  using namespace std;
-  extern "C" {
-        int yylex(void);
-    }
-    template <typename T>
-    T parser_number(string numstr){
-        stringstream ss;
-        ss << numstr;
-        T result(0);
-        ss >> result;
-        return result;
-    }
-    unordered_map<string,string > mp1;
-    unordered_map<string,int > mp2;
-    int linenum=0;
-    std::ofstream myfile;
-    vector<string>v;
-    //
+#include<bits/stdc++.h>
+#include "token.h"
+#include<string.h>
+using namespace std;
+extern "C" {
+    int yylex(void);
+}
+template <typename T>
+T parser_number(string numstr){
+    stringstream ss;
+    ss << numstr;
+    T result(0);
+    ss >> result;
+    return result;
+}
+unordered_map<string,string > mp1;
+unordered_map<string,int > mp2;
+int linenum=0;
+std::ofstream myfile;
+vector<string>v;
+//
 %}
 
 %option yylineno
