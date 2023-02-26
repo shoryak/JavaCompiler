@@ -86,20 +86,20 @@ struct Node{
 }
 
 
-%token<str> ABSTRACT CONTINUE FOR NEW SWITCH ASSERT DEFAULT IF PACKAGE SYNCHRONIZED BOOLEAN DO GOTO PRIVATE THIS BREAK DOUBLE IMPLEMENTS PROTECTED THROW BYTE ELSE IMPORT PUBLIC THROWS CASE ENUM INSTANCEOF RETURN TRANSIENT CATCH EXTENDS INT SHORT TRY CHAR FINAL INTERFACE STATIC VOID CLASS FINALLY LONG STRICTFP VOLATILE CONST FLOAT NATIVE SUPER WHILE UNDERSCORE
-%token<str> EXPORTS OPENS REQUIRES USES MODULE PERMITS SEALED VAR PROVIDES TO WITH OPEN RECORD TRANSITIVE YIELD
-%token<str> CharacterLiteral 
-%token<str> BooleanLiteral
-%token<str> IntegerLiteral
-%token<str> FloatingPointLiteral 
-%token<str> StringLiteral
-%token<str> TextBlock 
-%token<str> NullLiteral
-%token<str> LeftParenthesis  RightParenthesis  LeftCurlyBrace RightCurlyBrace LeftSquareBracket  RightSquareBracket
-%token<str> Semicolon Comma  Dot  AtSign 
-%token<str> Scope ellipsis 
-%token<str> ASSIGN GT LT EXCLAMATION TILDE QUESTIONMARK COLON ARROW EQUAL GE LE NOTEQUAL AND OR INC DEC ADD SUB MUL DIV BITAND BITOR CARET MOD LSHIFT RSHIFT URSHIFT ADD_ASSIGN SUB_ASSIGN MUL_ASSIGN DIV_ASSIGN AND_ASSIGN OR_ASSIGN XOR_ASSIGN MOD_ASSIGN LSHIFT_ASSIGN RSHIFT_ASSIGN URSHIFT_ASSIGN 
-%token<str> IdentifierChars
+%token<node> ABSTRACT CONTINUE FOR NEW SWITCH ASSERT DEFAULT IF PACKAGE SYNCHRONIZED BOOLEAN DO GOTO PRIVATE THIS BREAK DOUBLE IMPLEMENTS PROTECTED THROW BYTE ELSE IMPORT PUBLIC THROWS CASE ENUM INSTANCEOF RETURN TRANSIENT CATCH EXTENDS INT SHORT TRY CHAR FINAL INTERFACE STATIC VOID CLASS FINALLY LONG STRICTFP VOLATILE CONST FLOAT NATIVE SUPER WHILE UNDERSCORE
+%token<node> EXPORTS OPENS REQUIRES USES MODULE PERMITS SEALED VAR PROVIDES TO WITH OPEN RECORD TRANSITIVE YIELD
+%token<node> CharacterLiteral 
+%token<node> BooleanLiteral
+%token<node> IntegerLiteral
+%token<node> FloatingPointLiteral 
+%token<node> StringLiteral
+%token<node> TextBlock 
+%token<node> NullLiteral
+%token<node> LeftParenthesis  RightParenthesis  LeftCurlyBrace RightCurlyBrace LeftSquareBracket  RightSquareBracket
+%token<node> Semicolon Comma  Dot  AtSign 
+%token<node> Scope ellipsis 
+%token<node> ASSIGN GT LT EXCLAMATION TILDE QUESTIONMARK COLON ARROW EQUAL GE LE NOTEQUAL AND OR INC DEC ADD SUB MUL DIV BITAND BITOR CARET MOD LSHIFT RSHIFT URSHIFT ADD_ASSIGN SUB_ASSIGN MUL_ASSIGN DIV_ASSIGN AND_ASSIGN OR_ASSIGN XOR_ASSIGN MOD_ASSIGN LSHIFT_ASSIGN RSHIFT_ASSIGN URSHIFT_ASSIGN 
+%token<node> IdentifierChars
 
 %type<node> CompilationUnit  OrdinaryCompilationUnit  
 %type<node> ClassDeclaration  ClassBody ClassExtends  ClassModifier ClassModifierList ClassPermits
@@ -950,7 +950,7 @@ RelationalExpression: ShiftExpression
 | InstanceofExpression
 
 
-InstanceofExpression: RelationalExpression INSTANCEOF ReferenceType
+InstanceofExpression: RelationalExpression INSTANCEOF UnannReferenceType
 | RelationalExpression INSTANCEOF Pattern
 ;
 
@@ -1067,6 +1067,8 @@ TypeIdentifierKeywords: EXPORTS | OPENS | REQUIRES | USES | MODULE | PROVIDES | 
 
 Identifier :  IdentifierChars
 TypeIdentifier: IdentifierChars | TypeIdentifierKeywords
+ExpressionName: Identifier | ExpressionName Dot Identifier
+TypeName: TypeIdentifier
 MethodName: IdentifierChars | ContextualKeywords
 
 Literal : IntegerLiteral  {printf("%s\n", $$->val);}

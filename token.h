@@ -44,6 +44,21 @@
 #if YYDEBUG
 extern int yydebug;
 #endif
+/* "%code requires" blocks.  */
+#line 67 "parser.y"
+
+    #include <bits/stdc++.h>
+    #include <string>
+    #include <vector>
+    #include <cstdio>
+
+    struct Node;
+    using namespace std;
+    Node* createNode(char* value, vector<Node*> children);
+    Node* createNode(char* value);
+    int buildTree(Node* , int parentno , int co);
+
+#line 62 "parser.tab.h"
 
 /* Token kinds.  */
 #ifndef YYTOKENTYPE
@@ -186,14 +201,15 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 26 "parser.y"
+#line 80 "parser.y"
 
+    Node* node;
     char* str;
     int num;
     float float_val;
     char sym;
 
-#line 197 "parser.tab.h"
+#line 213 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
