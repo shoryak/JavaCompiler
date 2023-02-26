@@ -133,7 +133,6 @@ struct Node{
 %type<node> Literal
 
 %type<str> ContextualKeywords TypeIdentifierKeywords
-%type<str> DotId
 
 %start MethodInvocation
 
