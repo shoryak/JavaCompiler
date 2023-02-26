@@ -1,67 +1,71 @@
 %{
 #include<bits/stdc++.h>
+
 using namespace std;
-int lines=0;
+
+int lines = 0;
 int yyparse();
-extern "C" {
-        
-        int yylex(void);
-        int yyerror(char* s)
-        {
-            printf("ERROR: %s Line Number: %d\n",s,lines);
-            return 1;
-        }
+extern "C"
+{        
+    int yylex(void);
+    int yyerror(char* s)
+    {
+        printf("ERROR: %s Line Number: %d\n",s,lines);
+        return 1;
     }
+}
 extern FILE *yyin;
 extern FILE *yyout;
+
 template <typename T>
-T parser_string(string str){
+T parser_string(string str)
+{
     stringstream ss;
     ss << str;
     T result("");
     ss >> result;
     return result;
 }
-struct Node{
-        char* val;
-        vector<Node*> children;
-        char* data;
-    };
 
-    Node* root;
-    Node* createNode(char* value, vector<Node*> children)
-    {
-        Node* temp= new Node();
-        temp->val=value;
-        temp->children=children;
-        return temp;
-    }
-    Node* createNode(char* value)
-    {
-        Node* temp= new Node();
-        temp->val=value;
-        return temp;
-    }
-   
+struct Node
+{
+    char* val;
+    vector<Node*> children;
+    char* data;
+};
 
-    int buildTree(Node* node, int parentno, int co) 
-    {
-        if(node==NULL)
-        return co;
+Node* root;
 
-        int nodeno=co++;
-        printf(" node%d [label=\"%s\"]\n",nodeno,node->val);
-        if(parentno>=0) 
-            printf(" node%d -> node%d\n",parentno,nodeno);
-        
-        int n=node->children.size();
-        vector<Node*> children=node->children;
-        for(int i=0;i<n;i++)
-        {
-            co=buildTree(children[i],nodeno,co);
-        }
-        return co;
+Node* createNode(char* value, vector<Node*> children)
+{
+    Node* temp= new Node();
+    temp->val=value;
+    temp->children=children;
+    return temp;
+}
+
+Node* createNode(char* value)
+{
+    Node* temp = new Node();
+    temp->val = value;
+    return temp;
+}
+
+int buildTree(Node* node, int parentno, int co)
+{
+    if(node == NULL) return co;
+    int nodeno = co++;
+    printf(" node%d [label=\"%s\"]\n", nodeno, node->val);
+    if(parentno >= 0)
+        printf(" node%d -> node%d\n", parentno, nodeno);    
+    int n = node->children.size();
+    vector<Node*> children = node->children;
+    for(int i = 0; i < n; i++)
+    {
+        co = buildTree(children[i],nodeno,co);
     }
+    return co;
+}
 %}
 
 %code requires {
@@ -134,255 +138,279 @@ struct Node{
 
 %type<str> ContextualKeywords TypeIdentifierKeywords
 
-%start MethodInvocation
+%start CompilationUnit
 
 %%
 
-CompilationUnit: OrdinaryCompilationUnit { cout<<"abcd"<<endl; root= $$; buildTree(root,-1,0);}
-;
+CompilationUnit:    OrdinaryCompilationUnit
+                    {
+                        cout<<"abcd\n"; root= $$; buildTree(root,-1,0);
+                    }
+                    ;
 
-OrdinaryCompilationUnit: TopLevelClassOrInterfaceDeclarationList 
-;
+OrdinaryCompilationUnit:    TopLevelClassOrInterfaceDeclarationList
+                            ;
 
-TopLevelClassOrInterfaceDeclarationList: TopLevelClassOrInterfaceDeclaration
-{
-    vector<Node*> v;
-    v.push_back($1);
-    $$ = createNode("JAVA-PROGRAM" , v);
-}
-| TopLevelClassOrInterfaceDeclarationList TopLevelClassOrInterfaceDeclaration {
-    $$ = $1;
-    $$->children.push_back($2);
-}
-;
+TopLevelClassOrInterfaceDeclarationList:    TopLevelClassOrInterfaceDeclaration
+                                            {
+                                                vector<Node*> v;
+                                                v.push_back($1);
+                                                $$ = createNode("JAVA-PROGRAM" , v);
+                                            }
+                                            | TopLevelClassOrInterfaceDeclarationList TopLevelClassOrInterfaceDeclaration
+                                            {
+                                                $$ = $1;
+                                                $$->children.push_back($2);
+                                            }
+                                            ;
 
+TopLevelClassOrInterfaceDeclaration:    ClassDeclaration
+                                        ;
 
+ClassDeclaration:   NormalClassDeclaration
+                    ;
 
-TopLevelClassOrInterfaceDeclaration: ClassDeclaration
-;
+NormalClassDeclaration: CLASS TypeIdentifier ClassBody
+                        {
+                            vector<Node*> v;
+                            v.push_back($2);
+                            v.push_back($3);
+                            $$ = createNode("class" , v);
+                        }
+                        | ModifierList CLASS TypeIdentifier ClassBody
+                        {
+                            vector<Node*> v;
+                            for(auto i : $1->children){
+                                v.push_back(i);
+                            }
+                            v.push_back($3);
+                            v.push_back($4);
+                            $$ = createNode("class" , v);
+                        }
+                        ;
 
-ClassDeclaration: NormalClassDeclaration
-;
+Modifier:   PUBLIC
+            | PRIVATE
+            | STATIC
+            ;
 
-NormalClassDeclaration : CLASS TypeIdentifier     ClassBody{
-    vector<Node*> v;
-    v.push_back($2);
-    v.push_back($3);
-    $$ = createNode("class" , v);
-}
-| ModifierList CLASS TypeIdentifier     ClassBody{
-    vector<Node*> v;
-    for(auto i : $1->children){
-        v.push_back(i);
-    }
-    v.push_back($3);
-    v.push_back($4);
-    $$ = createNode("class" , v);
+ModifierList:   ModifierList Modifier
+                {
+                    $$ = $1 , $$->children.push_back($2);
+                }
+                | Modifier
+                {
+                    $$ = createNode("ModifierList");
+                    $$->children.push_back($1);
+                }
+                ;
 
-}
-;
+ClassBody:  LeftCurlyBrace ClassBodyDeclarationList RightCurlyBrace
+            {
+                $$ = $2;
+            }
+            | LeftCurlyBrace  RightCurlyBrace
+            {
+                $$ = createNode("ClassBody");
+            }
+            ;
 
+ClassBodyDeclarationList:   ClassBodyDeclaration
+                            {
+                                vector<Node*> v;
+                                v.push_back($1);
+                                $$ = createNode("ClassBody", v);
+                            }
+                            | ClassBodyDeclarationList ClassBodyDeclaration
+                            {
+                                $$ = $1;
+                                $$->children.push_back($2);
+                            }
+                            ;
 
-Modifier : PUBLIC | PRIVATE | STATIC  
-
-
-ModifierList : ModifierList Modifier  { $$ = $1 , $$->children.push_back($2);}
-| Modifier {
-    $$ = createNode("ModifierList");
-    $$->children.push_back($1);
-} 
-
-
-
-
-
-ClassBody: LeftCurlyBrace ClassBodyDeclarationList RightCurlyBrace  { $$ = $2;}
-| LeftCurlyBrace  RightCurlyBrace { $$ = createNode("ClassBody");
-}
-;
-
-ClassBodyDeclarationList : ClassBodyDeclaration{
-    vector<Node*> v;
-    v.push_back($1);
-    $$ = createNode("ClassBody" , v);
-}
-| ClassBodyDeclarationList ClassBodyDeclaration{
-    $$ = $1;
-    $$->children.push_back($2);
-}
-;
-
-
-
-ClassBodyDeclaration: ClassMemberDeclaration
-    |InstanceInitializer
-    |StaticInitializer
-    |ConstructorDeclaration
-;
+ClassBodyDeclaration:   ClassMemberDeclaration
+                        | InstanceInitializer
+                        | StaticInitializer
+                        | ConstructorDeclaration
+                        ;
 
 ClassMemberDeclaration: FieldDeclaration
-    | MethodDeclaration
-    | ClassDeclaration   
-    | Semicolon
-;
+                        | MethodDeclaration
+                        | ClassDeclaration
+                        | Semicolon
+                        ;
 
-FieldDeclaration: ModifierList UnannType VariableDeclaratorList Semicolon {
-    $$ = createNode("FieldDeclaration");
-    $$->children.push_back($1);
-    $$->children.push_back($2);
-    $$->children.push_back($3);
-    $$->children.push_back($4);
-}
-|  UnannType VariableDeclaratorList Semicolon {
-    $$ = createNode("FieldDeclaration");
-    $$->children.push_back($1);
-    $$->children.push_back($2);
-    $$->children.push_back($3);
-}
+FieldDeclaration:   ModifierList UnannType VariableDeclaratorList Semicolon
+                    {
+                        $$ = createNode("FieldDeclaration");
+                        $$->children.push_back($1);
+                        $$->children.push_back($2);
+                        $$->children.push_back($3);
+                        $$->children.push_back($4);
+                    }
+                    | UnannType VariableDeclaratorList Semicolon
+                    {
+                        $$ = createNode("FieldDeclaration");
+                        $$->children.push_back($1);
+                        $$->children.push_back($2);
+                        $$->children.push_back($3);
+                    }
+                    ;
 
+VariableDeclaratorList: VariableDeclarator
+                        {
+                            $$ = createNode("Variables");
+                            $$->children.push_back($1);
+                        }
+                        | VariableDeclaratorList Comma VariableDeclarator
+                        {
+                            $$ = $1;
+                            $$->children.push_back($3);
+                        }
+                        ;
 
-VariableDeclaratorList: VariableDeclarator{
-    $$ = createNode("Variables");
-    $$->children.push_back($1);
-} 
-| VariableDeclaratorList Comma VariableDeclarator{
-    $$ = $1;
-    $$->children.push_back($3);
-}
+VariableDeclarator: VariableDeclaratorId ASSIGN VariableInitializer
+                    {
+                        $$ = createNode("=" );
+                        $$->children.push_back($1);
+                        $$->children.push_back($3);
+                    }
+                    | VariableDeclaratorId
+                    ;
 
+VariableDeclaratorId:   Identifier Dims
+                        {
+                            $$= $1;
+                            $$->children.push_back($2);
+                        }
+                        | Identifier
+                        ;
 
-VariableDeclarator: VariableDeclaratorId ASSIGN VariableInitializer {
-    $$ = createNode("=" );
-    $$->children.push_back($1);
-    $$->children.push_back($3);
-}
-| VariableDeclaratorId 
-;
+VariableInitializer:    Expression
+                        | ArrayInitializer
+                        ;
 
+UnannType:  UnannPrimitiveType
+            | UnannReferenceType
+            ;
 
-VariableDeclaratorId: Identifier Dims {
-    $$= $1;
-    $$->children.push_back($2);
-}
-| Identifier 
-
-
-
-VariableInitializer: Expression
-| ArrayInitializer
-;
-
-UnannType: UnannPrimitiveType
-| UnannReferenceType
-;
 UnannPrimitiveType: NumericType
-| BOOLEAN
-;
+                    | BOOLEAN
+                    ;
 
 UnannReferenceType: UnannClassOrInterfaceType
-| TypeIdentifier
-| UnannArrayType
-;
+                    | TypeIdentifier
+                    | UnannArrayType
+                    ;
 
-UnannClassOrInterfaceType: UnannClassType
-;
+UnannClassOrInterfaceType:  UnannClassType
+                            ;
 
 UnannClassType: TypeIdentifier TypeArguments
-| UnannClassOrInterfaceType Dot TypeIdentifier TypeArguments
-| UnannClassOrInterfaceType Dot TypeIdentifier 
-;
-
-
+                | UnannClassOrInterfaceType Dot TypeIdentifier TypeArguments
+                | UnannClassOrInterfaceType Dot TypeIdentifier
+                ;
 
 UnannArrayType: UnannPrimitiveType Dims
-| UnannClassOrInterfaceType Dims
-| TypeIdentifier Dims
-;
+                | UnannClassOrInterfaceType Dims
+                | TypeIdentifier Dims
+                ;
 
+MethodDeclaration:  ModifierList MethodHeader MethodBody
+                    {
+                        vector<Node*> v;
+                        for(auto child: $1->children)
+                            v.push_back(child);
+                        v.push_back($2);
+                        v.push_back($3);
+                        $$ = createNode("MethodDeclaration" , v);
+                    }
+                    | MethodHeader MethodBody
+                    {
+                        vector<Node*> v;
+                        v.push_back($1);
+                        v.push_back($2);
+                        $$ = createNode("MethodDeclaration" , v);
+                    }
+                    ;
 
-MethodDeclaration: ModifierList MethodHeader MethodBody {
-    vector<Node*> v;
-    for(auto child : $1->children){
-        v.push_back(child);
-    }
-    v.push_back($2);
-    v.push_back($3);
-    $$ = createNode("MethodDeclaration" , v);
-}
-|  MethodHeader MethodBody{
-    vector<Node*> v;
-    v.push_back($1);
-    v.push_back($2);
-    $$ = createNode("MethodDeclaration" , v);
-}
+MethodHeader:   UnannType MethodDeclarator
+                {
+                    $$ = createNode("MethodHeader");
+                    $$->children.push_back($1);
+                    $$->children.push_back($2);
+                }
+                | VOID MethodDeclarator
+                {
+                    $$ = createNode("MethodHeader");
+                    $$->children.push_back($1);
+                    $$->children.push_back($2);
+                }
+                ;
 
+MethodDeclarator:   Identifier LeftParenthesis ReceiverParameter Comma RightParenthesis
+                    | Identifier LeftParenthesis RightParenthesis
+                    | Identifier LeftParenthesis ReceiverParameter Comma FormalParameterList RightParenthesis
+                    | Identifier LeftParenthesis FormalParameterList RightParenthesis
+                    | Identifier LeftParenthesis ReceiverParameter Comma RightParenthesis Dims
+                    | Identifier LeftParenthesis RightParenthesis Dims
+                    | Identifier LeftParenthesis ReceiverParameter Comma FormalParameterList RightParenthesis Dims
+                    | Identifier LeftParenthesis FormalParameterList RightParenthesis Dims
+                    ;
 
+ReceiverParameter:  UnannType THIS
+                    | UnannType Identifier Dot THIS
+                    ;
 
-MethodHeader:UnannType MethodDeclarator { $$ = createNode("MethodHeader");
-    $$->children.push_back($1);
-    $$->children.push_back($2);
-}
-| VOID MethodDeclarator {
-    $$ = createNode("MethodHeader");
-    $$->children.push_back($1);
-    $$->children.push_back($2);}
-;
+FormalParameterList:    FormalParameterList Comma FormalParameter
+                        | FormalParameter
+                        ;
 
+FormalParameter:    VariableModifierList UnannType VariableDeclaratorId
+                    | UnannType VariableDeclaratorId
+                    | VariableArityParameter
+                    ;
 
+VariableArityParameter: UnannType ellipsis Identifier
+                        | VariableModifierList UnannType ellipsis Identifier
+                        ;
 
-MethodDeclarator: Identifier LeftParenthesis ReceiverParameter Comma RightParenthesis 
-| Identifier LeftParenthesis RightParenthesis 
-| Identifier LeftParenthesis ReceiverParameter Comma FormalParameterList RightParenthesis 
-| Identifier LeftParenthesis FormalParameterList RightParenthesis 
-| Identifier LeftParenthesis ReceiverParameter Comma RightParenthesis Dims
-| Identifier LeftParenthesis RightParenthesis Dims
-| Identifier LeftParenthesis ReceiverParameter Comma FormalParameterList RightParenthesis Dims
-| Identifier LeftParenthesis FormalParameterList RightParenthesis Dims
+VariableModifierList:   VariableModifier
+                        | VariableModifierList VariableModifier
+                        ;
 
-ReceiverParameter: UnannType  THIS
-| UnannType Identifier Dot THIS
-
-
-FormalParameterList: FormalParameterList Comma FormalParameter | FormalParameter
-
-FormalParameter: VariableModifierList UnannType VariableDeclaratorId
-| UnannType VariableDeclaratorId
-| VariableArityParameter
-;
-
-VariableArityParameter:  UnannType  ellipsis Identifier
-| VariableModifierList UnannType  ellipsis Identifier
-
-VariableModifierList : VariableModifier| VariableModifierList VariableModifier 
-
-VariableModifier: FINAL
+VariableModifier:   FINAL
+                    ;
 
 MethodBody: Block
-| Semicolon
-;
+            | Semicolon
+            ;
 
-InstanceInitializer: Block
-;
+InstanceInitializer:    Block
+                        ;
 
-StaticInitializer: STATIC Block { $$ = createNode("StaticInitializer");
-$$->children.push_back($1);
-$$->children.push_back($2);}
-;
+StaticInitializer:  STATIC Block
+                    {
+                        $$ = createNode("StaticInitializer");
+                        $$->children.push_back($1);
+                        $$->children.push_back($2);
+                    }
+                    ;
 
-ConstructorDeclaration: ConstructorDeclarator ConstructorBody {
-    $$ = createNode("ConstructorDeclaration");
-    $$->children.push_back($1);
-    $$->children.push_back($2);
-}
-| ModifierList ConstructorDeclarator ConstructorBody {
-    $$ = createNode("ConstructorDeclaration");
-    $$->children.push_back($1);
-    $$->children.push_back($2);
-    $$->children.push_back($3);
-}
-;
-
-
+ConstructorDeclaration: ConstructorDeclarator ConstructorBody
+                        {
+                            $$ = createNode("ConstructorDeclaration");
+                            $$->children.push_back($1);
+                            $$->children.push_back($2);
+                        }
+                        | ModifierList ConstructorDeclarator ConstructorBody
+                        {
+                            $$ = createNode("ConstructorDeclaration");
+                            $$->children.push_back($1);
+                            $$->children.push_back($2);
+                            $$->children.push_back($3);
+                        }
+                        ;
 
 ConstructorDeclarator:  SimpleTypeName LeftParenthesis  RightParenthesis
 | SimpleTypeName LeftParenthesis ReceiverParameter Comma RightParenthesis
@@ -391,198 +419,237 @@ ConstructorDeclarator:  SimpleTypeName LeftParenthesis  RightParenthesis
 ;
 
 SimpleTypeName: TypeIdentifier
-;
+                ;
 
-
-ConstructorBody: LeftCurlyBrace  RightCurlyBrace {
-    createNode("ConstructorBody");
-}
-| LeftCurlyBrace ExplicitConstructorInvocation RightCurlyBrace {
-     createNode("ConstructorBody");
-     $$->children.push_back($2);
-}
-| LeftCurlyBrace  BlockStatements RightCurlyBrace{
-    createNode("ConstructorBody");
-     $$->children.push_back($2);
-}
-| LeftCurlyBrace ExplicitConstructorInvocation BlockStatements RightCurlyBrace {
-    $$ = createNode("ConstructorBody");
-    $$->children.push_back($2);
-    $$->children.push_back($3);
-}
-;
-
+ConstructorBody:    LeftCurlyBrace  RightCurlyBrace
+                    {
+                        createNode("ConstructorBody");
+                    }
+                    | LeftCurlyBrace ExplicitConstructorInvocation RightCurlyBrace
+                    {
+                        createNode("ConstructorBody");
+                        $$->children.push_back($2);
+                    }
+                    | LeftCurlyBrace  BlockStatements RightCurlyBrace
+                    {
+                        createNode("ConstructorBody");
+                        $$->children.push_back($2);
+                    }
+                    | LeftCurlyBrace ExplicitConstructorInvocation BlockStatements RightCurlyBrace
+                    {
+                        $$ = createNode("ConstructorBody");
+                        $$->children.push_back($2);
+                        $$->children.push_back($3);
+                    }
+                    ;
 
 ExplicitConstructorInvocation:  THIS LeftParenthesis RightParenthesis Semicolon
-| TypeArguments THIS LeftParenthesis RightParenthesis Semicolon
-| THIS LeftParenthesis ArgumentList RightParenthesis Semicolon
-| TypeArguments THIS LeftParenthesis ArgumentList RightParenthesis Semicolon
-| TypeArguments SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
-| SUPER LeftParenthesis RightParenthesis Semicolon
-| SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
-| TypeArguments SUPER LeftParenthesis  RightParenthesis Semicolon    
-| ExpressionName Dot TypeArguments SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
-| ExpressionName Dot TypeArguments SUPER LeftParenthesis RightParenthesis Semicolon
-| ExpressionName Dot SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
-| ExpressionName Dot SUPER LeftParenthesis RightParenthesis Semicolon     
-| Primary Dot  SUPER LeftParenthesis RightParenthesis Semicolon
-| Primary Dot TypeArguments SUPER LeftParenthesis RightParenthesis Semicolon
-| Primary Dot  SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
-| Primary Dot TypeArguments SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
-;
+                                | TypeArguments THIS LeftParenthesis RightParenthesis Semicolon
+                                | THIS LeftParenthesis ArgumentList RightParenthesis Semicolon
+                                | TypeArguments THIS LeftParenthesis ArgumentList RightParenthesis Semicolon
+                                | TypeArguments SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
+                                | SUPER LeftParenthesis RightParenthesis Semicolon
+                                | SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
+                                | TypeArguments SUPER LeftParenthesis  RightParenthesis Semicolon
+                                | ExpressionName Dot TypeArguments SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
+                                | ExpressionName Dot TypeArguments SUPER LeftParenthesis RightParenthesis Semicolon
+                                | ExpressionName Dot SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
+                                | ExpressionName Dot SUPER LeftParenthesis RightParenthesis Semicolon
+                                | Primary Dot  SUPER LeftParenthesis RightParenthesis Semicolon
+                                | Primary Dot TypeArguments SUPER LeftParenthesis RightParenthesis Semicolon
+                                | Primary Dot  SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
+                                | Primary Dot TypeArguments SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
+                                ;
 
+ArrayInitializer:   LeftCurlyBrace  Comma RightCurlyBrace
+                    {
+                        $$ = createNode("ArrayInitializer");
+                        $$->children.push_back($2);
+                    }
+                    | LeftCurlyBrace  RightCurlyBrace
+                    {
+                        $$=createNode("ArrayInitializer");
+                    }
+                    | LeftCurlyBrace VariableInitializerList Comma RightCurlyBrace
+                    {
+                        $$=createNode("ArrayInitializer");
+                        $$->children.push_back($2);
+                        $$->children.push_back($3);
+                    }
+                    | LeftCurlyBrace VariableInitializerList  RightCurlyBrace
+                    {
+                        $$=createNode("ArrayInitializer");
+                        $$->children.push_back($2);
+                    }
+                    ;
 
-ArrayInitializer: LeftCurlyBrace  Comma RightCurlyBrace {
-    $$ = createNode("ArrayInitializer");
-    $$->children.push_back($2);
-}
-| LeftCurlyBrace  RightCurlyBrace {$$=createNode("ArrayInitializer");}
-| LeftCurlyBrace VariableInitializerList Comma RightCurlyBrace {
-    $$=createNode("ArrayInitializer");
-    $$->children.push_back($2);
-    $$->children.push_back($3);
-}
-| LeftCurlyBrace VariableInitializerList  RightCurlyBrace {
-    $$=createNode("ArrayInitializer");
-    $$->children.push_back($2);
-}
+VariableInitializerList:    VariableInitializer
+                            | VariableInitializerList Comma VariableInitializer
+                            {
+                                $$= $1;
+                                $$->children.push_back($3);
+                            }
+                            ;
 
+Block:  LeftCurlyBrace BlockStatements RightCurlyBrace
+        {
+            $$ = $2;
+        }
+        | LeftCurlyBrace RightCurlyBrace
+        {
+            $$ = createNode("Block");
+        }
+        ;
 
-VariableInitializerList: VariableInitializer
- | VariableInitializerList Comma VariableInitializer {
-     $$= $1;
-     $$->children.push_back($3);
-     
- }
-
-
-Block: LeftCurlyBrace BlockStatements RightCurlyBrace { $$ = $2;}
-|  LeftCurlyBrace RightCurlyBrace { $$ = createNode("Block");}
-
-BlockStatements: BlockStatements BlockStatement {
-    $$ = $1;
-    $$->children.push_back($2);
-}
-| BlockStatement{
-    $$ = createNode("Block");
-    $$->children.push_back($1);
-}
+BlockStatements:    BlockStatements BlockStatement
+                    {
+                        $$ = $1;
+                        $$->children.push_back($2);
+                    }
+                    | BlockStatement
+                    {
+                        $$ = createNode("Block");
+                        $$->children.push_back($1);
+                    }
+                    ;
 
 BlockStatement: LocalClassOrInterfaceDeclaration
-| LocalVariableDeclarationStatement
-| Statement { }
-;
-LocalClassOrInterfaceDeclaration: ClassDeclaration
-;
+                | LocalVariableDeclarationStatement
+                | Statement
+                {
+                }
+                ;
 
+LocalClassOrInterfaceDeclaration:   ClassDeclaration
+                                    ;
 
-LocalVariableDeclarationStatement: LocalVariableDeclaration Semicolon
+LocalVariableDeclarationStatement:  LocalVariableDeclaration Semicolon
+                                    ;
 
-LocalVariableDeclaration: LocalVariableType 
-| VariableModifierList LocalVariableType {
-    $$ = createNode("LocalVariableDeclaration");
-    $$->children.push_back($1);
-    $$->children.push_back($2);
-}
-| LocalVariableType VariableDeclaratorList {
-    $$ = createNode("LocalVariableDeclaration");
-    $$->children.push_back($1);
-    $$->children.push_back($2);
-}
-| VariableModifierList LocalVariableType VariableDeclaratorList {
-    $$ = createNode("LocalVariableDeclaration");
-    $$->children.push_back($1);
-    $$->children.push_back($2);
-    $$->children.push_back($3);
-    
-}
+LocalVariableDeclaration:   LocalVariableType
+                            | VariableModifierList LocalVariableType
+                            {
+                                $$ = createNode("LocalVariableDeclaration");
+                                $$->children.push_back($1);
+                                $$->children.push_back($2);
+                            }
+                            | LocalVariableType VariableDeclaratorList
+                            {
+                                $$ = createNode("LocalVariableDeclaration");
+                                $$->children.push_back($1);
+                                $$->children.push_back($2);
+                            }
+                            | VariableModifierList LocalVariableType VariableDeclaratorList
+                            {
+                                $$ = createNode("LocalVariableDeclaration");
+                                $$->children.push_back($1);
+                                $$->children.push_back($2);
+                                $$->children.push_back($3);
+                            }
+                            ;
 
+LocalVariableType:  UnannType
+                    | VAR
+                    ;
 
-
-LocalVariableType: UnannType | VAR
-
-Statement: StatementWithoutTrailingSubstatement
-| LabeledStatement
-| IfThenStatement
-| IfThenElseStatement
-| WhileStatement
-| ForStatement
-;
+Statement:  StatementWithoutTrailingSubstatement
+            | LabeledStatement
+            | IfThenStatement
+            | IfThenElseStatement
+            | WhileStatement
+            | ForStatement
+            ;
 
 StatementNoShortIf: StatementWithoutTrailingSubstatement
-| IfThenElseStatementNoShortIf
-| WhileStatementNoShortIf
-| ForStatementNoShortIf
-;
+                    | IfThenElseStatementNoShortIf
+                    | WhileStatementNoShortIf
+                    | ForStatementNoShortIf
+                    ;
 
-StatementWithoutTrailingSubstatement: Block
-| EmptyStatement
-| ExpressionStatement
-| AssertStatement
-| BreakStatement
-| ContinueStatement
-| ReturnStatement
-| YieldStatement
-;
+StatementWithoutTrailingSubstatement:   Block
+                                        | EmptyStatement
+                                        | ExpressionStatement
+                                        | AssertStatement
+                                        | BreakStatement
+                                        | ContinueStatement
+                                        | ReturnStatement
+                                        | YieldStatement
+                                        ;
 
 EmptyStatement: Semicolon
+                ;
 
-LabeledStatement: Identifier COLON Statement {
-    $$ =createNode("LabeledStatement");
-    $$->children.push_back($1);
-    $$->children.push_back($2);
-    $$->children.push_back($3);
-}
+LabeledStatement:   Identifier COLON Statement
+                    {
+                        $$ =createNode("LabeledStatement");
+                        $$->children.push_back($1);
+                        $$->children.push_back($2);
+                        $$->children.push_back($3);
+                    }
+                    ;
 
-ExpressionStatement: StatementExpression Semicolon {
-    $$ = createNode("ExpressionStatement");
-    $$->children.push_back($1);
-}
+ExpressionStatement:    StatementExpression Semicolon
+                        {
+                            $$ = createNode("ExpressionStatement");
+                            $$->children.push_back($1);
+                        }
+                        ;
 
-StatementExpression: Assignment { $$ = $1;}
-| PreIncrementExpression
-| PreDecrementExpression
-| PostIncrementExpression
-| PostDecrementExpression
-| MethodInvocation
-| ClassInstanceCreationExpression
-;
+StatementExpression:    Assignment
+                        {
+                            $$ = $1;
+                        }
+                        | PreIncrementExpression
+                        | PreDecrementExpression
+                        | PostIncrementExpression
+                        | PostDecrementExpression
+                        | MethodInvocation
+                        | ClassInstanceCreationExpression
+                        ;
 
-IfThenStatement: IF LeftParenthesis Expression RightParenthesis Statement {
-    $$ = createNode("IfThenStatement");
-    $$->children.push_back($3);
-    $$->children.push_back($5);
-}
+IfThenStatement:    IF LeftParenthesis Expression RightParenthesis Statement
+                    {
+                        $$ = createNode("IfThenStatement");
+                        $$->children.push_back($3);
+                        $$->children.push_back($5);
+                    }
+                    ;
 
-IfThenElseStatement: IF LeftParenthesis Expression RightParenthesis StatementNoShortIf ELSE Statement {
-    $$ = createNode("IfThenElseStatement");
-    $$->children.push_back($3);
-    $$->children.push_back($5);
-    $$->children.push_back($7); 
-}
+IfThenElseStatement:    IF LeftParenthesis Expression RightParenthesis StatementNoShortIf ELSE Statement
+                        {
+                            $$ = createNode("IfThenElseStatement");
+                            $$->children.push_back($3);
+                            $$->children.push_back($5);
+                            $$->children.push_back($7);
+                        }
+                        ;
 
-IfThenElseStatementNoShortIf: IF LeftParenthesis Expression RightParenthesis StatementNoShortIf ELSE StatementNoShortIf{
-    $$ = createNode("IfThenElseStatementNoShortIf");
-    $$->children.push_back($3);
-    $$->children.push_back($5);
-     $$->children.push_back($7);
-}
+IfThenElseStatementNoShortIf:   IF LeftParenthesis Expression RightParenthesis StatementNoShortIf ELSE StatementNoShortIf
+                                {
+                                    $$ = createNode("IfThenElseStatementNoShortIf");
+                                    $$->children.push_back($3);
+                                    $$->children.push_back($5);
+                                    $$->children.push_back($7);
+                                }
+                                ;
 
-AssertStatement: ASSERT Expression Semicolon {
-    $$ = createNode("Assert");
-     $$->children.push_back($2);
-      $$->children.push_back($3);
-    
-}
-| ASSERT Expression COLON Expression Semicolon {
-    $$ = createNode("Assert");
-    $$->children.push_back($2);
-    $$->children.push_back($4);
-}
+AssertStatement:    ASSERT Expression Semicolon
+                    {
+                        $$ = createNode("Assert");
+                        $$->children.push_back($2);
+                        $$->children.push_back($3);
+                    }
+                    | ASSERT Expression COLON Expression Semicolon
+                    {
+                        $$ = createNode("Assert");
+                        $$->children.push_back($2);
+                        $$->children.push_back($4);
+                    }
+                    ;
 
-
-WhileStatement: WHILE LeftParenthesis Expression RightParenthesis Statement {
-    $$ = createNode("While");
+WhileStatement: WHILE LeftParenthesis Expression RightParenthesis Statement
+                {
+                    $$ = createNode("While");
     $$->children.push_back($3);
     $$->children.push_back($5);
 }
