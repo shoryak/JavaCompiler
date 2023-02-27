@@ -92,85 +92,85 @@ Literals {DecimalIntegerLiteral}|{HexIntegerLiteral}|{OctalIntegerLiteral}|{Floa
 \n {linenum++;}
 
 
-"abstract" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return ABSTRACT ;}
-"continue" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return CONTINUE ;}
-"for" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return FOR ;}
-"new" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return NEW ;}
-"switch" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return SWITCH ;}
-"assert" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return ASSERT ;}
-"default" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return DEFAULT ;}
-"if" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return IF ;}
-"package" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return PACKAGE ;}
-"synchronized" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return SYNCHRONIZED ;}
-"boolean" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return BOOLEAN ;}
-"do" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return DO ;}
-"goto" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return GOTO ;}
-"private" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return PRIVATE ;}
-"this" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return THIS ;}
-"break" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return BREAK ;}
-"double" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return DOUBLE ;}
-"implements" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return IMPLEMENTS ;}
-"protected" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return PROTECTED ;}
-"throw" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return THROW ;}
-"byte" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return BYTE ;}
-"else" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return ELSE ;}
-"import" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return IMPORT ;}
-"public" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return PUBLIC ;}
-"throws" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return THROWS ;}
-"case" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return CASE ;}
-"enum" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return ENUM ;}
-"instanceof" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return INSTANCEOF ;}
-"return" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return RETURN ;}
-"transient" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return TRANSIENT ;}
-"catch" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return CATCH ;}
-"extends" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return EXTENDS ;}
-"int" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return INT ;}
-"short" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return SHORT ;}
-"try" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return TRY ;}
-"char" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return CHAR ;}
-"final" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return FINAL ;}
-"interface" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return INTERFACE ;}
-"static" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return STATIC ;}
-"void" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return VOID ;}
-"class" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return CLASS ;}
-"finally" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return FINALLY ;}
-"long" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return LONG ;}
-"strictfp" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return STRICTFP ;}
-"volatile" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return VOLATILE ;}
-"const" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return CONST ;}
-"float" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return FLOAT ;}
-"native" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return NATIVE ;}
-"super" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return SUPER ;}
-"while" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return WHILE ;}
-"_" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return UNDERSCORE ;}
+"abstract" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return ABSTRACT ;}
+"continue" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return CONTINUE ;}
+"for" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return FOR ;}
+"new" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return NEW ;}
+"switch" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return SWITCH ;}
+"assert" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return ASSERT ;}
+"default" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return DEFAULT ;}
+"if" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return IF ;}
+"package" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return PACKAGE ;}
+"synchronized" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return SYNCHRONIZED ;}
+"boolean" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return BOOLEAN ;}
+"do" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return DO ;}
+"goto" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return GOTO ;}
+"private" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return PRIVATE ;}
+"this" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return THIS ;}
+"break" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return BREAK ;}
+"double" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return DOUBLE ;}
+"implements" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return IMPLEMENTS ;}
+"protected" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return PROTECTED ;}
+"throw" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return THROW ;}
+"byte" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return BYTE ;}
+"else" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return ELSE ;}
+"import" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return IMPORT ;}
+"public" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return PUBLIC ;}
+"throws" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return THROWS ;}
+"case" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return CASE ;}
+"enum" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return ENUM ;}
+"instanceof" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return INSTANCEOF ;}
+"return" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return RETURN ;}
+"transient" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return TRANSIENT ;}
+"catch" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return CATCH ;}
+"extends" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return EXTENDS ;}
+"int" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return INT ;}
+"short" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return SHORT ;}
+"try" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return TRY ;}
+"char" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return CHAR ;}
+"final" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return FINAL ;}
+"interface" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return INTERFACE ;}
+"static" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return STATIC ;}
+"void" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return VOID ;}
+"class" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return CLASS ;}
+"finally" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return FINALLY ;}
+"long" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return LONG ;}
+"strictfp" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return STRICTFP ;}
+"volatile" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return VOLATILE ;}
+"const" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return CONST ;}
+"float" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return FLOAT ;}
+"native" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return NATIVE ;}
+"super" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return SUPER ;}
+"while" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return WHILE ;}
+"_" { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return UNDERSCORE ;}
 
-"exports"   { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return EXPORTS; }
-"opens"     { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return OPENS; }
-"requires"  { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return REQUIRES; }
-"uses"      { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return USES; }
-"module"    { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return MODULE; }
-"permits"   { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return PERMITS; }
-"sealed"    { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return SEALED; }
-"var"       { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return VAR; }
-"provides"  { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return PROVIDES; }
-"to"        { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return TO; }
-"with"      { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return WITH; }
-"open"      { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return OPEN; }
-"record"    { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return RECORD; }
-"transitive"    { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return TRANSITIVE; }
+"exports"   { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return EXPORTS; }
+"opens"     { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return OPENS; }
+"requires"  { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return REQUIRES; }
+"uses"      { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return USES; }
+"module"    { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return MODULE; }
+"permits"   { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return PERMITS; }
+"sealed"    { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return SEALED; }
+"var"       { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return VAR; }
+"provides"  { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return PROVIDES; }
+"to"        { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return TO; }
+"with"      { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return WITH; }
+"open"      { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return OPEN; }
+"record"    { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return RECORD; }
+"transitive"    { string str="Keyword"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return TRANSITIVE; }
 
-"(" { string str="Separator"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return LeftParenthesis;}
-")" {   string str="Separator"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return RightParenthesis;}
-"{" {   string str="Separator"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return LeftCurlyBrace ;}
-"}" {   string str="Separator"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return RightCurlyBrace; }
-"[" { string str="Separator"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return LeftSquareBracket;}
-"]" { string str="Separator"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return RightSquareBracket;}
-";" { string str="Separator"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return Semicolon;}
-"," { string str="Separator"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return Comma;}
-"." { string str="Separator"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return Dot;}
-"..." { string str="Separator"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return ellipsis;}
-"@" { string str="Separator"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return AtSign;}
-"::" { string str="Separator"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);1++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return Scope;}
+"(" { string str="Separator"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return LeftParenthesis;}
+")" {   string str="Separator"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return RightParenthesis;}
+"{" {   string str="Separator"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return LeftCurlyBrace ;}
+"}" {   string str="Separator"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return RightCurlyBrace; }
+"[" { string str="Separator"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return LeftSquareBracket;}
+"]" { string str="Separator"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return RightSquareBracket;}
+";" { string str="Separator"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return Semicolon;}
+"," { string str="Separator"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return Comma;}
+"." { string str="Separator"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return Dot;}
+"..." { string str="Separator"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return ellipsis;}
+"@" { string str="Separator"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return AtSign;}
+"::" { string str="Separator"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return Scope;}
 
 "=" { yylval.node = createNode(strdup(yytext)); return ASSIGN ;}
 ">" { yylval.node = createNode(strdup(yytext)); return GT ;}
@@ -219,15 +219,23 @@ Literals {DecimalIntegerLiteral}|{HexIntegerLiteral}|{OctalIntegerLiteral}|{Floa
     mp2[yytext]++; 
     if(mp2[yytext]!=1){} else v.push_back(yytext);
     string str;
-    for(int i=1;i<len(yytext)-1;i++) str.push_back(yytext[i]);
-    yylval.node = createNode(strdup(str));
+    for(int i=1;i<strlen(yytext)-1;i++) str.push_back(yytext[i]);
+    yylval.node = createNode(strdup(const_cast<char*>(str.c_str())));
     cout<<"abcd"<<endl;
     return StringLiteral;
 }
 
 
 
-(\"\"\")[ ]*([\n\r]|[\r][\n])([^\\]|(\\\\))*(\"\"\") {mp1[yytext]="Literal";mp2[yytext]++;if(mp2[yytext]!=1){} else v.push_back(yytext); string str="Identifier"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return TextBlock;}
+
+
+{DecimalIntegerLiteral}|{HexIntegerLiteral}|{OctalIntegerLiteral}|{BinaryIntegerLiteral} {string str="Literal"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return IntegerLiteral; }
+{FloatingPointLiteral} {string str="Literal"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return FloatingPointLiteral;}
+{BooleanLiteral} {string str="Literal"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return BooleanLiteral;}
+{CharLiteral} {string str="Literal"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return CharacterLiteral;}
+{NullLiteral} {string str="Literal"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return NullLiteral;}
+
+(\"\"\")[ ]*([\n\r]|[\r][\n])([^\\]|(\\\\))*(\"\"\") {mp1[yytext]="Literal";mp2[yytext]++;if(mp2[yytext]!=1){} else v.push_back(yytext); string str="Identifier"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return TextBlock;}
 
 
 [\'][\\][\'] {cout<<yytext<<" "<<" Line number is "<<yylineno<< " Illegal Character is "<<yytext[0]<<endl; mp1[yytext]="Illegal";mp2[yytext]++;}
@@ -239,20 +247,20 @@ Literals {DecimalIntegerLiteral}|{HexIntegerLiteral}|{OctalIntegerLiteral}|{Floa
     mp1[yytext]="Literal";
     mp2[yytext]++; 
     if(mp2[yytext]!=1){} else v.push_back(yytext);
-    string str="Literal"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ;
+    string str="Literal"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ;
     return CharacterLiteral;
 
 }
 
 
-{DecimalIntegerLiteral}|{HexIntegerLiteral}|{OctalIntegerLiteral}|{BinaryIntegerLiteral} {string str="Literal"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return IntegerLiteral; }
-{FloatingPointLiteral} {string str="Literal"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return FloatingPointLiteral;}
-{BooleanLiteral} {string str="Literal"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return BooleanLiteral;}
-{CharLiteral} {string str="Literal"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return CharacterLiteral;}
-{NullLiteral} {string str="Literal"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ; return NullLiteral;}
+{DecimalIntegerLiteral}|{HexIntegerLiteral}|{OctalIntegerLiteral}|{BinaryIntegerLiteral} {string str="Literal"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return IntegerLiteral; }
+{FloatingPointLiteral} {string str="Literal"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return FloatingPointLiteral;}
+{BooleanLiteral} {string str="Literal"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return BooleanLiteral;}
+{CharLiteral} {string str="Literal"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return CharacterLiteral;}
+{NullLiteral} {string str="Literal"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ; return NullLiteral;}
 
 
-[a-zA-Z$_]+[$_a-zA-Z0-9]* {mp1[yytext]="Identifier";mp2[yytext]++;if(mp2[yytext]!=1){} else v.push_back(yytext); string str="Identifier"; str.push_back('_');str.push_back('_'); for(int i=0;i<len(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(str)) ;return IdentifierChars;}
+[a-zA-Z$_]+[$_a-zA-Z0-9]* {mp1[yytext]="Identifier";mp2[yytext]++;if(mp2[yytext]!=1){} else v.push_back(yytext); string str="Identifier"; str.push_back('_');str.push_back('_'); for(int i=0;i<strlen(yytext);i++){str.push_back(yytext[i]);} yylval.node = createNode(strdup(const_cast<char*>(str.c_str()))) ;return IdentifierChars;}
 
 
 . {cout<<yytext<<" "<<" Line number is "<<yylineno<< " Illegal Character is "<<yytext[0]<<endl; mp1[yytext]="Illegal";mp2[yytext]++;}
