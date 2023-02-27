@@ -153,7 +153,11 @@ void list_concat(vector<Node*>& s, const vector<Node*>& t) {
 
 CompilationUnit:    OrdinaryCompilationUnit
                     {
-                        root= $$; buildTree(root,-1,0);
+                        root= $$;
+                        freopen("graph.dot", "w", stdout);
+                        printf("digraph G {\n");
+                        buildTree(root,-1,0);
+                        printf("}\n");
                     }
                     ;
 
@@ -190,10 +194,6 @@ NormalClassDeclaration: CLASS TypeIdentifier ClassBody
                         {
                             vector<Node*> v;
                             list_concat(v, $1->children);
-                            // for(auto child: $1->children)
-                            // {
-                            //     v.push_back(child);
-                            // }
                             v.push_back($3);
                             v.push_back($4);
                             $$ = createNode("class" , v);
@@ -281,7 +281,7 @@ VariableDeclaratorList: VariableDeclarator
 
 VariableDeclarator: VariableDeclaratorId ASSIGN VariableInitializer
                     {
-                        $$ = createNode("=" );
+                        $$ = createNode("=");
                         $$->children.push_back($1);
                         $$->children.push_back($3);
                     }
@@ -290,7 +290,9 @@ VariableDeclarator: VariableDeclaratorId ASSIGN VariableInitializer
 
 VariableDeclaratorId:   Identifier Dims
                         {
-                            $$ = $1;
+                            $$ = createNode("VariableDeclaratorId");
+                            $$->children.push_back($1);
+                            $$->children.push_back($2);
                         }
                         | Identifier
                         ;
@@ -1165,10 +1167,6 @@ ClassLiteral:   TypeName Dot CLASS {
                 }
                 ;
 
-LeftRightSquareList:    LeftSquareBracket RightSquareBracket
-                        | LeftRightSquareList LeftSquareBracket RightSquareBracket
-                        ;
-
 ClassInstanceCreationExpression:    UnqualifiedClassInstanceCreationExpression
                                     | ExpressionName Dot UnqualifiedClassInstanceCreationExpression
                                     {
@@ -1889,14 +1887,19 @@ ArrayType:  UnannArrayType
             ;
 
 Dims:   LeftSquareBracket RightSquareBracket
-        | LeftSquareBracket RightSquareBracket LeftRightSquareList
+        | Dims LeftSquareBracket RightSquareBracket
         ;
 
-TypeBound:  EXTENDS UnannClassOrInterfaceType {
-                    $$ = createNode("TypeBound");
-                    $$->children.push_back($1);
-                    $$->children.push_back($2);
-}
+LeftRightSquareList:    LeftSquareBracket RightSquareBracket
+                        | LeftRightSquareList LeftSquareBracket RightSquareBracket
+                        ;
+
+TypeBound:  EXTENDS UnannClassOrInterfaceType
+            {
+                $$ = createNode("TypeBound");
+                $$->children.push_back($1);
+                $$->children.push_back($2);
+            }
             ;
 
 TypeArguments:  LT TypeArgumentList GT {
@@ -1929,16 +1932,17 @@ Wildcard:   QUESTIONMARK
             }
             ;
 
-WildcardBounds: EXTENDS UnannReferenceType {
-                $$=createNode("WildcardBounds");
-                $$->children.push_back($1);
-                $$->children.push_back($2);
-}
-                | SUPER UnannReferenceType {
-                               
-                $$=createNode("WildcardBounds");;
-                $$->children.push_back($1);
-                $$->children.push_back($2);
+WildcardBounds: EXTENDS UnannReferenceType
+                {
+                    $$=createNode("WildcardBounds");
+                    $$->children.push_back($1);
+                    $$->children.push_back($2);
+                }
+                | SUPER UnannReferenceType
+                {
+                    $$=createNode("WildcardBounds");;
+                    $$->children.push_back($1);
+                    $$->children.push_back($2);
                 }
                 ;
 

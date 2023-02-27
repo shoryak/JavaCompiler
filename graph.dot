@@ -1,0 +1,65 @@
+digraph G {
+ node0 [label="JAVA-PROGRAM"]
+ node1 [label="class"]
+ node0 -> node1
+ node2 [label="public"]
+ node1 -> node2
+ node3 [label="ArrayProgram"]
+ node1 -> node3
+ node4 [label="ClassBody"]
+ node1 -> node4
+ node5 [label="MethodDeclaration"]
+ node4 -> node5
+ node6 [label="public"]
+ node5 -> node6
+ node7 [label="static"]
+ node5 -> node7
+ node8 [label="MethodHeader"]
+ node5 -> node8
+ node9 [label="void"]
+ node8 -> node9
+ node10 [label="MethodDeclarator"]
+ node8 -> node10
+ node11 [label="main"]
+ node10 -> node11
+ node12 [label="FormalParameter"]
+ node10 -> node12
+ node13 [label="UnannArrayType"]
+ node12 -> node13
+ node14 [label="String"]
+ node13 -> node14
+ node15 [label="["]
+ node13 -> node15
+ node16 [label="args"]
+ node12 -> node16
+ node17 [label="Block"]
+ node5 -> node17
+ node18 [label="LocalVariableDeclaration"]
+ node17 -> node18
+ node19 [label="int"]
+ node18 -> node19
+ node20 [label="Variables"]
+ node18 -> node20
+ node21 [label="="]
+ node20 -> node21
+ node22 [label="VariableDeclaratorId"]
+ node21 -> node22
+ node23 [label="numbers"]
+ node22 -> node23
+ node24 [label="["]
+ node22 -> node24
+ node25 [label="ArrayInitializer"]
+ node21 -> node25
+ node26 [label="VariableInitializerList"]
+ node25 -> node26
+ node27 [label="2"]
+ node26 -> node27
+ node28 [label="3"]
+ node26 -> node28
+ node29 [label="5"]
+ node26 -> node29
+ node30 [label="7"]
+ node26 -> node30
+ node31 [label="11"]
+ node26 -> node31
+}
