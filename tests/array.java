@@ -9,6 +9,6 @@ public class ArrayProgram {
     }
     public class Hello {
         int x = 42;
-        int y = 84;
+        int y = 84, z = 10;
     }
 }

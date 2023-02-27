@@ -245,24 +245,31 @@ FieldDeclaration:   ModifierList UnannType VariableDeclaratorList Semicolon
                         $$->add_child($1);
                         $$->add_child($2);
                         $$->add_child($3);
+                        $$->add_child($4);
                     }
                     | UnannType VariableDeclaratorList Semicolon
                     {
                         $$ = createNode("FieldDeclaration");
                         $$->add_child($1);
                         $$->add_child($2);
+                        $$->add_child($3);
                     }
                     ;
 
 VariableDeclaratorList: VariableDeclarator
-                        {
-                            $$ = createNode("Variables");
-                            $$->add_child($1);
-                        }
                         | VariableDeclaratorList Comma VariableDeclarator
                         {
-                            $$ = $1;
-                            $$->add_child($3);
+                            if(strcmp($1->value, "Variables") == 0)
+                            {
+                                $$ = $1;
+                                $$->add_child($3);
+                            }
+                            else
+                            {
+                                $$ = createNode("Variables");
+                                $$->add_child($1);
+                                $$->add_child($3);
+                            }
                         }
                         ;
 
