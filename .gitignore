@@ -3,5 +3,7 @@
 *.out
 *.output
 *.svg
+*.ps
+*.dot
 lex.yy.c
 parser.tab.*
