@@ -258,14 +258,12 @@ FieldDeclaration:   ModifierList UnannType VariableDeclaratorList Semicolon
                         $$->children.push_back($1);
                         $$->children.push_back($2);
                         $$->children.push_back($3);
-                        $$->children.push_back($4);
                     }
                     | UnannType VariableDeclaratorList Semicolon
                     {
                         $$ = createNode("FieldDeclaration");
                         $$->children.push_back($1);
                         $$->children.push_back($2);
-                        $$->children.push_back($3);
                     }
                     ;
 
