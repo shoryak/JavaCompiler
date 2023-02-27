@@ -1,7 +1,7 @@
 %{
-#include<bits/stdc++.h>
-
-using namespace std;
+#include <vector>
+#include <cstdio>
+#include <cstring>
 
 int lines = 0;
 int yyparse();
@@ -17,37 +17,33 @@ extern "C"
 extern FILE *yyin;
 extern FILE *yyout;
 
-template <typename T>
-T parser_string(string str)
-{
-    stringstream ss;
-    ss << str;
-    T result("");
-    ss >> result;
-    return result;
-}
-
 struct Node
 {
     char* value;
-    vector<Node*> children;
+    std::vector<Node*> children;
+    Node(char* value, std::vector<Node*> children): value{value}, children{children} {}
+    Node(char* value): value{value}, children{std::vector<Node*>()} {}
+    void add_child(Node* nd)
+    {
+        children.push_back(nd);
+    }
+    void add_children(Node* nd)
+    {
+        for(auto& child: nd->children)
+            children.push_back(child);
+    }
 };
 
 Node* root;
 
-Node* createNode(char* value, vector<Node*> children)
+Node* createNode(const char* value, std::vector<Node*> children)
 {
-    Node* temp= new Node();
-    temp->value = value;
-    temp->children = children;
-    return temp;
+    return new Node(strdup(value), children);
 }
 
-Node* createNode(char* value)
+Node* createNode(const char* value)
 {
-    Node* temp = new Node();
-    temp->value = value;
-    return temp;
+    return new Node(strdup(value));
 }
 
 int buildTree(Node* node, int parentno, int co)
@@ -58,35 +54,31 @@ int buildTree(Node* node, int parentno, int co)
     if(parentno >= 0)
         printf(" node%d -> node%d\n", parentno, nodeno);    
     int n = node->children.size();
-    vector<Node*> children = node->children;
+    std::vector<Node*> children = node->children;
     for(int i = 0; i < n; i++)
     {
-        co = buildTree(children[i],nodeno,co);
+        co = buildTree(children[i], nodeno, co);
     }
     return co;
 }
 
-void list_concat(vector<Node*>& s, const vector<Node*>& t) {
+void list_concat(std::vector<Node*>& s, const std::vector<Node*>& t) {
     for(auto mem: t)
     {
         s.push_back(mem);
-    
     }
 }
 %}
 
 %code requires {
-    #include <bits/stdc++.h>
-    #include <string>
     #include <vector>
     #include <cstdio>
-
+    #include <cstring>
     struct Node;
-    using namespace std;
-    Node* createNode(char* value, vector<Node*> children);
-    Node* createNode(char* value);
+    Node* createNode(const char* value, std::vector<Node*> children);
+    Node* createNode(const char* value);
     int buildTree(Node*, int parentno , int co);
-    void list_concat(vector<Node*>& s, const vector<Node*>& t);
+    void list_concat(std::vector<Node*>& s, const std::vector<Node*>& t);
 }
 
 %union {
@@ -118,8 +110,8 @@ void list_concat(vector<Node*>& s, const vector<Node*>& t) {
 %type<node> TypeIdentifier 
 %type<node> ThrowStatement RelationalExpression 
 %type<node> TopLevelClassOrInterfaceDeclarationList TopLevelClassOrInterfaceDeclaration NormalClassDeclaration 
-%type<node>  ClassBodyDeclaration  ClassBodyDeclarationList ClassMemberDeclaration FieldDeclaraFieldModifierList FieldDeclaration VariableDeclaratorList
-%type<node>  VariableDeclarator VariableDeclaratorId VariableInitializer UnannType UnannPrimitiveType UnannReferenceType
+%type<node> ClassBodyDeclaration ClassBodyDeclarationList ClassMemberDeclaration FieldDeclaraFieldModifierList FieldDeclaration VariableDeclaratorList
+%type<node> VariableDeclarator VariableDeclaratorId VariableInitializer UnannType UnannPrimitiveType UnannReferenceType
 %type<node> UnannClassOrInterfaceType UnannClassType UnannTypeVariable UnannArrayType MethodDeclaration MethodModifierList
 %type<node> MethodModifier MethodHeader Result MethodDeclarator ReceiverParameter FormalParameterList  FormalParameter
 %type<node> VariableArityParameter VariableModifierList VariableModifier Throws ExceptionTypeList ExceptionType MethodBody
@@ -152,10 +144,10 @@ void list_concat(vector<Node*>& s, const vector<Node*>& t) {
 
 CompilationUnit:    OrdinaryCompilationUnit
                     {
-                        root= $$;
+                        root = $$;
                         freopen("graph.dot", "w", stdout);
                         printf("digraph G {\n");
-                        buildTree(root,-1,0);
+                        buildTree(root, -1, 0);
                         printf("}\n");
                     }
                     ;
@@ -165,14 +157,13 @@ OrdinaryCompilationUnit:    TopLevelClassOrInterfaceDeclarationList
 
 TopLevelClassOrInterfaceDeclarationList:    TopLevelClassOrInterfaceDeclaration
                                             {
-                                                vector<Node*> v;
-                                                v.push_back($1);
-                                                $$ = createNode("JAVA-PROGRAM" , v);
+                                                std::vector<Node*> v{$1};
+                                                $$ = createNode("JAVA-PROGRAM", v);
                                             }
                                             | TopLevelClassOrInterfaceDeclarationList TopLevelClassOrInterfaceDeclaration
                                             {
                                                 $$ = $1;
-                                                $$->children.push_back($2);
+                                                $$->add_child($2);
                                             }
                                             ;
 
@@ -184,18 +175,15 @@ ClassDeclaration:   NormalClassDeclaration
 
 NormalClassDeclaration: CLASS TypeIdentifier ClassBody
                         {
-                            vector<Node*> v;
-                            v.push_back($2);
-                            v.push_back($3);
+                            std::vector<Node*> v{$2, $3};
                             $$ = createNode("class" , v);
                         }
                         | ModifierList CLASS TypeIdentifier ClassBody
                         {
-                            vector<Node*> v;
-                            list_concat(v, $1->children);
-                            v.push_back($3);
-                            v.push_back($4);
-                            $$ = createNode("class" , v);
+                            $$ = createNode("class");
+                            $$->add_children($1);
+                            $$->add_child($3);
+                            $$->add_child($4);
                         }
                         ;
 
@@ -207,12 +195,12 @@ Modifier:   PUBLIC
 ModifierList:   ModifierList Modifier
                 {
                     $$ = $1;
-                    $$->children.push_back($2);
+                    $$->add_child($2);
                 }
                 | Modifier
                 {
                     $$ = createNode("ModifierList");
-                    $$->children.push_back($1);
+                    $$->add_child($1);
                 }
                 ;
 
@@ -223,19 +211,19 @@ ClassBody:  LeftCurlyBrace ClassBodyDeclarationList RightCurlyBrace
             | LeftCurlyBrace RightCurlyBrace
             {
                 $$ = createNode("ClassBody");
+                $$->add_child(createNode("{}"));
             }
             ;
 
 ClassBodyDeclarationList:   ClassBodyDeclaration
                             {
-                                vector<Node*> v;
-                                v.push_back($1);
-                                $$ = createNode("ClassBody", v);
+                                $$ = createNode("ClassBody");
+                                $$->add_child($1);
                             }
                             | ClassBodyDeclarationList ClassBodyDeclaration
                             {
                                 $$ = $1;
-                                $$->children.push_back($2);
+                                $$->add_child($2);
                             }
                             ;
 
@@ -254,35 +242,35 @@ ClassMemberDeclaration: FieldDeclaration
 FieldDeclaration:   ModifierList UnannType VariableDeclaratorList Semicolon
                     {
                         $$ = createNode("FieldDeclaration");
-                        $$->children.push_back($1);
-                        $$->children.push_back($2);
-                        $$->children.push_back($3);
+                        $$->add_child($1);
+                        $$->add_child($2);
+                        $$->add_child($3);
                     }
                     | UnannType VariableDeclaratorList Semicolon
                     {
                         $$ = createNode("FieldDeclaration");
-                        $$->children.push_back($1);
-                        $$->children.push_back($2);
+                        $$->add_child($1);
+                        $$->add_child($2);
                     }
                     ;
 
 VariableDeclaratorList: VariableDeclarator
                         {
                             $$ = createNode("Variables");
-                            $$->children.push_back($1);
+                            $$->add_child($1);
                         }
                         | VariableDeclaratorList Comma VariableDeclarator
                         {
                             $$ = $1;
-                            $$->children.push_back($3);
+                            $$->add_child($3);
                         }
                         ;
 
 VariableDeclarator: VariableDeclaratorId ASSIGN VariableInitializer
                     {
                         $$ = createNode("=");
-                        $$->children.push_back($1);
-                        $$->children.push_back($3);
+                        $$->add_child($1);
+                        $$->add_child($3);
                     }
                     | VariableDeclaratorId
                     ;
@@ -290,8 +278,8 @@ VariableDeclarator: VariableDeclaratorId ASSIGN VariableInitializer
 VariableDeclaratorId:   Identifier Dims
                         {
                             $$ = createNode("VariableDeclaratorId");
-                            $$->children.push_back($1);
-                            $$->children.push_back($2);
+                            $$->add_child($1);
+                            $$->add_child($2);
                         }
                         | Identifier
                         ;
@@ -318,45 +306,45 @@ UnannClassOrInterfaceType:  UnannClassType
 
 UnannClassType: TypeIdentifier TypeArguments {
                     $$ = createNode("UnnanClassType");
-                    $$->children.push_back($1);
-                    $$->children.push_back($2);
+                    $$->add_child($1);
+                    $$->add_child($2);
 }
 | UnannClassOrInterfaceType Dot TypeIdentifier TypeArguments {
                     $$ = createNode("UnnanClassType");
-                    $$->children.push_back($1);
-                    $$->children.push_back($2);
-                    $$->children.push_back($3);
-                    $$->children.push_back($4);
+                    $$->add_child($1);
+                    $$->add_child($2);
+                    $$->add_child($3);
+                    $$->add_child($4);
                 }
 | UnannClassOrInterfaceType Dot TypeIdentifier {
                     $$ = createNode("UnnanClassType");
-                    $$->children.push_back($1);
-                    $$->children.push_back($2);
-                    $$->children.push_back($3);
+                    $$->add_child($1);
+                    $$->add_child($2);
+                    $$->add_child($3);
 }
 ;
 
 UnannArrayType: UnannPrimitiveType Dims
                 { 
                     $$ = createNode("UnannArrayType");
-                    $$->children.push_back($1);
-                    $$->children.push_back($2);
+                    $$->add_child($1);
+                    $$->add_child($2);
                 }
                 | UnannClassOrInterfaceType Dims {
                     $$ = createNode("UnannArrayType");
-                    $$->children.push_back($1);
-                    $$->children.push_back($2);
+                    $$->add_child($1);
+                    $$->add_child($2);
                 }
                 | TypeIdentifier Dims {
                     $$ = createNode("UnannArrayType");
-                    $$->children.push_back($1);
-                    $$->children.push_back($2);
+                    $$->add_child($1);
+                    $$->add_child($2);
                 }
                 ;
 
 MethodDeclaration:  ModifierList MethodHeader MethodBody
                     {
-                        vector<Node*> v;
+                        std::vector<Node*> v;
                         for(auto child: $1->children)
                             v.push_back(child);
                         v.push_back($2);
@@ -365,7 +353,7 @@ MethodDeclaration:  ModifierList MethodHeader MethodBody
                     }
                     | MethodHeader MethodBody
                     {
-                        vector<Node*> v;
+                        std::vector<Node*> v;
                         v.push_back($1);
                         v.push_back($2);
                         $$ = createNode("MethodDeclaration" , v);
@@ -375,22 +363,22 @@ MethodDeclaration:  ModifierList MethodHeader MethodBody
 MethodHeader:   UnannType MethodDeclarator
                 {
                     $$ = createNode("MethodHeader");
-                    $$->children.push_back($1);
-                    $$->children.push_back($2);
+                    $$->add_child($1);
+                    $$->add_child($2);
                 }
                 | VOID MethodDeclarator
                 {
                     $$ = createNode("MethodHeader");
-                    $$->children.push_back($1);
-                    $$->children.push_back($2);
+                    $$->add_child($1);
+                    $$->add_child($2);
                 }
                 ;
 
 MethodDeclarator:   Identifier LeftParenthesis ReceiverParameter Comma RightParenthesis 
                     {
                         $$ = createNode("MethodDeclarator");
-                        $$->children.push_back($1);
-                        $$->children.push_back($3);
+                        $$->add_child($1);
+                        $$->add_child($3);
                     }
                     | Identifier LeftParenthesis RightParenthesis
                     {
@@ -399,79 +387,79 @@ MethodDeclarator:   Identifier LeftParenthesis ReceiverParameter Comma RightPare
                     | Identifier LeftParenthesis ReceiverParameter Comma FormalParameterList RightParenthesis
                     {
                         $$ = createNode("MethodDeclarator");
-                        $$->children.push_back($1);
-                        $$->children.push_back($3);
+                        $$->add_child($1);
+                        $$->add_child($3);
                         list_concat($$->children, $5->children);
                     }
                     | Identifier LeftParenthesis FormalParameterList RightParenthesis
                     {
                         $$ = createNode("MethodDeclarator");
-                        $$->children.push_back($1);
+                        $$->add_child($1);
                         list_concat($$->children, $3->children);
                         
                     }
                     | Identifier LeftParenthesis ReceiverParameter Comma RightParenthesis Dims
                     {
                         $$ = createNode("MethodDeclarator");
-                        $$->children.push_back($1);
-                        $$->children.push_back($3);
-                        $$->children.push_back($6);
+                        $$->add_child($1);
+                        $$->add_child($3);
+                        $$->add_child($6);
                     }
                     | Identifier LeftParenthesis RightParenthesis Dims
                     {
                         $$ = createNode("MethodDeclarator");
-                        $$->children.push_back($1);
-                        $$->children.push_back($4);
+                        $$->add_child($1);
+                        $$->add_child($4);
       
                     }
                     | Identifier LeftParenthesis ReceiverParameter Comma FormalParameterList RightParenthesis Dims
                     {
                         $$ = createNode("MethodDeclarator");
-                        $$->children.push_back($1);
-                        $$->children.push_back($3);
+                        $$->add_child($1);
+                        $$->add_child($3);
                         list_concat($$->children, $5->children);
-                        $$->children.push_back($7);
+                        $$->add_child($7);
                     }
                     | Identifier LeftParenthesis FormalParameterList RightParenthesis Dims
                     {
                         $$ = createNode("MethodDeclarator");
-                        $$->children.push_back($1);
+                        $$->add_child($1);
                         list_concat($$->children, $3->children);
-                        $$->children.push_back($5);
+                        $$->add_child($5);
                     }
                     ;
 
 ReceiverParameter:  UnannType THIS
                     {
                         $$ = createNode("ReceiverParameter");
-                        $$->children.push_back($1);
-                        $$->children.push_back($2);
+                        $$->add_child($1);
+                        $$->add_child($2);
                     }
                     | UnannType Identifier Dot THIS
                     {
                         $$ = createNode("ReceiverParameter");
-                        $$->children.push_back($1);
-                        $3->children.push_back($2);
-                        $3->children.push_back($4);
-                        $$->children.push_back($3);
+                        $$->add_child($1);
+                        $3->add_child($2);
+                        $3->add_child($4);
+                        $$->add_child($3);
                     }
                     ;
 
 FormalParameterList:    FormalParameterList Comma FormalParameter
                         {
                             $$ = $1;
-                            $$->children.push_back($3);
+                            $$->add_child($3);
                         }
                         | FormalParameter
                         {
                             $$ = createNode("FormalParameterList");
-                            $$->children.push_back($1);
+                            $$->add_child($1);
                         }
                         ;
 
 FormalParameter:    VariableModifierList UnannType VariableDeclaratorId
                     {                  
-                        vector<Node*> v;
+                        std::vector<Node*> v;
                         for(auto child: $1->children)
                             v.push_back(child);
                         v.push_back($2);
@@ -480,8 +468,8 @@ FormalParameter:    VariableModifierList UnannType VariableDeclaratorId
                     }
                     | UnannType VariableDeclaratorId {
                         $$ = createNode("FormalParameter");
-                        $$->children.push_back($1);
-                        $$->children.push_back($2);
+                        $$->add_child($1);
+                        $$->add_child($2);
                     }
                     | VariableArityParameter
                     ;
@@ -489,9 +477,9 @@ FormalParameter:    VariableModifierList UnannType VariableDeclaratorId
 VariableArityParameter: UnannType ellipsis Identifier
                         {
                             $$ = createNode("VariableArityParameter");
-                            $$->children.push_back($1);
-                            $$->children.push_back($2);
-                            $$->children.push_back($3);
+                            $$->add_child($1);
+                            $$->add_child($2);
+                            $$->add_child($3);
                         }
                         | VariableModifierList UnannType ellipsis Identifier
                         ;
@@ -499,11 +487,11 @@ VariableArityParameter: UnannType ellipsis Identifier
 VariableModifierList:   VariableModifier
                         {
                             $$ = createNode("VariableModifierList");
-                            $$->children.push_back($1);
+                            $$->add_child($1);
                         }
                         | VariableModifierList VariableModifier{
                             $$ = $1;
-                            $$->children.push_back($2);
+                            $$->add_child($2);
                         }   
                         ;
 
@@ -520,23 +508,23 @@ InstanceInitializer:    Block
 StaticInitializer:  STATIC Block
                     {
                         $$ = createNode("StaticInitializer");
-                        $$->children.push_back($1);
-                        $$->children.push_back($2);
+                        $$->add_child($1);
+                        $$->add_child($2);
                     }
                     ;
 
 ConstructorDeclaration: ConstructorDeclarator ConstructorBody
                         {
                             $$ = createNode("ConstructorDeclaration");
-                            $$->children.push_back($1);
-                            $$->children.push_back($2);
+                            $$->add_child($1);
+                            $$->add_child($2);
                         }
                         | ModifierList ConstructorDeclarator ConstructorBody
                         {
                             $$ = createNode("ConstructorDeclaration");
-                            $$->children.push_back($1);
-                            $$->children.push_back($2);
-                            $$->children.push_back($3);
+                            $$->add_child($1);
+                            $$->add_child($2);
+                            $$->add_child($3);
                         }
                         ;
 
@@ -547,19 +535,19 @@ ConstructorDeclarator:  SimpleTypeName LeftParenthesis  RightParenthesis
                         | SimpleTypeName LeftParenthesis ReceiverParameter Comma RightParenthesis
                         {
                             $$ = createNode("ConstructorDeclarator");
-                            $$->children.push_back($1);
-                            $$->children.push_back($3);
+                            $$->add_child($1);
+                            $$->add_child($3);
                         }
                         | SimpleTypeName LeftParenthesis  FormalParameterList RightParenthesis 
                         {
                             $$ = createNode("ConstructorDeclarator");
-                            $$->children.push_back($1);
+                            $$->add_child($1);
                             list_concat($$->children, $3->children);
                         }
                         | SimpleTypeName LeftParenthesis ReceiverParameter Comma FormalParameterList RightParenthesis{
                             $$ = createNode("ConstructorDeclarator");
-                            $$->children.push_back($1);
-                            $$->children.push_back($3);
+                            $$->add_child($1);
+                            $$->add_child($3);
                             list_concat($$->children, $5->children);
                         }
 ;
@@ -574,18 +562,18 @@ ConstructorBody:    LeftCurlyBrace  RightCurlyBrace
                     | LeftCurlyBrace ExplicitConstructorInvocation RightCurlyBrace
                     {
                         $$ = createNode("ConstructorBody");
-                        $$->children.push_back($2);
+                        $$->add_child($2);
                     }
                     | LeftCurlyBrace  BlockStatements RightCurlyBrace
                     {
                         $$ = createNode("ConstructorBody");
-                        $$->children.push_back($2);
+                        $$->add_child($2);
                     }
                     | LeftCurlyBrace ExplicitConstructorInvocation BlockStatements RightCurlyBrace
                     {
                         $$ = createNode("ConstructorBody");
-                        $$->children.push_back($2);
-                        $$->children.push_back($3);
+                        $$->add_child($2);
+                        $$->add_child($3);
                     }
                     ;
 
@@ -594,111 +582,111 @@ ExplicitConstructorInvocation:  THIS LeftParenthesis RightParenthesis Semicolon 
                             }
                                 | TypeArguments THIS LeftParenthesis RightParenthesis Semicolon {
                                     $$ = createNode("ExplicitConstructorInvocation");
-                                    $$->children.push_back($1);
-                                    $$->children.push_back($2);                                    
+                                    $$->add_child($1);
+                                    $$->add_child($2);                                    
                                 }
                                 | THIS LeftParenthesis ArgumentList RightParenthesis Semicolon
                                 {
                                     $$ = createNode("ExplicitConstructorInvocation");
-                                    $$->children.push_back($1);
+                                    $$->add_child($1);
                                     list_concat($$->children, $3->children);
                                 }
                                 | TypeArguments THIS LeftParenthesis ArgumentList RightParenthesis Semicolon
                                 {
                                     $$ = createNode("ExplicitConstructorInvocation");
-                                    $$->children.push_back($1);
-                                    $$->children.push_back($2);
+                                    $$->add_child($1);
+                                    $$->add_child($2);
                                     list_concat($$->children, $4->children);
                                 }
                                 | TypeArguments SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
                                 {
                                     $$ = createNode("ExplicitConstructorInvocation");
-                                    $$->children.push_back($1);
-                                    $$->children.push_back($2);
+                                    $$->add_child($1);
+                                    $$->add_child($2);
                                     list_concat($$->children, $4->children);
                                 }
                                 | SUPER LeftParenthesis RightParenthesis Semicolon
                                 {
                                     $$ = createNode("ExplicitConstructorInvocation");
-                                    $$->children.push_back($1);
+                                    $$->add_child($1);
                                 }
                                 | SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
                                 {
                                     $$ = createNode("ExplicitConstructorInvocation");
-                                    $$->children.push_back($1);
+                                    $$->add_child($1);
                                     list_concat($$->children, $3->children);
                                 }
                                 | TypeArguments SUPER LeftParenthesis  RightParenthesis Semicolon
                                 {
                                     $$ = createNode("ExplicitConstructorInvocation");
-                                    $$->children.push_back($2);
+                                    $$->add_child($2);
                                 }
                                 | ExpressionName Dot TypeArguments SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
                                 {
                                     $$ = createNode("ExplicitConstructorInvocation");
-                                    $2->children.push_back($1);
-                                    $2->children.push_back($4);
-                                    $$->children.push_back($2);
-                                    $$->children.push_back($6);
+                                    $2->add_child($1);
+                                    $2->add_child($4);
+                                    $$->add_child($2);
+                                    $$->add_child($6);
                                 }
                                 | ExpressionName Dot TypeArguments SUPER LeftParenthesis RightParenthesis Semicolon
                                 {
                                     $$ = createNode("ExplicitConstructorInvocation");
-                                    $2->children.push_back($1);
-                                    $2->children.push_back($4);
-                                    $$->children.push_back($2);
+                                    $2->add_child($1);
+                                    $2->add_child($4);
+                                    $$->add_child($2);
                                 }
                                 | ExpressionName Dot SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
                                 {
                                     $$ = createNode("ExplicitConstructorInvocation");
-                                    $2->children.push_back($1);
-                                    $2->children.push_back($3);
-                                    $$->children.push_back($2);
-                                    $$->children.push_back($5);
+                                    $2->add_child($1);
+                                    $2->add_child($3);
+                                    $$->add_child($2);
+                                    $$->add_child($5);
                                 }
                                 | ExpressionName Dot SUPER LeftParenthesis RightParenthesis Semicolon
                                 {
                                     $$ = createNode("ExplicitConstructorInvocation");
-                                    $2->children.push_back($1);
-                                    $2->children.push_back($3);
-                                    $$->children.push_back($2);
+                                    $2->add_child($1);
+                                    $2->add_child($3);
+                                    $$->add_child($2);
                                 }
                                 | Primary Dot  SUPER LeftParenthesis RightParenthesis Semicolon
                                 {
                                     $$ = createNode("ExplicitConstructorInvocation");
-                                    $2->children.push_back($1);
-                                    $2->children.push_back($3);
-                                    $$->children.push_back($2);
+                                    $2->add_child($1);
+                                    $2->add_child($3);
+                                    $$->add_child($2);
                                 }
                                 | Primary Dot TypeArguments SUPER LeftParenthesis RightParenthesis Semicolon
                                 {
                                     $$ = createNode("ExplicitConstructorInvocation");
-                                    $2->children.push_back($1);
-                                    $2->children.push_back($4);
-                                    $$->children.push_back($2);
+                                    $2->add_child($1);
+                                    $2->add_child($4);
+                                    $$->add_child($2);
                                 }
                                 | Primary Dot  SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
                                 {
                                     $$ = createNode("ExplicitConstructorInvocation");
-                                    $2->children.push_back($1);
-                                    $2->children.push_back($3);
-                                    $$->children.push_back($2);
-                                    $$->children.push_back($5);
+                                    $2->add_child($1);
+                                    $2->add_child($3);
+                                    $$->add_child($2);
+                                    $$->add_child($5);
                                 }
                                 | Primary Dot TypeArguments SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
                                 {
                                     $$ = createNode("ExplicitConstructorInvocation");
-                                    $2->children.push_back($1);
-                                    $2->children.push_back($4);
-                                    $$->children.push_back($2);
-                                    $$->children.push_back($6);
+                                    $2->add_child($1);
+                                    $2->add_child($4);
+                                    $$->add_child($2);
+                                    $$->add_child($6);
                                 }
                                 ;
 
 ArrayInitializer:   LeftCurlyBrace  Comma RightCurlyBrace
                     {
                         $$ = createNode("ArrayInitializer");
-                        $$->children.push_back($2);
+                        $$->add_child($2);
                     }
                     | LeftCurlyBrace  RightCurlyBrace
                     {
@@ -707,25 +695,25 @@ ArrayInitializer:   LeftCurlyBrace  Comma RightCurlyBrace
                     | LeftCurlyBrace VariableInitializerList Comma RightCurlyBrace
                     {
                         $$=createNode("ArrayInitializer");
-                        $$->children.push_back($2);
-                        $$->children.push_back($3);
+                        $$->add_child($2);
+                        $$->add_child($3);
                     }
                     | LeftCurlyBrace VariableInitializerList RightCurlyBrace
                     {
                         $$=createNode("ArrayInitializer");
-                        $$->children.push_back($2);
+                        $$->add_child($2);
                     }
                     ;
 
 VariableInitializerList:    VariableInitializer
                             {
                                 $$ = createNode("VariableInitializerList");
-                                $$->children.push_back($1);
+                                $$->add_child($1);
                             }
                             | VariableInitializerList Comma VariableInitializer
                             {
                                 $$= $1;
-                                $$->children.push_back($3);
+                                $$->add_child($3);
                             }
                             ;
 
@@ -742,12 +730,12 @@ Block:  LeftCurlyBrace BlockStatements RightCurlyBrace
 BlockStatements:    BlockStatements BlockStatement
                     {
                         $$ = $1;
-                        $$->children.push_back($2);
+                        $$->add_child($2);
                     }
                     | BlockStatement
                     {
                         $$ = createNode("Block");
-                        $$->children.push_back($1);
+                        $$->add_child($1);
                     }
                     ;
 
@@ -768,21 +756,21 @@ LocalVariableDeclaration:   LocalVariableType
                             | VariableModifierList LocalVariableType
                             {
                                 $$ = createNode("LocalVariableDeclaration");
-                                $$->children.push_back($1);
-                                $$->children.push_back($2);
+                                $$->add_child($1);
+                                $$->add_child($2);
                             }
                             | LocalVariableType VariableDeclaratorList
                             {
                                 $$ = createNode("LocalVariableDeclaration");
-                                $$->children.push_back($1);
-                                $$->children.push_back($2);
+                                $$->add_child($1);
+                                $$->add_child($2);
                             }
                             | VariableModifierList LocalVariableType VariableDeclaratorList
                             {
                                 $$ = createNode("LocalVariableDeclaration");
-                                $$->children.push_back($1);
-                                $$->children.push_back($2);
-                                $$->children.push_back($3);
+                                $$->add_child($1);
+                                $$->add_child($2);
+                                $$->add_child($3);
                             }
                             ;
 
@@ -820,9 +808,9 @@ EmptyStatement: Semicolon
 LabeledStatement:   Identifier COLON Statement
                     {
                         $$ =createNode("LabeledStatement");
-                        $$->children.push_back($1);
-                        $$->children.push_back($2);
-                        $$->children.push_back($3);
+                        $$->add_child($1);
+                        $$->add_child($2);
+                        $$->add_child($3);
                     }
                     ;
 
@@ -847,55 +835,55 @@ StatementExpression:    Assignment
 IfThenStatement:    IF LeftParenthesis Expression RightParenthesis Statement
                     {
                         $$ = createNode("IfThenStatement");
-                        $$->children.push_back($3);
-                        $$->children.push_back($5);
+                        $$->add_child($3);
+                        $$->add_child($5);
                     }
                     ;
 
 IfThenElseStatement:    IF LeftParenthesis Expression RightParenthesis StatementNoShortIf ELSE Statement
                         {
                             $$ = createNode("IfThenElseStatement");
-                            $$->children.push_back($3);
-                            $$->children.push_back($5);
-                            $$->children.push_back($7);
+                            $$->add_child($3);
+                            $$->add_child($5);
+                            $$->add_child($7);
                         }
                         ;
 
 IfThenElseStatementNoShortIf:   IF LeftParenthesis Expression RightParenthesis StatementNoShortIf ELSE StatementNoShortIf
                                 {
                                     $$ = createNode("IfThenElseStatementNoShortIf");
-                                    $$->children.push_back($3);
-                                    $$->children.push_back($5);
-                                    $$->children.push_back($7);
+                                    $$->add_child($3);
+                                    $$->add_child($5);
+                                    $$->add_child($7);
                                 }
                                 ;
 
 AssertStatement:    ASSERT Expression Semicolon
                     {
                         $$ = createNode("Assert");
-                        $$->children.push_back($2);
-                        $$->children.push_back($3);
+                        $$->add_child($2);
+                        $$->add_child($3);
                     }
                     | ASSERT Expression COLON Expression Semicolon
                     {
                         $$ = createNode("Assert");
-                        $$->children.push_back($2);
-                        $$->children.push_back($4);
+                        $$->add_child($2);
+                        $$->add_child($4);
                     }
                     ;
 
 WhileStatement: WHILE LeftParenthesis Expression RightParenthesis Statement
                 {
                     $$ = createNode("While");
-                    $$->children.push_back($3);
-                    $$->children.push_back($5);
+                    $$->add_child($3);
+                    $$->add_child($5);
                 }
 
 WhileStatementNoShortIf:    WHILE LeftParenthesis Expression RightParenthesis StatementNoShortIf
                             {
                                 $$ = createNode("While");
-                                $$->children.push_back($3);
-                                $$->children.push_back($5);
+                                $$->add_child($3);
+                                $$->add_child($5);
                             }
                             ;
 
@@ -910,106 +898,106 @@ ForStatementNoShortIf:  BasicForStatementNoShortIf
 BasicForStatement:  FOR LeftParenthesis  Semicolon  Semicolon  RightParenthesis Statement
                     {
                         $$ = createNode("For");
-                        $$->children.push_back($6);
+                        $$->add_child($6);
                     }
                     | FOR LeftParenthesis ForInit Semicolon  Semicolon  RightParenthesis Statement
                     {
                         $$ = createNode("For");
-                        $$->children.push_back($7);
+                        $$->add_child($7);
                     }
                     | FOR LeftParenthesis  Semicolon  Semicolon ForUpdate RightParenthesis Statement
                     {
                         $$ = createNode("For");
-                        $$->children.push_back($5);
-                        $$->children.push_back($7);
+                        $$->add_child($5);
+                        $$->add_child($7);
                     }
                     | FOR LeftParenthesis ForInit Semicolon  Semicolon ForUpdate RightParenthesis Statement
                     {
                         $$ = createNode("For");
-                        $$->children.push_back($3);
-                        $$->children.push_back($6);
-                        $$->children.push_back($8);
+                        $$->add_child($3);
+                        $$->add_child($6);
+                        $$->add_child($8);
                     }
                     | FOR LeftParenthesis  Semicolon Expression Semicolon  RightParenthesis Statement
                     {
                         $$ = createNode("For");
-                        $$->children.push_back($4);
-                        $$->children.push_back($7);
+                        $$->add_child($4);
+                        $$->add_child($7);
                     }
                     | FOR LeftParenthesis ForInit Semicolon Expression Semicolon  RightParenthesis Statement
                     {
                         $$ = createNode("For");
-                        $$->children.push_back($3);
-                        $$->children.push_back($5);
-                        $$->children.push_back($8);
+                        $$->add_child($3);
+                        $$->add_child($5);
+                        $$->add_child($8);
                     }
                     | FOR LeftParenthesis  Semicolon Expression Semicolon ForUpdate RightParenthesis Statement
                     {
                         $$ = createNode("For");
-                        $$->children.push_back($4);
-                        $$->children.push_back($6);
-                        $$->children.push_back($8);
+                        $$->add_child($4);
+                        $$->add_child($6);
+                        $$->add_child($8);
                     }
                     | FOR LeftParenthesis ForInit Semicolon Expression Semicolon ForUpdate RightParenthesis Statement
                     {
                         $$ = createNode("For");
-                        $$->children.push_back($3);
-                        $$->children.push_back($5);
-                        $$->children.push_back($7);
-                        $$->children.push_back($9);
+                        $$->add_child($3);
+                        $$->add_child($5);
+                        $$->add_child($7);
+                        $$->add_child($9);
                     }
                     ;
 
 BasicForStatementNoShortIf: FOR LeftParenthesis  Semicolon  Semicolon RightParenthesis StatementNoShortIf
                             {
                                 $$ = createNode("For");
-                                $$->children.push_back($6);
+                                $$->add_child($6);
                             }
                             | FOR LeftParenthesis ForInit Semicolon  Semicolon RightParenthesis StatementNoShortIf
                             {
                                 $$ = createNode("For");
-                                $$->children.push_back($7);
+                                $$->add_child($7);
                             }
                             | FOR LeftParenthesis  Semicolon Expression Semicolon RightParenthesis StatementNoShortIf
                             {
                                 $$ = createNode("For");
-                                $$->children.push_back($4);
-                                $$->children.push_back($7);
+                                $$->add_child($4);
+                                $$->add_child($7);
                             }
                             | FOR LeftParenthesis ForInit Semicolon Expression Semicolon RightParenthesis StatementNoShortIf
                             {
                                 $$ = createNode("For");
-                                $$->children.push_back($3);
-                                $$->children.push_back($5);
-                                $$->children.push_back($8);
+                                $$->add_child($3);
+                                $$->add_child($5);
+                                $$->add_child($8);
                             }
                             | FOR LeftParenthesis  Semicolon  Semicolon ForUpdate RightParenthesis StatementNoShortIf
                             {
                                 $$ = createNode("For");
-                                $$->children.push_back($5);
-                                $$->children.push_back($7);
+                                $$->add_child($5);
+                                $$->add_child($7);
                             }
                             | FOR LeftParenthesis ForInit Semicolon  Semicolon ForUpdate RightParenthesis StatementNoShortIf
                             {
                                 $$ = createNode("For");
-                                $$->children.push_back($3);
-                                $$->children.push_back($6);
-                                $$->children.push_back($8);
+                                $$->add_child($3);
+                                $$->add_child($6);
+                                $$->add_child($8);
                             }
                             | FOR LeftParenthesis  Semicolon Expression Semicolon ForUpdate RightParenthesis StatementNoShortIf
                             {
                                 $$ = createNode("For");
-                                $$->children.push_back($4);
-                                $$->children.push_back($6);
-                                $$->children.push_back($8);
+                                $$->add_child($4);
+                                $$->add_child($6);
+                                $$->add_child($8);
                             }
                             | FOR LeftParenthesis ForInit Semicolon Expression Semicolon ForUpdate RightParenthesis StatementNoShortIf
                             {
                                 $$ = createNode("For");
-                                $$->children.push_back($3);
-                                $$->children.push_back($5);
-                                $$->children.push_back($7);
-                                $$->children.push_back($9);
+                                $$->add_child($3);
+                                $$->add_child($5);
+                                $$->add_child($7);
+                                $$->add_child($9);
                             }
                             ;
 
@@ -1022,50 +1010,50 @@ ForUpdate:  StatementExpressionList
 
 StatementExpressionList:    StatementExpression{
                                 $$ = createNode("StatementExpressionList");
-                                $$->children.push_back($1);
+                                $$->add_child($1);
                             }
                             | StatementExpressionList Comma StatementExpression
                             {
                                 $$ = $1;
-                                $$->children.push_back($3);
+                                $$->add_child($3);
                             }
                             ;
 
 EnhancedForStatement:   FOR LeftParenthesis LocalVariableDeclaration COLON Expression RightParenthesis Statement
                         {
                             $$ = createNode("For");
-                            $$->children.push_back($3);
-                            $$->children.push_back($5);
-                            $$->children.push_back($7);
+                            $$->add_child($3);
+                            $$->add_child($5);
+                            $$->add_child($7);
                         }
                         ;
 
 EnhancedForStatementNoShortIf:  FOR LeftParenthesis LocalVariableDeclaration COLON Expression RightParenthesis StatementNoShortIf
                                 {
                                     $$ = createNode("For");
-                                    $$->children.push_back($3);
-                                    $$->children.push_back($5);
-                                    $$->children.push_back($7);
+                                    $$->add_child($3);
+                                    $$->add_child($5);
+                                    $$->add_child($7);
                                 }
                                 ;
 
 BreakStatement: BREAK Identifier Semicolon 
                 {
                         $$ = createNode("BREAK");
-                        $$->children.push_back($2);
+                        $$->add_child($2);
 
                 }
                 | BREAK Semicolon
                 {
                         $$ = createNode("BREAK");
-                        $$->children.push_back($2);
+                        $$->add_child($2);
                 }
                 ;
 
 YieldStatement: YIELD Expression Semicolon
                 {
                     $$ = $1;
-                    $$->children.push_back($2);
+                    $$->add_child($2);
                 }
                 ;
 
@@ -1073,7 +1061,7 @@ ContinueStatement:  CONTINUE Semicolon
                     | CONTINUE Identifier Semicolon
                     {
                         $$ = $1;
-                        $$->children.push_back($2);
+                        $$->add_child($2);
                     }
                     ;
 
@@ -1081,7 +1069,7 @@ ReturnStatement:    RETURN Semicolon
                     | RETURN Expression Semicolon
                     {
                         $$ = $1;
-                        $$->children.push_back($2);
+                        $$->add_child($2);
                     }
                     ;
 
@@ -1106,8 +1094,8 @@ PrimaryNoNewArray:  Literal
                     | THIS
                     | TypeName Dot THIS
                     {
-                        $2->children.push_back($1);
-                        $2->children.push_back($3);
+                        $2->add_child($1);
+                        $2->add_child($3);
                         $$ = $2;
                     }
                     | LeftParenthesis Expression RightParenthesis
@@ -1123,46 +1111,46 @@ PrimaryNoNewArray:  Literal
 
 ClassLiteral:   TypeName Dot CLASS {
                         $$ = createNode("ClassLiteral");
-                        $$->children.push_back($1);
-                        $$->children.push_back($2);
-                        $$->children.push_back($3);
+                        $$->add_child($1);
+                        $$->add_child($2);
+                        $$->add_child($3);
                 }
                 | NumericType  Dot CLASS {
                         $$ = createNode("ClassLiteral");
-                        $$->children.push_back($1);
-                        $$->children.push_back($2);
-                        $$->children.push_back($3);
+                        $$->add_child($1);
+                        $$->add_child($2);
+                        $$->add_child($3);
                 }
                 | BOOLEAN  Dot CLASS {
                         $$ = createNode("ClassLiteral");
-                        $$->children.push_back($1);
-                        $$->children.push_back($2);
-                        $$->children.push_back($3);
+                        $$->add_child($1);
+                        $$->add_child($2);
+                        $$->add_child($3);
                 }
                 | VOID Dot CLASS {
                         $$ = createNode("ClassLiteral");
-                        $$->children.push_back($1);
-                        $$->children.push_back($2);
-                        $$->children.push_back($3);
+                        $$->add_child($1);
+                        $$->add_child($2);
+                        $$->add_child($3);
                 }
                 | TypeName LeftRightSquareList Dot CLASS {
                         $$ = createNode("ClassLiteral");
-                        $$->children.push_back($1);
-                        $$->children.push_back($2);
-                        $$->children.push_back($3);
-                        $$->children.push_back($4);
+                        $$->add_child($1);
+                        $$->add_child($2);
+                        $$->add_child($3);
+                        $$->add_child($4);
                 }
                 | NumericType LeftRightSquareList Dot CLASS {
                         $$ = createNode("ClassLiteral");
-                        $$->children.push_back($1);
-                        $$->children.push_back($3);
-                        $$->children.push_back($4);
+                        $$->add_child($1);
+                        $$->add_child($3);
+                        $$->add_child($4);
                 }
                 | BOOLEAN LeftRightSquareList Dot CLASS {
                         $$ = createNode("ClassLiteral");
-                        $$->children.push_back($1);
-                        $$->children.push_back($3);
-                        $$->children.push_back($4);
+                        $$->add_child($1);
+                        $$->add_child($3);
+                        $$->add_child($4);
                 }
                 ;
 
@@ -1170,15 +1158,15 @@ ClassInstanceCreationExpression:    UnqualifiedClassInstanceCreationExpression
                                     | ExpressionName Dot UnqualifiedClassInstanceCreationExpression
                                     {
                                         $$ = createNode("ClassInstanceCreationExpression");
-                                        $2->children.push_back($1);
-                                        $2->children.push_back($3);
-                                        $$->children.push_back($2);
+                                        $2->add_child($1);
+                                        $2->add_child($3);
+                                        $$->add_child($2);
                                     }
                                     | Primary Dot UnqualifiedClassInstanceCreationExpression {
                                         $$ = createNode("ClassInstanceCreationExpression");
-                                        $2->children.push_back($1);
-                                        $2->children.push_back($3);
-                                        $$->children.push_back($2);
+                                        $2->add_child($1);
+                                        $2->add_child($3);
+                                        $$->add_child($2);
                                     }
                                     
                                     ;
@@ -1221,14 +1209,14 @@ ClassOrInterfaceTypeToInstantiate:  Identifier
                                     | ClassOrInterfaceTypeToInstantiate Dot Identifier
                                     {
                                         
-                                        $2->children.push_back($1);
-                                        $2->children.push_back($3);
+                                        $2->add_child($1);
+                                        $2->add_child($3);
                                         $$ = $2;
                                     }
                                     | ClassOrInterfaceTypeToInstantiate Dot Identifier TypeArgumentsOrDiamond
                                     {
-                                        $2->children.push_back($1);
-                                        $2->children.push_back($3);
+                                        $2->add_child($1);
+                                        $2->add_child($3);
                                         $$ = $2;
                                     }
                                     ;
@@ -1238,22 +1226,22 @@ TypeArgumentsOrDiamond: TypeArguments
 
 FieldAccess:    Primary Dot Identifier
                 {
-                    $2->children.push_back($1);
-                    $2->children.push_back($3);
+                    $2->add_child($1);
+                    $2->add_child($3);
                     $$ = $2;
                 }
                 | SUPER Dot Identifier
                 {
-                    $2->children.push_back($1);
-                    $2->children.push_back($3);
+                    $2->add_child($1);
+                    $2->add_child($3);
                     $$ = $2;
                 }
                 | TypeName Dot SUPER Dot Identifier
                 {
-                    $2->children.push_back($1);
-                    $2->children.push_back($3);
-                    $4->children.push_back($2);
-                    $4->children.push_back($5);
+                    $2->add_child($1);
+                    $2->add_child($3);
+                    $4->add_child($2);
+                    $4->add_child($5);
                     $$ = $4;
 
                 }
@@ -1262,300 +1250,300 @@ FieldAccess:    Primary Dot Identifier
 ArrayAccess:    ExpressionName LeftSquareBracket Expression RightSquareBracket
                 {
                         $$ = createNode("ArrayAccess");
-                        $$->children.push_back($1);
-                        $$->children.push_back($3);
+                        $$->add_child($1);
+                        $$->add_child($3);
                 }
                 | PrimaryNoNewArray LeftSquareBracket Expression RightSquareBracket{
                         $$ = createNode("ArrayAccess");
-                        $$->children.push_back($1);
-                        $$->children.push_back($3);
+                        $$->add_child($1);
+                        $$->add_child($3);
                 }
                 ;
 
 MethodInvocation:   Identifier LeftParenthesis  RightParenthesis
                     {
                         $$ = createNode("MethodInvocation");
-                        $$->children.push_back($1);
+                        $$->add_child($1);
                     }
                     | Identifier LeftParenthesis ArgumentList RightParenthesis
                     {
                         $$ = createNode("MethodInvocation");
-                        $$->children.push_back($1);
-                        $$->children.push_back($3);
+                        $$->add_child($1);
+                        $$->add_child($3);
                     }
 
                     | TypeName Dot Identifier LeftParenthesis RightParenthesis
                     {
                         $$ = createNode("MethodInvocation");
-                        $2->children.push_back($1);
-                        $2->children.push_back($3);
-                        $$->children.push_back($2);;
+                        $2->add_child($1);
+                        $2->add_child($3);
+                        $$->add_child($2);;
                     }
                   | TypeName Dot TypeArguments Identifier LeftParenthesis RightParenthesis
                     {
                         $$ = createNode("MethodInvocation");
-                        $2->children.push_back($1);
-                        $2->children.push_back($4);
-                        $$->children.push_back($2);
+                        $2->add_child($1);
+                        $2->add_child($4);
+                        $$->add_child($2);
                     }
                     | TypeName Dot Identifier LeftParenthesis ArgumentList RightParenthesis
                     {
                         $$ = createNode("MethodInvocation");
-                        $2->children.push_back($1);
-                        $2->children.push_back($3);
-                        $$->children.push_back($2);
-                        $$->children.push_back($5);
+                        $2->add_child($1);
+                        $2->add_child($3);
+                        $$->add_child($2);
+                        $$->add_child($5);
                     }
                     | TypeName Dot TypeArguments Identifier LeftParenthesis ArgumentList RightParenthesis
                     {
                         $$ = createNode("MethodInvocation");
-                        $2->children.push_back($1);
-                        $2->children.push_back($4);
-                        $$->children.push_back($2);
-                        $$->children.push_back($6);
+                        $2->add_child($1);
+                        $2->add_child($4);
+                        $$->add_child($2);
+                        $$->add_child($6);
                     }
                     
                     | ExpressionName Dot Identifier LeftParenthesis RightParenthesis
                     {
                         $$ = createNode("MethodInvocation");
-                        $2->children.push_back($1);
-                        $2->children.push_back($3);
-                        $$->children.push_back($2);
+                        $2->add_child($1);
+                        $2->add_child($3);
+                        $$->add_child($2);
                     }
                     | ExpressionName Dot TypeArguments Identifier LeftParenthesis RightParenthesis
                     {
                         $$ = createNode("MethodInvocation");
-                        $2->children.push_back($1);
-                        $2->children.push_back($4);
-                        $$->children.push_back($2);
+                        $2->add_child($1);
+                        $2->add_child($4);
+                        $$->add_child($2);
                     }
                     | ExpressionName Dot Identifier LeftParenthesis ArgumentList RightParenthesis
                     {
                         $$ = createNode("MethodInvocation");
-                        $2->children.push_back($1);
-                        $2->children.push_back($3);
-                        $$->children.push_back($2);
-                        $$->children.push_back($5);
+                        $2->add_child($1);
+                        $2->add_child($3);
+                        $$->add_child($2);
+                        $$->add_child($5);
                     }
                     | ExpressionName Dot TypeArguments Identifier LeftParenthesis ArgumentList RightParenthesis
                     {
                         $$ = createNode("MethodInvocation");
-                        $2->children.push_back($1);
-                        $2->children.push_back($4);
-                        $$->children.push_back($2);
-                        $$->children.push_back($5);
+                        $2->add_child($1);
+                        $2->add_child($4);
+                        $$->add_child($2);
+                        $$->add_child($5);
                     }
                     
                     | Primary Dot Identifier LeftParenthesis RightParenthesis {
                                             
                         $$ = createNode("MethodInvocation");
-                        $2->children.push_back($1);
-                        $2->children.push_back($4);
-                        $$->children.push_back($2);
+                        $2->add_child($1);
+                        $2->add_child($4);
+                        $$->add_child($2);
                     
                     }
                     | Primary Dot TypeArguments Identifier LeftParenthesis RightParenthesis{
                         $$ = createNode("MethodInvocation");
-                        $2->children.push_back($1);
-                        $2->children.push_back($3);
-                        $$->children.push_back($2);
+                        $2->add_child($1);
+                        $2->add_child($3);
+                        $$->add_child($2);
                     }
                     | Primary Dot Identifier LeftParenthesis ArgumentList RightParenthesis {
                         $$ = createNode("MethodInvocation");
-                        $2->children.push_back($1);
-                        $2->children.push_back($3);
-                        $$->children.push_back($2);
-                        $$->children.push_back($5);
+                        $2->add_child($1);
+                        $2->add_child($3);
+                        $$->add_child($2);
+                        $$->add_child($5);
                     }
                     | Primary Dot TypeArguments Identifier LeftParenthesis ArgumentList RightParenthesis{
                         $$ = createNode("MethodInvocation");
-                        $2->children.push_back($1);
-                        $2->children.push_back($4);
-                        $$->children.push_back($2);
-                        $$->children.push_back($5);
+                        $2->add_child($1);
+                        $2->add_child($4);
+                        $$->add_child($2);
+                        $$->add_child($5);
                     }
                     
                     | SUPER Dot Identifier LeftParenthesis RightParenthesis {
                         $$ = createNode("MethodInvocation");
-                        $2->children.push_back($1);
-                        $2->children.push_back($3);
-                        $$->children.push_back($2);          
+                        $2->add_child($1);
+                        $2->add_child($3);
+                        $$->add_child($2);          
    
                     
                     }
                     | SUPER Dot TypeArguments Identifier LeftParenthesis RightParenthesis{
                         $$ = createNode("MethodInvocation");
-                        $2->children.push_back($1);
-                        $2->children.push_back($4);
-                        $$->children.push_back($2);
+                        $2->add_child($1);
+                        $2->add_child($4);
+                        $$->add_child($2);
                     }
                     | SUPER Dot Identifier LeftParenthesis ArgumentList RightParenthesis {
                         $$ = createNode("MethodInvocation");
-                        $2->children.push_back($1);
-                        $2->children.push_back($3);
-                        $$->children.push_back($2);
-                        $$->children.push_back($5);
+                        $2->add_child($1);
+                        $2->add_child($3);
+                        $$->add_child($2);
+                        $$->add_child($5);
                     }
                     | SUPER Dot TypeArguments Identifier LeftParenthesis ArgumentList RightParenthesis{
                         $$ = createNode("MethodInvocation");
-                        $2->children.push_back($1);
-                        $2->children.push_back($4);
-                        $$->children.push_back($2);
-                        $$->children.push_back($5);
+                        $2->add_child($1);
+                        $2->add_child($4);
+                        $$->add_child($2);
+                        $$->add_child($5);
                     }
                     
                     | TypeName Dot SUPER Dot Identifier LeftParenthesis RightParenthesis
                     {
                         $$ = createNode("MethodInvocation");
-                        $2->children.push_back($1);
-                        $2->children.push_back($3);
-                        $4->children.push_back($2);
-                        $4->children.push_back($5);
-                        $$->children.push_back($4);
+                        $2->add_child($1);
+                        $2->add_child($3);
+                        $4->add_child($2);
+                        $4->add_child($5);
+                        $$->add_child($4);
                     }
                     | TypeName Dot SUPER Dot TypeArguments Identifier LeftParenthesis RightParenthesis
                     {
                         $$ = createNode("MethodInvocation");
-                        $2->children.push_back($1);
-                        $2->children.push_back($3);
-                        $4->children.push_back($2);
-                        $4->children.push_back($6);
-                        $$->children.push_back($4);
+                        $2->add_child($1);
+                        $2->add_child($3);
+                        $4->add_child($2);
+                        $4->add_child($6);
+                        $$->add_child($4);
                     }
                     | TypeName Dot SUPER Dot Identifier LeftParenthesis ArgumentList RightParenthesis 
                     {
                         $$ = createNode("MethodInvocation");
-                        $2->children.push_back($1);
-                        $2->children.push_back($3);
-                        $4->children.push_back($2);
-                        $4->children.push_back($5);
-                        $$->children.push_back($4);
-                        $$->children.push_back($7);     
+                        $2->add_child($1);
+                        $2->add_child($3);
+                        $4->add_child($2);
+                        $4->add_child($5);
+                        $$->add_child($4);
+                        $$->add_child($7);     
                     }
                     | TypeName Dot SUPER Dot TypeArguments Identifier LeftParenthesis ArgumentList RightParenthesis
                     {
                         $$ = createNode("MethodInvocation");
-                        $2->children.push_back($1);
-                        $2->children.push_back($3);
-                        $4->children.push_back($2);
-                        $4->children.push_back($6);
-                        $$->children.push_back($4);
-                        $$->children.push_back($8); 
+                        $2->add_child($1);
+                        $2->add_child($3);
+                        $4->add_child($2);
+                        $4->add_child($6);
+                        $$->add_child($4);
+                        $$->add_child($8); 
                     }
                     ;
 
 ArgumentList:   Expression
                 {
                     $$ = createNode("Arguments");
-                    $$->children.push_back($1);
+                    $$->add_child($1);
                 }
                 | ArgumentList Comma Expression
                 {
                     $$ = $1;
-                    $$->children.push_back($3);
+                    $$->add_child($3);
                 }
                 ;
 
 MethodReference:    ExpressionName Scope Identifier {
                         $$ = createNode("::");
-                        $$->children.push_back($1);
-                        $$->children.push_back($3);
+                        $$->add_child($1);
+                        $$->add_child($3);
                     }
 
                     | ExpressionName Scope TypeArguments Identifier{
                         $$ = $2;
-                        $$->children.push_back($1);
-                        $$->children.push_back($3);
-                        $$->children.push_back($4);
+                        $$->add_child($1);
+                        $$->add_child($3);
+                        $$->add_child($4);
                     }
                     | Primary Scope Identifier{
                         $$ = $2;
-                        $$->children.push_back($1);
-                        $$->children.push_back($3);
+                        $$->add_child($1);
+                        $$->add_child($3);
                     }
                     | Primary Scope TypeArguments{
                         $$ = $2;
-                        $$->children.push_back($1);
-                        $$->children.push_back($3);
+                        $$->add_child($1);
+                        $$->add_child($3);
                     }
 
                     | UnannReferenceType Scope Identifier{
                         $$ = $2;
-                        $$->children.push_back($1);
-                        $$->children.push_back($3);
+                        $$->add_child($1);
+                        $$->add_child($3);
                     }
                     | UnannReferenceType Scope TypeArguments Identifier{
                         $$ = $2;
-                        $$->children.push_back($1);
-                        $$->children.push_back($3);
-                        $$->children.push_back($4);
+                        $$->add_child($1);
+                        $$->add_child($3);
+                        $$->add_child($4);
                     }
                     
                     | SUPER Scope Identifier{
                         $$ = $2;
-                        $$->children.push_back($1);
-                        $$->children.push_back($3);
+                        $$->add_child($1);
+                        $$->add_child($3);
                     }
                     | SUPER Scope TypeArguments Identifier{
                         $$ = $2;
-                        $$->children.push_back($1);
-                        $$->children.push_back($3);
-                        $$->children.push_back($4);
+                        $$->add_child($1);
+                        $$->add_child($3);
+                        $$->add_child($4);
                     }
                     
                     | TypeName Dot SUPER Scope Identifier{
                         $$ = $4;
-                        $2->children.push_back($1);
-                        $2->children.push_back($3);
-                        $$->children.push_back($2);
-                         $$->children.push_back($5);
+                        $2->add_child($1);
+                        $2->add_child($3);
+                        $$->add_child($2);
+                         $$->add_child($5);
                     }
                     | TypeName Dot SUPER Scope TypeArguments Identifier{
                         $$ = $4;
-                        $2->children.push_back($1);
-                        $2->children.push_back($3);
-                        $$->children.push_back($2);
-                         $$->children.push_back($5);
-                        $$->children.push_back($6);
+                        $2->add_child($1);
+                        $2->add_child($3);
+                        $$->add_child($2);
+                         $$->add_child($5);
+                        $$->add_child($6);
                     }
                     
                     | UnannClassType Scope NEW{
                         $$ = $2;
-                        $$->children.push_back($1);
-                        $$->children.push_back($3);
+                        $$->add_child($1);
+                        $$->add_child($3);
                     }
                     | UnannClassType Scope TypeArguments NEW{
                         $$ = $2;
-                        $$->children.push_back($1);
-                        $$->children.push_back($3);
-                        $$->children.push_back($4);
+                        $$->add_child($1);
+                        $$->add_child($3);
+                        $$->add_child($4);
                     }
                     | ArrayType Scope NEW{
                         $$ = $2;
-                        $$->children.push_back($1);
-                        $$->children.push_back($3);
+                        $$->add_child($1);
+                        $$->add_child($3);
                     }
                     ;
 
 ArrayCreationExpression:    NEW PrimitiveType DimExprs
                             {
                                 $$ = createNode("ArrayCreationExpression");
-                                $$->children.push_back($2);
+                                $$->add_child($2);
                             }
                             | NEW UnannClassOrInterfaceType DimExprs
                             {
                                 $$ = createNode("ArrayCreationExpression");
-                                $$->children.push_back($2);
+                                $$->add_child($2);
                             }
                             | NEW PrimitiveType DimExprs Dims
                             {
                                 $$ = createNode("ArrayCreationExpression");
-                                $$->children.push_back($2);
+                                $$->add_child($2);
                             }
                             | NEW UnannClassOrInterfaceType DimExprs Dims
                             {
                                 $$ = createNode("ArrayCreationExpression");
-                                $$->children.push_back($2);
+                                $$->add_child($2);
                             }
                             ;
 
@@ -1568,7 +1556,7 @@ DimExprList:    DimExpr
 
 DimExpr:    LeftSquareBracket Expression RightSquareBracket {
     $$=createNode("DimExpr");
-    $$->children.push_back($2);
+    $$->add_child($2);
 }
             ;
 
@@ -1582,8 +1570,8 @@ AssignmentExpression:   ConditionalExpression
 Assignment: LeftHandSide AssignmentOperator Expression
             {
                 $$ = createNode($2->value);
-                $$->children.push_back($1);
-                $$->children.push_back($3);
+                $$->add_child($1);
+                $$->add_child($3);
             }
             ;
 
@@ -1610,9 +1598,9 @@ ConditionalExpression:  ConditionalOrExpression
                         | ConditionalOrExpression QUESTIONMARK Expression COLON ConditionalExpression
                         {
                             $$ = createNode("Ternary");
-                            $$->children.push_back($1);
-                            $$->children.push_back($3);
-                            $$->children.push_back($5);
+                            $$->add_child($1);
+                            $$->add_child($3);
+                            $$->add_child($5);
                         }
                         ;
 
@@ -1620,8 +1608,8 @@ ConditionalOrExpression:    ConditionalAndExpression
                             | ConditionalOrExpression OR ConditionalAndExpression
                             {
                                 $$ = createNode("||");
-                                $$->children.push_back($1);
-                                $$->children.push_back($3);
+                                $$->add_child($1);
+                                $$->add_child($3);
                             }
                             ;
 
@@ -1629,8 +1617,8 @@ ConditionalAndExpression:   InclusiveOrExpression
                             | ConditionalAndExpression AND InclusiveOrExpression
                             {
                                 $$ = createNode("&&");
-                                $$->children.push_back($1);
-                                $$->children.push_back($3);
+                                $$->add_child($1);
+                                $$->add_child($3);
                             }
                             ;
 
@@ -1638,8 +1626,8 @@ InclusiveOrExpression:  ExclusiveOrExpression
                         | InclusiveOrExpression BITOR ExclusiveOrExpression
                         {
                             $$ = createNode("|");
-                            $$->children.push_back($1);
-                            $$->children.push_back($3);
+                            $$->add_child($1);
+                            $$->add_child($3);
                         }
                         ;
 
@@ -1647,8 +1635,8 @@ ExclusiveOrExpression:  AndExpression
                         | ExclusiveOrExpression CARET AndExpression
                         {
                             $$ = createNode("^");
-                            $$->children.push_back($1);
-                            $$->children.push_back($3);
+                            $$->add_child($1);
+                            $$->add_child($3);
                         }
                         ;
 
@@ -1656,8 +1644,8 @@ AndExpression:  EqualityExpression
                 | AndExpression BITAND EqualityExpression
                 {
                     $$ = createNode("&");
-                    $$->children.push_back($1);
-                    $$->children.push_back($3);
+                    $$->add_child($1);
+                    $$->add_child($3);
                 }
                 ;
 
@@ -1665,14 +1653,14 @@ EqualityExpression: RelationalExpression
                     | EqualityExpression EQUAL RelationalExpression
                     {
                         $$ = createNode("==");
-                        $$->children.push_back($1);
-                        $$->children.push_back($3);
+                        $$->add_child($1);
+                        $$->add_child($3);
                     }
                     | EqualityExpression NOTEQUAL RelationalExpression
                     {
                         $$ = createNode("!=");
-                        $$->children.push_back($1);
-                        $$->children.push_back($3);
+                        $$->add_child($1);
+                        $$->add_child($3);
                     }
                     ;
 
@@ -1680,26 +1668,26 @@ RelationalExpression:   ShiftExpression
                         | RelationalExpression LT ShiftExpression
                         {
                             $$ = createNode("<");
-                            $$->children.push_back($1);
-                            $$->children.push_back($3);
+                            $$->add_child($1);
+                            $$->add_child($3);
                         }
                         | RelationalExpression GT ShiftExpression
                         {
                             $$ = createNode(">");
-                            $$->children.push_back($1);
-                            $$->children.push_back($3);
+                            $$->add_child($1);
+                            $$->add_child($3);
                         }
                         | RelationalExpression LE ShiftExpression
                         {
                             $$ = createNode("<=");
-                            $$->children.push_back($1);
-                            $$->children.push_back($3);
+                            $$->add_child($1);
+                            $$->add_child($3);
                         }
                         | RelationalExpression GE ShiftExpression
                         {
                             $$ = createNode(">=");
-                            $$->children.push_back($1);
-                            $$->children.push_back($3);
+                            $$->add_child($1);
+                            $$->add_child($3);
                         }
                         | InstanceofExpression
                         ;
@@ -1707,14 +1695,14 @@ RelationalExpression:   ShiftExpression
 InstanceofExpression:   RelationalExpression INSTANCEOF UnannReferenceType
                         {
                             $$ = createNode("instanceof");
-                            $$->children.push_back($1);
-                            $$->children.push_back($3);
+                            $$->add_child($1);
+                            $$->add_child($3);
                         }
                         | RelationalExpression INSTANCEOF Pattern
                         {
                             $$ = createNode("instanceof");
-                            $$->children.push_back($1);
-                            $$->children.push_back($3);
+                            $$->add_child($1);
+                            $$->add_child($3);
                         }
                         ;
 
@@ -1722,20 +1710,20 @@ ShiftExpression:    AdditiveExpression
                     | ShiftExpression LSHIFT AdditiveExpression
                     {
                         $$ = createNode("<<");
-                        $$->children.push_back($1); 
-                        $$->children.push_back($3);
+                        $$->add_child($1); 
+                        $$->add_child($3);
                     }
                     | ShiftExpression RSHIFT AdditiveExpression
                     {
                         $$ = createNode(">>");
-                        $$->children.push_back($1);
-                        $$->children.push_back($3);
+                        $$->add_child($1);
+                        $$->add_child($3);
                     }
                     | ShiftExpression URSHIFT AdditiveExpression
                     {
                         $$ = createNode(">>>");
-                        $$->children.push_back($1);
-                        $$->children.push_back($3);
+                        $$->add_child($1);
+                        $$->add_child($3);
                     }
                     ;
 
@@ -1743,14 +1731,14 @@ AdditiveExpression: MultiplicativeExpression
                     | AdditiveExpression ADD MultiplicativeExpression
                     {
                         $$ = createNode("+");
-                        $$->children.push_back($1);
-                        $$->children.push_back($3);
+                        $$->add_child($1);
+                        $$->add_child($3);
                     }
                     | AdditiveExpression SUB MultiplicativeExpression
                     {
                         $$ = createNode("-");
-                        $$->children.push_back($1);
-                        $$->children.push_back($3);
+                        $$->add_child($1);
+                        $$->add_child($3);
                     }
                     ;
 
@@ -1758,20 +1746,20 @@ MultiplicativeExpression:   UnaryExpression
                             | MultiplicativeExpression MUL UnaryExpression
                             {
                                 $$ = createNode("*");
-                                $$->children.push_back($1);
-                                $$->children.push_back($3);
+                                $$->add_child($1);
+                                $$->add_child($3);
                             }
                             | MultiplicativeExpression DIV UnaryExpression
                             {
                                 $$ = createNode("/");
-                                $$->children.push_back($1);
-                                $$->children.push_back($3);
+                                $$->add_child($1);
+                                $$->add_child($3);
                             }
                             | MultiplicativeExpression MOD UnaryExpression
                             {
                                 $$ = createNode("%");
-                                $$->children.push_back($1);
-                                $$->children.push_back($3);
+                                $$->add_child($1);
+                                $$->add_child($3);
                             }
                             ;
 
@@ -1779,12 +1767,12 @@ UnaryExpression:    PreIncrementExpression
                     | PreDecrementExpression
                     | ADD UnaryExpression
                     {
-                        $1->children.push_back($2);
+                        $1->add_child($2);
                         $$ = $1;
                     }
                     | SUB UnaryExpression
                     {
-                        $1->children.push_back($2);
+                        $1->add_child($2);
                         $$ = $1;
                     }
                     | UnaryExpressionNotPlusMinus
@@ -1793,28 +1781,28 @@ UnaryExpression:    PreIncrementExpression
 PreIncrementExpression: INC UnaryExpression
                         {
                             $$ = createNode("PreIncrementExpression");
-                            $$->children.push_back($1);
-                            $$->children.push_back($2);
+                            $$->add_child($1);
+                            $$->add_child($2);
                         }
                         ;
 
 PreDecrementExpression: DEC UnaryExpression
                         {
                             $$ = createNode("PreDecrementExpression");
-                            $$->children.push_back($1);
-                            $$->children.push_back($2);
+                            $$->add_child($1);
+                            $$->add_child($2);
                         }
                         ;
 
 UnaryExpressionNotPlusMinus:    PostfixExpression
                                 | TILDE UnaryExpression
                                 {
-                                    $1->children.push_back($2);
+                                    $1->add_child($2);
                                     $$ = $1;
                                 }
                                 | EXCLAMATION UnaryExpression
                                 {
-                                    $1->children.push_back($2);
+                                    $1->add_child($2);
                                     $$ = $1;
                                 }
                                 | CastExpression
@@ -1829,30 +1817,30 @@ PostfixExpression:  Primary
 PostIncrementExpression:    PostfixExpression INC
                             {
                                 $$ = createNode("PostIncrementExpression");
-                                $$->children.push_back($1);
-                                $$->children.push_back($2);
+                                $$->add_child($1);
+                                $$->add_child($2);
                             }
                             ;
 
 PostDecrementExpression:    PostfixExpression DEC
                             {
                                 $$ = createNode("PostDecrementExpression");
-                                $$->children.push_back($1);
-                                $$->children.push_back($2);
+                                $$->add_child($1);
+                                $$->add_child($2);
                             }
                             ;
 
 CastExpression: LeftParenthesis PrimitiveType RightParenthesis UnaryExpression
                 {
                     $$ = createNode("CastExpression");
-                    $$->children.push_back($2);
-                    $$->children.push_back($4);
+                    $$->add_child($2);
+                    $$->add_child($4);
                 }
                 | LeftParenthesis UnannReferenceType  RightParenthesis UnaryExpressionNotPlusMinus
                 {
                     $$ = createNode("CastExpression");
-                    $$->children.push_back($2);
-                    $$->children.push_back($4);
+                    $$->add_child($2);
+                    $$->add_child($4);
                 }
                 ;
 
@@ -1889,13 +1877,13 @@ Dims:   LeftSquareBracket RightSquareBracket
         {
             $$ = createNode("Dims");
             Node* temp = createNode("[ ]");
-            $$->children.push_back(temp);
+            $$->add_child(temp);
         }
         | Dims LeftSquareBracket RightSquareBracket 
         {
             $$ = $1;
             Node* temp = createNode("[ ]");
-            $$->children.push_back(temp);
+            $$->add_child(temp);
         }
         ;
 
@@ -1906,8 +1894,8 @@ LeftRightSquareList:    LeftSquareBracket RightSquareBracket
 TypeBound:  EXTENDS UnannClassOrInterfaceType
             {
                 $$ = createNode("TypeBound");
-                $$->children.push_back($1);
-                $$->children.push_back($2);
+                $$->add_child($1);
+                $$->add_child($2);
             }
             ;
 
@@ -1919,11 +1907,11 @@ TypeArguments:  LT TypeArgumentList GT {
 TypeArgumentList:   TypeArgumentList Comma TypeArgument
                     {
                         $$ = $1;
-                        $$->children.push_back($3);
+                        $$->add_child($3);
                     }
                     | TypeArgument {
                         $$ = createNode("TypeArgumentList");
-                        $$->children.push_back($1);
+                        $$->add_child($1);
                     }
                     ;
 
@@ -1934,8 +1922,8 @@ TypeArgument:   UnannReferenceType
 Wildcard:   QUESTIONMARK
             | QUESTIONMARK WildcardBounds {
                 $$=createNode("Wildcard");
-                $$->children.push_back($1);
-                $$->children.push_back($2);
+                $$->add_child($1);
+                $$->add_child($2);
 
 
             }
@@ -1944,14 +1932,14 @@ Wildcard:   QUESTIONMARK
 WildcardBounds: EXTENDS UnannReferenceType
                 {
                     $$=createNode("WildcardBounds");
-                    $$->children.push_back($1);
-                    $$->children.push_back($2);
+                    $$->add_child($1);
+                    $$->add_child($2);
                 }
                 | SUPER UnannReferenceType
                 {
                     $$=createNode("WildcardBounds");;
-                    $$->children.push_back($1);
-                    $$->children.push_back($2);
+                    $$->add_child($1);
+                    $$->add_child($2);
                 }
                 ;
 
@@ -1995,8 +1983,8 @@ ExpressionName: Identifier
                 | ExpressionName Dot Identifier
                 {
                     $$ = createNode(".");
-                    $$->children.push_back($1);
-                    $$->children.push_back($3);
+                    $$->add_child($1);
+                    $$->add_child($3);
                 }
                 ;
 

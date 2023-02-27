@@ -1,9 +1,10 @@
 %{
 #define YY_NO_UNPUT
 
-#include "token.h"
-#include <string.h>
+#include <iostream>
 #include <string>
+#include <cstring>
+#include "token.h"
 
 extern "C" {
     int yylex(void);
@@ -11,10 +12,22 @@ extern "C" {
 
 int linenum = 0;
 
-Node* PrefixedNode(std::string prefix, const char* matched)
+std::string KEYWORD_PREFIX      = "Keyword__";
+std::string IDENTIFIER_PREFIX   = "Identifier__";
+std::string SEPARATOR_PREFIX    = "Separator__";
+std::string LITERAL_PREFIX      = "Literal__";
+
+std::string KEYWORD_SUFFIX      = "";
+std::string IDENTIFIER_SUFFIX   = "";
+std::string SEPARATOR_SUFFIX    = "";
+std::string LITERAL_SUFFIX      = "";
+
+Node* FixedNode(std::string prefix, const char* matched, std::string suffix)
 {
-    prefix.append(matched);
-    return createNode(strdup(prefix.c_str()));
+    std::string res = prefix;
+    res.append(matched);
+    res += suffix;
+    return createNode(strdup(res.c_str()));
 }
 
 %}
@@ -87,124 +100,124 @@ Literals {DecimalIntegerLiteral}|{HexIntegerLiteral}|{OctalIntegerLiteral}|{Floa
 
 \n { linenum++; }
 
-"abstract" { yylval.node = PrefixedNode("Keyword__", yytext); return ABSTRACT ;}
-"continue" { yylval.node = PrefixedNode("Keyword__", yytext); return CONTINUE ;}
-"for" { yylval.node = PrefixedNode("Keyword__", yytext); return FOR ;}
-"new" { yylval.node = PrefixedNode("Keyword__", yytext); return NEW ;}
-"switch" { yylval.node = PrefixedNode("Keyword__", yytext); return SWITCH ;}
-"assert" { yylval.node = PrefixedNode("Keyword__", yytext); return ASSERT ;}
-"default" { yylval.node = PrefixedNode("Keyword__", yytext); return DEFAULT ;}
-"if" { yylval.node = PrefixedNode("Keyword__", yytext); return IF ;}
-"package" { yylval.node = PrefixedNode("Keyword__", yytext); return PACKAGE ;}
-"synchronized" { yylval.node = PrefixedNode("Keyword__", yytext); return SYNCHRONIZED ;}
-"boolean" { yylval.node = PrefixedNode("Keyword__", yytext); return BOOLEAN ;}
-"do" { yylval.node = PrefixedNode("Keyword__", yytext); return DO ;}
-"goto" { yylval.node = PrefixedNode("Keyword__", yytext); return GOTO ;}
-"private" { yylval.node = PrefixedNode("Keyword__", yytext); return PRIVATE ;}
-"this" { yylval.node = PrefixedNode("Keyword__", yytext); return THIS ;}
-"break" { yylval.node = PrefixedNode("Keyword__", yytext); return BREAK ;}
-"double" { yylval.node = PrefixedNode("Keyword__", yytext); return DOUBLE ;}
-"implements" { yylval.node = PrefixedNode("Keyword__", yytext); return IMPLEMENTS ;}
-"protected" { yylval.node = PrefixedNode("Keyword__", yytext); return PROTECTED ;}
-"throw" { yylval.node = PrefixedNode("Keyword__", yytext); return THROW ;}
-"byte" { yylval.node = PrefixedNode("Keyword__", yytext); return BYTE ;}
-"else" { yylval.node = PrefixedNode("Keyword__", yytext); return ELSE ;}
-"import" { yylval.node = PrefixedNode("Keyword__", yytext); return IMPORT ;}
-"public" { yylval.node = PrefixedNode("Keyword__", yytext); return PUBLIC ;}
-"throws" { yylval.node = PrefixedNode("Keyword__", yytext); return THROWS ;}
-"case" { yylval.node = PrefixedNode("Keyword__", yytext); return CASE ;}
-"enum" { yylval.node = PrefixedNode("Keyword__", yytext); return ENUM ;}
-"instanceof" { yylval.node = PrefixedNode("Keyword__", yytext); return INSTANCEOF ;}
-"return" { yylval.node = PrefixedNode("Keyword__", yytext); return RETURN ;}
-"transient" { yylval.node = PrefixedNode("Keyword__", yytext); return TRANSIENT ;}
-"catch" { yylval.node = PrefixedNode("Keyword__", yytext); return CATCH ;}
-"extends" { yylval.node = PrefixedNode("Keyword__", yytext); return EXTENDS ;}
-"int" { yylval.node = PrefixedNode("Keyword__", yytext); return INT ;}
-"short" { yylval.node = PrefixedNode("Keyword__", yytext); return SHORT ;}
-"try" { yylval.node = PrefixedNode("Keyword__", yytext); return TRY ;}
-"char" { yylval.node = PrefixedNode("Keyword__", yytext); return CHAR ;}
-"final" { yylval.node = PrefixedNode("Keyword__", yytext); return FINAL ;}
-"interface" { yylval.node = PrefixedNode("Keyword__", yytext); return INTERFACE ;}
-"static" { yylval.node = PrefixedNode("Keyword__", yytext); return STATIC ;}
-"void" { yylval.node = PrefixedNode("Keyword__", yytext); return VOID ;}
-"class" { yylval.node = PrefixedNode("Keyword__", yytext); return CLASS ;}
-"finally" { yylval.node = PrefixedNode("Keyword__", yytext); return FINALLY ;}
-"long" { yylval.node = PrefixedNode("Keyword__", yytext); return LONG ;}
-"strictfp" { yylval.node = PrefixedNode("Keyword__", yytext); return STRICTFP ;}
-"volatile" { yylval.node = PrefixedNode("Keyword__", yytext); return VOLATILE ;}
-"const" { yylval.node = PrefixedNode("Keyword__", yytext); return CONST ;}
-"float" { yylval.node = PrefixedNode("Keyword__", yytext); return FLOAT ;}
-"native" { yylval.node = PrefixedNode("Keyword__", yytext); return NATIVE ;}
-"super" { yylval.node = PrefixedNode("Keyword__", yytext); return SUPER ;}
-"while" { yylval.node = PrefixedNode("Keyword__", yytext); return WHILE ;}
-"_" { yylval.node = PrefixedNode("Keyword__", yytext); return UNDERSCORE ;}
+"abstract" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return ABSTRACT ;}
+"continue" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return CONTINUE ;}
+"for" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return FOR ;}
+"new" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return NEW ;}
+"switch" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return SWITCH ;}
+"assert" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return ASSERT ;}
+"default" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return DEFAULT ;}
+"if" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return IF ;}
+"package" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return PACKAGE ;}
+"synchronized" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return SYNCHRONIZED ;}
+"boolean" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return BOOLEAN ;}
+"do" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return DO ;}
+"goto" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return GOTO ;}
+"private" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return PRIVATE ;}
+"this" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return THIS ;}
+"break" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return BREAK ;}
+"double" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return DOUBLE ;}
+"implements" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return IMPLEMENTS ;}
+"protected" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return PROTECTED ;}
+"throw" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return THROW ;}
+"byte" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return BYTE ;}
+"else" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return ELSE ;}
+"import" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return IMPORT ;}
+"public" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return PUBLIC ;}
+"throws" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return THROWS ;}
+"case" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return CASE ;}
+"enum" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return ENUM ;}
+"instanceof" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return INSTANCEOF ;}
+"return" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return RETURN ;}
+"transient" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return TRANSIENT ;}
+"catch" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return CATCH ;}
+"extends" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return EXTENDS ;}
+"int" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return INT ;}
+"short" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return SHORT ;}
+"try" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return TRY ;}
+"char" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return CHAR ;}
+"final" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return FINAL ;}
+"interface" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return INTERFACE ;}
+"static" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return STATIC ;}
+"void" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return VOID ;}
+"class" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return CLASS ;}
+"finally" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return FINALLY ;}
+"long" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return LONG ;}
+"strictfp" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return STRICTFP ;}
+"volatile" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return VOLATILE ;}
+"const" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return CONST ;}
+"float" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return FLOAT ;}
+"native" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return NATIVE ;}
+"super" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return SUPER ;}
+"while" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return WHILE ;}
+"_" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return UNDERSCORE ;}
 
-"exports"   { yylval.node = PrefixedNode("Keyword__", yytext); return EXPORTS; }
-"opens"     { yylval.node = PrefixedNode("Keyword__", yytext); return OPENS; }
-"requires"  { yylval.node = PrefixedNode("Keyword__", yytext); return REQUIRES; }
-"uses"      { yylval.node = PrefixedNode("Keyword__", yytext); return USES; }
-"module"    { yylval.node = PrefixedNode("Keyword__", yytext); return MODULE; }
-"permits"   { yylval.node = PrefixedNode("Keyword__", yytext); return PERMITS; }
-"sealed"    { yylval.node = PrefixedNode("Keyword__", yytext); return SEALED; }
-"var"       { yylval.node = PrefixedNode("Keyword__", yytext); return VAR; }
-"provides"  { yylval.node = PrefixedNode("Keyword__", yytext); return PROVIDES; }
-"to"        { yylval.node = PrefixedNode("Keyword__", yytext); return TO; }
-"with"      { yylval.node = PrefixedNode("Keyword__", yytext); return WITH; }
-"open"      { yylval.node = PrefixedNode("Keyword__", yytext); return OPEN; }
-"record"    { yylval.node = PrefixedNode("Keyword__", yytext); return RECORD; }
-"transitive"    { yylval.node = PrefixedNode("Keyword__", yytext); return TRANSITIVE; }
+"exports"   { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return EXPORTS; }
+"opens"     { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return OPENS; }
+"requires"  { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return REQUIRES; }
+"uses"      { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return USES; }
+"module"    { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return MODULE; }
+"permits"   { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return PERMITS; }
+"sealed"    { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return SEALED; }
+"var"       { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return VAR; }
+"provides"  { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return PROVIDES; }
+"to"        { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return TO; }
+"with"      { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return WITH; }
+"open"      { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return OPEN; }
+"record"    { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return RECORD; }
+"transitive"    { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return TRANSITIVE; }
 
-"(" { yylval.node = PrefixedNode("Separator__", yytext); return LeftParenthesis; }
-")" { yylval.node = PrefixedNode("Separator__", yytext); return RightParenthesis; }
-"{" { yylval.node = PrefixedNode("Separator__", yytext); return LeftCurlyBrace; }
-"}" { yylval.node = PrefixedNode("Separator__", yytext); return RightCurlyBrace; }
-"[" { yylval.node = PrefixedNode("Separator__", yytext); return LeftSquareBracket; }
-"]" { yylval.node = PrefixedNode("Separator__", yytext); return RightSquareBracket; }
-";" { yylval.node = PrefixedNode("Separator__", yytext); return Semicolon; }
-"," { yylval.node = PrefixedNode("Separator__", yytext); return Comma; }
-"." { yylval.node = PrefixedNode("Separator__", yytext); return Dot; }
-"..." { yylval.node = PrefixedNode("Separator__", yytext); return ellipsis;}
-"@" { yylval.node = PrefixedNode("Separator__", yytext); return AtSign;}
-"::" { yylval.node = PrefixedNode("Separator__", yytext); return Scope;}
+"(" { yylval.node = FixedNode(SEPARATOR_PREFIX, yytext, SEPARATOR_SUFFIX); return LeftParenthesis; }
+")" { yylval.node = FixedNode(SEPARATOR_PREFIX, yytext, SEPARATOR_SUFFIX); return RightParenthesis; }
+"{" { yylval.node = FixedNode(SEPARATOR_PREFIX, yytext, SEPARATOR_SUFFIX); return LeftCurlyBrace; }
+"}" { yylval.node = FixedNode(SEPARATOR_PREFIX, yytext, SEPARATOR_SUFFIX); return RightCurlyBrace; }
+"[" { yylval.node = FixedNode(SEPARATOR_PREFIX, yytext, SEPARATOR_SUFFIX); return LeftSquareBracket; }
+"]" { yylval.node = FixedNode(SEPARATOR_PREFIX, yytext, SEPARATOR_SUFFIX); return RightSquareBracket; }
+";" { yylval.node = FixedNode(SEPARATOR_PREFIX, yytext, SEPARATOR_SUFFIX); return Semicolon; }
+"," { yylval.node = FixedNode(SEPARATOR_PREFIX, yytext, SEPARATOR_SUFFIX); return Comma; }
+"." { yylval.node = FixedNode(SEPARATOR_PREFIX, yytext, SEPARATOR_SUFFIX); return Dot; }
+"..." { yylval.node = FixedNode(SEPARATOR_PREFIX, yytext, SEPARATOR_SUFFIX); return ellipsis;}
+"@" { yylval.node = FixedNode(SEPARATOR_PREFIX, yytext, SEPARATOR_SUFFIX); return AtSign;}
+"::" { yylval.node = FixedNode(SEPARATOR_PREFIX, yytext, SEPARATOR_SUFFIX); return Scope;}
 
-"=" { yylval.node = PrefixedNode("", yytext); return ASSIGN; }
-">" { yylval.node = PrefixedNode("", yytext); return GT; }
-"<" { yylval.node = PrefixedNode("", yytext); return LT; }
-"!" { yylval.node = PrefixedNode("", yytext); return EXCLAMATION; }
-"~" { yylval.node = PrefixedNode("", yytext); return TILDE; }
-"?" { yylval.node = PrefixedNode("", yytext); return QUESTIONMARK; }
-":" { yylval.node = PrefixedNode("", yytext); return COLON; }
-"->" { yylval.node = PrefixedNode("", yytext); return ARROW; }
-"==" { yylval.node = PrefixedNode("", yytext); return EQUAL; }
-">=" { yylval.node = PrefixedNode("", yytext); return GE; }
-"<=" { yylval.node = PrefixedNode("", yytext); return LE; }
-"!=" { yylval.node = PrefixedNode("", yytext); return NOTEQUAL; }
-"&&" { yylval.node = PrefixedNode("", yytext); return AND; }
-"||" { yylval.node = PrefixedNode("", yytext); return OR; }
-"++" { yylval.node = PrefixedNode("", yytext); return INC; }
-"--" { yylval.node = PrefixedNode("", yytext); return DEC; }
-"+" { yylval.node = PrefixedNode("", yytext); return ADD; }
-"-" { yylval.node = PrefixedNode("", yytext); return SUB; }
-"*" { yylval.node = PrefixedNode("", yytext); return MUL; }
-"/" { yylval.node = PrefixedNode("", yytext); return DIV; }
-"&" { yylval.node = PrefixedNode("", yytext); return BITAND; }
-"|" { yylval.node = PrefixedNode("", yytext); return BITOR; }
-"^" { yylval.node = PrefixedNode("", yytext); return CARET; }
-"%" { yylval.node = PrefixedNode("", yytext); return MOD; }
-"<<" { yylval.node = PrefixedNode("", yytext); return LSHIFT; }
-">>" { yylval.node = PrefixedNode("", yytext); return RSHIFT; }
-">>>" { yylval.node = PrefixedNode("", yytext); return URSHIFT; }
-"+=" { yylval.node = PrefixedNode("", yytext); return ADD_ASSIGN; }
-"-=" { yylval.node = PrefixedNode("", yytext); return SUB_ASSIGN; }
-"*=" { yylval.node = PrefixedNode("", yytext); return MUL_ASSIGN; }
-"/=" { yylval.node = PrefixedNode("", yytext); return DIV_ASSIGN; }
-"&=" { yylval.node = PrefixedNode("", yytext); return AND_ASSIGN; }
-"|=" { yylval.node = PrefixedNode("", yytext); return OR_ASSIGN; }
-"^=" { yylval.node = PrefixedNode("", yytext); return XOR_ASSIGN; }
-"%=" { yylval.node = PrefixedNode("", yytext); return MOD_ASSIGN; }
-"<<=" { yylval.node = PrefixedNode("", yytext); return LSHIFT_ASSIGN; }
-">>=" { yylval.node = PrefixedNode("", yytext); return RSHIFT_ASSIGN; }
-">>>=" { yylval.node = PrefixedNode("", yytext); return URSHIFT_ASSIGN; }
+"=" { yylval.node = FixedNode("", yytext, ""); return ASSIGN; }
+">" { yylval.node = FixedNode("", yytext, ""); return GT; }
+"<" { yylval.node = FixedNode("", yytext, ""); return LT; }
+"!" { yylval.node = FixedNode("", yytext, ""); return EXCLAMATION; }
+"~" { yylval.node = FixedNode("", yytext, ""); return TILDE; }
+"?" { yylval.node = FixedNode("", yytext, ""); return QUESTIONMARK; }
+":" { yylval.node = FixedNode("", yytext, ""); return COLON; }
+"->" { yylval.node = FixedNode("", yytext, ""); return ARROW; }
+"==" { yylval.node = FixedNode("", yytext, ""); return EQUAL; }
+">=" { yylval.node = FixedNode("", yytext, ""); return GE; }
+"<=" { yylval.node = FixedNode("", yytext, ""); return LE; }
+"!=" { yylval.node = FixedNode("", yytext, ""); return NOTEQUAL; }
+"&&" { yylval.node = FixedNode("", yytext, ""); return AND; }
+"||" { yylval.node = FixedNode("", yytext, ""); return OR; }
+"++" { yylval.node = FixedNode("", yytext, ""); return INC; }
+"--" { yylval.node = FixedNode("", yytext, ""); return DEC; }
+"+" { yylval.node = FixedNode("", yytext, ""); return ADD; }
+"-" { yylval.node = FixedNode("", yytext, ""); return SUB; }
+"*" { yylval.node = FixedNode("", yytext, ""); return MUL; }
+"/" { yylval.node = FixedNode("", yytext, ""); return DIV; }
+"&" { yylval.node = FixedNode("", yytext, ""); return BITAND; }
+"|" { yylval.node = FixedNode("", yytext, ""); return BITOR; }
+"^" { yylval.node = FixedNode("", yytext, ""); return CARET; }
+"%" { yylval.node = FixedNode("", yytext, ""); return MOD; }
+"<<" { yylval.node = FixedNode("", yytext, ""); return LSHIFT; }
+">>" { yylval.node = FixedNode("", yytext, ""); return RSHIFT; }
+">>>" { yylval.node = FixedNode("", yytext, ""); return URSHIFT; }
+"+=" { yylval.node = FixedNode("", yytext, ""); return ADD_ASSIGN; }
+"-=" { yylval.node = FixedNode("", yytext, ""); return SUB_ASSIGN; }
+"*=" { yylval.node = FixedNode("", yytext, ""); return MUL_ASSIGN; }
+"/=" { yylval.node = FixedNode("", yytext, ""); return DIV_ASSIGN; }
+"&=" { yylval.node = FixedNode("", yytext, ""); return AND_ASSIGN; }
+"|=" { yylval.node = FixedNode("", yytext, ""); return OR_ASSIGN; }
+"^=" { yylval.node = FixedNode("", yytext, ""); return XOR_ASSIGN; }
+"%=" { yylval.node = FixedNode("", yytext, ""); return MOD_ASSIGN; }
+"<<=" { yylval.node = FixedNode("", yytext, ""); return LSHIFT_ASSIGN; }
+">>=" { yylval.node = FixedNode("", yytext, ""); return RSHIFT_ASSIGN; }
+">>>=" { yylval.node = FixedNode("", yytext, ""); return URSHIFT_ASSIGN; }
 
 \"([^\"\\]|\\.)*\" {
     int matched_length = strlen(yytext);
@@ -219,18 +232,18 @@ Literals {DecimalIntegerLiteral}|{HexIntegerLiteral}|{OctalIntegerLiteral}|{Floa
     return StringLiteral;
 }
 
-{DecimalIntegerLiteral}|{HexIntegerLiteral}|{OctalIntegerLiteral}|{BinaryIntegerLiteral} { yylval.node = PrefixedNode("Literal__", yytext); return IntegerLiteral; }
-{FloatingPointLiteral} { yylval.node = PrefixedNode("Literal__", yytext); return FloatingPointLiteral; }
-{BooleanLiteral} { yylval.node = PrefixedNode("Literal__", yytext); return BooleanLiteral; }
-{CharLiteral} { yylval.node = PrefixedNode("Literal__", yytext); return CharacterLiteral; }
-{NullLiteral} { yylval.node = PrefixedNode("Literal__", yytext); return NullLiteral; }
+{DecimalIntegerLiteral}|{HexIntegerLiteral}|{OctalIntegerLiteral}|{BinaryIntegerLiteral} { yylval.node = FixedNode(LITERAL_PREFIX, yytext, LITERAL_SUFFIX); return IntegerLiteral; }
+{FloatingPointLiteral} { yylval.node = FixedNode(LITERAL_PREFIX, yytext, LITERAL_SUFFIX); return FloatingPointLiteral; }
+{BooleanLiteral} { yylval.node = FixedNode(LITERAL_PREFIX, yytext, LITERAL_SUFFIX); return BooleanLiteral; }
+{CharLiteral} { yylval.node = FixedNode(LITERAL_PREFIX, yytext, LITERAL_SUFFIX); return CharacterLiteral; }
+{NullLiteral} { yylval.node = FixedNode(LITERAL_PREFIX, yytext, LITERAL_SUFFIX); return NullLiteral; }
 
-(\"\"\")[ ]*([\n\r]|[\r][\n])([^\\]|(\\\\))*(\"\"\") { yylval.node = PrefixedNode("Identifier__", yytext); return TextBlock;}
+(\"\"\")[ ]*([\n\r]|[\r][\n])([^\\]|(\\\\))*(\"\"\") { yylval.node = FixedNode(IDENTIFIER_PREFIX, yytext, IDENTIFIER_SUFFIX); return TextBlock;}
 [\'][\\][\'] { std::cout << yytext << " Line number is " << yylineno << " Illegal Character is " << yytext[0] << '\n'; }
 [\'][\'][\'] { std::cout << yytext << " Line number is " << yylineno << " Illegal Character is " << yytext[1] << '\n'; }
-[\'].[\'] { yylval.node = PrefixedNode("Literal__", yytext); return CharacterLiteral; }
+[\'].[\'] { yylval.node = FixedNode(LITERAL_PREFIX, yytext, LITERAL_SUFFIX); return CharacterLiteral; }
 
-[a-zA-Z$_]+[$_a-zA-Z0-9]* { yylval.node = PrefixedNode("Identifier__", yytext); return IdentifierChars; }
+[a-zA-Z$_]+[$_a-zA-Z0-9]* { yylval.node = FixedNode(IDENTIFIER_PREFIX, yytext, IDENTIFIER_SUFFIX); return IdentifierChars; }
 
 
 . { std::cout << yytext<<" Line number is " << yylineno << " Illegal Character is " << yytext[0] << '\n'; }
