@@ -775,8 +775,7 @@ LabeledStatement:   Identifier COLON Statement
 
 ExpressionStatement:    StatementExpression Semicolon
                         {
-                            $$ = createNode("ExpressionStatement");
-                            $$->children.push_back($1);
+                            $$  = $1;
                         }
                         ;
 
@@ -1938,10 +1937,7 @@ ExpressionName: Identifier
 TypeName:   TypeIdentifier
             ;
 
-Literal:    IntegerLiteral 
-            {
-                printf("%s\n", $$->val);
-            }
+Literal:    IntegerLiteral
             | FloatingPointLiteral
             | BooleanLiteral
             | CharacterLiteral
