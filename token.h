@@ -44,7 +44,7 @@
 extern int yydebug;
 #endif
 /* "%code requires" blocks.  */
-#line 78 "parser.y"
+#line 79 "parser.y"
 
     #include <bits/stdc++.h>
     #include <string>
@@ -55,8 +55,8 @@ extern int yydebug;
     using namespace std;
     Node* createNode(char* value, vector<Node*> children);
     Node* createNode(char* value);
-    int buildTree(Node* , int parentno , int co);
-    void list_concat(const vector<Node*>& s, const vector<Node*>& t);
+    int buildTree(Node*, int parentno , int co);
+    void list_concat(vector<Node*>& s, const vector<Node*>& t);
 
 #line 62 "parser.tab.h"
 
@@ -196,7 +196,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 92 "parser.y"
+#line 93 "parser.y"
 
     Node* node;
     char* str;
