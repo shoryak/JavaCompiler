@@ -153,7 +153,7 @@ void list_concat(vector<Node*>& s, const vector<Node*>& t) {
 
 CompilationUnit:    OrdinaryCompilationUnit
                     {
-                        cout<<"abcd\n"; root= $$; buildTree(root,-1,0);
+                        root= $$; buildTree(root,-1,0);
                     }
                     ;
 
@@ -551,12 +551,18 @@ ConstructorDeclarator:  SimpleTypeName LeftParenthesis  RightParenthesis
                             $$->children.push_back($1);
                             $$->children.push_back($3);
                         }
-                        | SimpleTypeName LeftParenthesis  FormalParameterList RightParenthesis {
-
-}
-| SimpleTypeName LeftParenthesis ReceiverParameter Comma FormalParameterList RightParenthesis{
-
-}
+                        | SimpleTypeName LeftParenthesis  FormalParameterList RightParenthesis 
+                        {
+                            $$ = createNode("ConstructorDeclarator");
+                            $$->children.push_back($1);
+                            $$->children.push_back($3);
+                        }
+                        | SimpleTypeName LeftParenthesis ReceiverParameter Comma FormalParameterList RightParenthesis{
+                            $$ = createNode("ConstructorDeclarator");
+                            $$->children.push_back($1);
+                            $$->children.push_back($3);
+                            $$->children.push_back($5);
+                        }
 ;
 
 SimpleTypeName: TypeIdentifier
@@ -993,12 +999,14 @@ EnhancedForStatementNoShortIf:  FOR LeftParenthesis LocalVariableDeclaration COL
                                 }
                                 ;
 
-BreakStatement: BREAK Identifier Semicolon {
+BreakStatement: BREAK Identifier Semicolon 
+                {
                         $$ = createNode("BREAK");
                         $$->children.push_back($2);
 
-}
-                | BREAK Semicolon{
+                }
+                | BREAK Semicolon
+                {
                         $$ = createNode("BREAK");
                         $$->children.push_back($2);
                 }
@@ -1351,14 +1359,41 @@ MethodInvocation:   Identifier LeftParenthesis  RightParenthesis
                     
                     | TypeName Dot SUPER Dot Identifier LeftParenthesis RightParenthesis
                     {
-
+                        $$ = createNode("MethodInvocation");
+                        $2->children.push_back($1);
+                        $2->children.push_back($3);
+                        $4->children.push_back($2);
+                        $4->children.push_back($5);
+                        $$->children.push_back($4);
                     }
                     | TypeName Dot SUPER Dot TypeArguments Identifier LeftParenthesis RightParenthesis
-                    | TypeName Dot SUPER Dot Identifier LeftParenthesis ArgumentList RightParenthesis {
-                              
+                    {
+                        $$ = createNode("MethodInvocation");
+                        $2->children.push_back($1);
+                        $2->children.push_back($3);
+                        $4->children.push_back($2);
+                        $4->children.push_back($6);
+                        $$->children.push_back($4);
                     }
-                    | TypeName Dot SUPER Dot TypeArguments Identifier LeftParenthesis ArgumentList RightParenthesis{
-                        
+                    | TypeName Dot SUPER Dot Identifier LeftParenthesis ArgumentList RightParenthesis 
+                    {
+                        $$ = createNode("MethodInvocation");
+                        $2->children.push_back($1);
+                        $2->children.push_back($3);
+                        $4->children.push_back($2);
+                        $4->children.push_back($5);
+                        $$->children.push_back($4);
+                        $$->children.push_back($7);     
+                    }
+                    | TypeName Dot SUPER Dot TypeArguments Identifier LeftParenthesis ArgumentList RightParenthesis
+                    {
+                        $$ = createNode("MethodInvocation");
+                        $2->children.push_back($1);
+                        $2->children.push_back($3);
+                        $4->children.push_back($2);
+                        $4->children.push_back($6);
+                        $$->children.push_back($4);
+                        $$->children.push_back($8); 
                     }
                     ;
 
@@ -1696,7 +1731,15 @@ MultiplicativeExpression:   UnaryExpression
 UnaryExpression:    PreIncrementExpression
                     | PreDecrementExpression
                     | ADD UnaryExpression
+                    {
+                        $1->children.push_back($2);
+                        $$ = $1;
+                    }
                     | SUB UnaryExpression
+                    {
+                        $1->children.push_back($2);
+                        $$ = $1;
+                    }
                     | UnaryExpressionNotPlusMinus
                     ;
 
@@ -1718,7 +1761,15 @@ PreDecrementExpression: DEC UnaryExpression
 
 UnaryExpressionNotPlusMinus:    PostfixExpression
                                 | TILDE UnaryExpression
+                                {
+                                    $1->children.push_back($2);
+                                    $$ = $1;
+                                }
                                 | EXCLAMATION UnaryExpression
+                                {
+                                    $1->children.push_back($2);
+                                    $$ = $1;
+                                }
                                 | CastExpression
                                 ;
 
@@ -1798,11 +1849,20 @@ TypeBound:  EXTENDS UnannClassOrInterfaceType {
 }
             ;
 
-TypeArguments:  LT TypeArgumentList GT
+TypeArguments:  LT TypeArgumentList GT {
+                    $$ = $2;
+                }
                 ;
 
 TypeArgumentList:   TypeArgumentList Comma TypeArgument
-                    | TypeArgument
+                    {
+                        $$ = $1;
+                        $$->children.push_back($3);
+                    }
+                    | TypeArgument {
+                        $$ = createNode("TypeArgumentList");
+                        $$->children.push_back($1);
+                    }
                     ;
 
 TypeArgument:   UnannReferenceType
