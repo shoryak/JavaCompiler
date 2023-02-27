@@ -553,13 +553,13 @@ ConstructorDeclarator:  SimpleTypeName LeftParenthesis  RightParenthesis
                         {
                             $$ = createNode("ConstructorDeclarator");
                             $$->children.push_back($1);
-                            $$->children.push_back($3);
+                            list_concat($$->children, $3->children);
                         }
                         | SimpleTypeName LeftParenthesis ReceiverParameter Comma FormalParameterList RightParenthesis{
                             $$ = createNode("ConstructorDeclarator");
                             $$->children.push_back($1);
                             $$->children.push_back($3);
-                            $$->children.push_back($5);
+                            list_concat($$->children, $5->children);
                         }
 ;
 
@@ -630,16 +630,68 @@ ExplicitConstructorInvocation:  THIS LeftParenthesis RightParenthesis Semicolon 
                                 | TypeArguments SUPER LeftParenthesis  RightParenthesis Semicolon
                                 {
                                     $$ = createNode("ExplicitConstructorInvocation");
-                                    
+                                    $$->children.push_back($2);
                                 }
                                 | ExpressionName Dot TypeArguments SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
+                                {
+                                    $$ = createNode("ExplicitConstructorInvocation");
+                                    $2->children.push_back($1);
+                                    $2->children.push_back($4);
+                                    $$->children.push_back($2);
+                                    $$->children.push_back($6);
+                                }
                                 | ExpressionName Dot TypeArguments SUPER LeftParenthesis RightParenthesis Semicolon
+                                {
+                                    $$ = createNode("ExplicitConstructorInvocation");
+                                    $2->children.push_back($1);
+                                    $2->children.push_back($4);
+                                    $$->children.push_back($2);
+                                }
                                 | ExpressionName Dot SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
+                                {
+                                    $$ = createNode("ExplicitConstructorInvocation");
+                                    $2->children.push_back($1);
+                                    $2->children.push_back($3);
+                                    $$->children.push_back($2);
+                                    $$->children.push_back($5);
+                                }
                                 | ExpressionName Dot SUPER LeftParenthesis RightParenthesis Semicolon
+                                {
+                                    $$ = createNode("ExplicitConstructorInvocation");
+                                    $2->children.push_back($1);
+                                    $2->children.push_back($3);
+                                    $$->children.push_back($2);
+                                }
                                 | Primary Dot  SUPER LeftParenthesis RightParenthesis Semicolon
+                                {
+                                    $$ = createNode("ExplicitConstructorInvocation");
+                                    $2->children.push_back($1);
+                                    $2->children.push_back($3);
+                                    $$->children.push_back($2);
+                                }
                                 | Primary Dot TypeArguments SUPER LeftParenthesis RightParenthesis Semicolon
+                                {
+                                    $$ = createNode("ExplicitConstructorInvocation");
+                                    $2->children.push_back($1);
+                                    $2->children.push_back($4);
+                                    $$->children.push_back($2);
+                                }
                                 | Primary Dot  SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
+                                {
+                                    $$ = createNode("ExplicitConstructorInvocation");
+                                    $2->children.push_back($1);
+                                    $2->children.push_back($3);
+                                    $$->children.push_back($2);
+                                    $$->children.push_back($5);
+                                }
                                 | Primary Dot TypeArguments SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
+                                {
+                                    $$ = createNode("ExplicitConstructorInvocation");
+                                    $2->children.push_back($1);
+                                    $2->children.push_back($4);
+                                    $$->children.push_back($2);
+                                    $$->children.push_back($6);
+                                }
                                 ;
 
 ArrayInitializer:   LeftCurlyBrace  Comma RightCurlyBrace
@@ -1835,8 +1887,18 @@ FloatingPointType:  FLOAT
 ArrayType:  UnannArrayType
             ;
 
-Dims:   LeftSquareBracket RightSquareBracket
-        | LeftSquareBracket RightSquareBracket LeftRightSquareList
+Dims:   LeftSquareBracket RightSquareBracket 
+        {
+            $$ = createNode("Dims");
+            Node* temp = createNode("[ ]");
+            $$->children.push_back(temp);
+        }
+        | Dims LeftSquareBracket RightSquareBracket 
+        {
+            $$ = $1;
+            Node* temp = createNode("[ ]");
+            $$->children.push_back(temp);
+        }
         ;
 
 TypeBound:  EXTENDS UnannClassOrInterfaceType {
