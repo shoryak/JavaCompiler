@@ -29,9 +29,8 @@ T parser_string(string str)
 
 struct Node
 {
-    char* val;
+    char* value;
     vector<Node*> children;
-    char* data;
 };
 
 Node* root;
@@ -39,7 +38,7 @@ Node* root;
 Node* createNode(char* value, vector<Node*> children)
 {
     Node* temp= new Node();
-    temp->val = value;
+    temp->value = value;
     temp->children = children;
     return temp;
 }
@@ -47,7 +46,7 @@ Node* createNode(char* value, vector<Node*> children)
 Node* createNode(char* value)
 {
     Node* temp = new Node();
-    temp->val = value;
+    temp->value = value;
     return temp;
 }
 
@@ -55,7 +54,7 @@ int buildTree(Node* node, int parentno, int co)
 {
     if(node == NULL) return co;
     int nodeno = co++;
-    printf(" node%d [label=\"%s\"]\n", nodeno, node->val);
+    printf(" node%d [label=\"%s\"]\n", nodeno, node->value);
     if(parentno >= 0)
         printf(" node%d -> node%d\n", parentno, nodeno);    
     int n = node->children.size();
@@ -1582,7 +1581,7 @@ AssignmentExpression:   ConditionalExpression
 
 Assignment: LeftHandSide AssignmentOperator Expression
             {
-                $$ = createNode($2->val);
+                $$ = createNode($2->value);
                 $$->children.push_back($1);
                 $$->children.push_back($3);
             }

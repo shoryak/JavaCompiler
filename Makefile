@@ -34,4 +34,4 @@ test.o:			test.cpp
 lex.o main.o:	token.h
 
 clean:
-				rm -f $(EXEC) $(EXEC_TEST) *.o parser.output parser.tab.* lex.yy.c
+				rm -f $(EXEC) $(EXEC_TEST) *.o parser.output parser.tab.* lex.yy.c *.svg *.ps *.dot

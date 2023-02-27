@@ -2,5 +2,6 @@
 *.o
 *.out
 *.output
+*.svg
 lex.yy.c
 parser.tab.*
