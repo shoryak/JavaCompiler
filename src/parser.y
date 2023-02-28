@@ -559,17 +559,16 @@ SimpleTypeName: TypeIdentifier
 
 ConstructorBody:    LeftCurlyBrace  RightCurlyBrace
                     {
-                       $$ = createNode("ConstructorBody");
+                       $$ = createNode("{ }");
                     }
                     | LeftCurlyBrace ExplicitConstructorInvocation RightCurlyBrace
                     {
                         $$ = createNode("ConstructorBody");
                         $$->add_child($2);
                     }
-                    | LeftCurlyBrace  BlockStatements RightCurlyBrace
+                    | LeftCurlyBrace BlockStatements RightCurlyBrace
                     {
-                        $$ = createNode("ConstructorBody");
-                        $$->add_child($2);
+                        $$ = $2;
                     }
                     | LeftCurlyBrace ExplicitConstructorInvocation BlockStatements RightCurlyBrace
                     {
@@ -579,14 +578,21 @@ ConstructorBody:    LeftCurlyBrace  RightCurlyBrace
                     }
                     ;
 
-ExplicitConstructorInvocation:  THIS LeftParenthesis RightParenthesis Semicolon {
-                                $$ = $1;
-                                $$->add_child($4);
-                            }
-                                | TypeArguments THIS LeftParenthesis RightParenthesis Semicolon {
+ExplicitConstructorInvocation:  THIS LeftParenthesis RightParenthesis Semicolon
+                                {
                                     $$ = createNode("ExplicitConstructorInvocation");
                                     $$->add_child($1);
-                                    $$->add_child($2);  
+                                    $$->add_child(createNode("()"));
+                                    $$->add_child($4);
+                                }
+                                | TypeArguments THIS LeftParenthesis RightParenthesis Semicolon
+                                {
+                                    $$ = createNode("ExplicitConstructorInvocation");
+                                    Node *temp = createNode("GenericClassName");
+                                    temp->add_child($1);
+                                    temp->add_child($2);
+                                    $$->add_child(temp);
+                                    $$->add_child(createNode("()"));
                                     $$->add_child($5);                                  
                                 }
                                 | THIS LeftParenthesis ArgumentList RightParenthesis Semicolon
@@ -599,16 +605,20 @@ ExplicitConstructorInvocation:  THIS LeftParenthesis RightParenthesis Semicolon 
                                 | TypeArguments THIS LeftParenthesis ArgumentList RightParenthesis Semicolon
                                 {
                                     $$ = createNode("ExplicitConstructorInvocation");
-                                    $$->add_child($1);
-                                    $$->add_child($2);
+                                    Node *temp = createNode("GenericClassName");
+                                    temp->add_child($1);
+                                    temp->add_child($2);
+                                    $$->add_child(temp);
                                     $$->add_children($4);
                                     $$->add_child($6);
                                 }
                                 | TypeArguments SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
                                 {
                                     $$ = createNode("ExplicitConstructorInvocation");
-                                    $$->add_child($1);
-                                    $$->add_child($2);
+                                    Node *temp = createNode("GenericClassName");
+                                    temp->add_child($1);
+                                    temp->add_child($2);
+                                    $$->add_child(temp);
                                     $$->add_children($4);
                                     $$->add_child($6);
                                 }
@@ -616,6 +626,7 @@ ExplicitConstructorInvocation:  THIS LeftParenthesis RightParenthesis Semicolon 
                                 {
                                     $$ = createNode("ExplicitConstructorInvocation");
                                     $$->add_child($1);
+                                    $$->add_child(createNode("()"));
                                     $$->add_child($4);
                                 }
                                 | SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
@@ -625,10 +636,13 @@ ExplicitConstructorInvocation:  THIS LeftParenthesis RightParenthesis Semicolon 
                                     $$->add_children($3);
                                     $$->add_child($5);
                                 }
-                                | TypeArguments SUPER LeftParenthesis  RightParenthesis Semicolon
+                                | TypeArguments SUPER LeftParenthesis RightParenthesis Semicolon
                                 {
                                     $$ = createNode("ExplicitConstructorInvocation");
-                                    $$->add_child($2);
+                                    Node *temp = createNode("GenericClassName");
+                                    temp->add_child($1);
+                                    temp->add_child($2);
+                                    $$->add_child(temp);
                                     $$->add_child($5);
                                 }
                                 | ExpressionName Dot TypeArguments SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
@@ -637,7 +651,7 @@ ExplicitConstructorInvocation:  THIS LeftParenthesis RightParenthesis Semicolon 
                                     $2->add_child($1);
                                     $2->add_child($4);
                                     $$->add_child($2);
-                                    $$->add_child($6);
+                                    $$->add_children($6);
                                 }
                                 | ExpressionName Dot TypeArguments SUPER LeftParenthesis RightParenthesis Semicolon
                                 {
@@ -653,7 +667,7 @@ ExplicitConstructorInvocation:  THIS LeftParenthesis RightParenthesis Semicolon 
                                     $2->add_child($1);
                                     $2->add_child($3);
                                     $$->add_child($2);
-                                    $$->add_child($5);
+                                    $$->add_children($5);
                                     $$->add_child($7);
                                 }
                                 | ExpressionName Dot SUPER LeftParenthesis RightParenthesis Semicolon
@@ -686,7 +700,7 @@ ExplicitConstructorInvocation:  THIS LeftParenthesis RightParenthesis Semicolon 
                                     $2->add_child($1);
                                     $2->add_child($3);
                                     $$->add_child($2);
-                                    $$->add_child($5);
+                                    $$->add_children($5);
                                     $$->add_child($7);
                                 }
                                 | Primary Dot TypeArguments SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
@@ -695,7 +709,7 @@ ExplicitConstructorInvocation:  THIS LeftParenthesis RightParenthesis Semicolon 
                                     $2->add_child($1);
                                     $2->add_child($4);
                                     $$->add_child($2);
-                                    $$->add_child($6);
+                                    $$->add_children($6);
                                     $$->add_child($8);
                                 }
                                 ;
@@ -764,20 +778,14 @@ BlockStatement: LocalClassOrInterfaceDeclaration
 LocalClassOrInterfaceDeclaration:   ClassDeclaration
                                     ;
 
-LocalVariableDeclarationStatement:  LocalVariableDeclaration Semicolon {
-                        $$ = $1;
-                        $$->add_child($2);
-}
+LocalVariableDeclarationStatement:  LocalVariableDeclaration Semicolon
+                                    {
+                                        $$ = $1;
+                                        $$->add_child($2);
+                                    }
                                     ;
 
-LocalVariableDeclaration:   LocalVariableType
-                            | VariableModifierList LocalVariableType
-                            {
-                                $$ = createNode("LocalVariableDeclaration");
-                                $$->add_child($1);
-                                $$->add_child($2);
-                            }
-                            | LocalVariableType VariableDeclaratorList
+LocalVariableDeclaration:   LocalVariableType VariableDeclaratorList
                             {
                                 $$ = createNode("LocalVariableDeclaration");
                                 $$->add_child($1);
@@ -840,9 +848,6 @@ ExpressionStatement:    StatementExpression Semicolon
                         ;
 
 StatementExpression:    Assignment
-                        {
-                            $$ = $1;
-                        }
                         | PreIncrementExpression
                         | PreDecrementExpression
                         | PostIncrementExpression
@@ -1238,35 +1243,62 @@ ClassInstanceCreationExpression:    UnqualifiedClassInstanceCreationExpression
 
 UnqualifiedClassInstanceCreationExpression: NEW ClassOrInterfaceTypeToInstantiate LeftParenthesis RightParenthesis
                                             {
-                                                $$ = $2;
+                                                $$ = createNode("UnqualifiedClassInstanceCreationExpression");
+                                                $$->add_child($1);
+                                                $$->add_child($2);
                                             }
                                             | NEW TypeArguments ClassOrInterfaceTypeToInstantiate LeftParenthesis RightParenthesis
                                             {
-                                                $$ = $3;
+                                                $$ = createNode("UnqualifiedClassInstanceCreationExpression");
+                                                $$->add_child($1);
+                                                $$->add_child($2);
+                                                $$->add_child($3);
                                             }
                                             | NEW ClassOrInterfaceTypeToInstantiate LeftParenthesis ArgumentList RightParenthesis
                                             {
-                                                $$ = $2;
+                                                $$ = createNode("UnqualifiedClassInstanceCreationExpression");
+                                                $$->add_child($1);
+                                                $$->add_child($2);
+                                                $$->add_children($4);
                                             }
                                             | NEW TypeArguments ClassOrInterfaceTypeToInstantiate LeftParenthesis ArgumentList RightParenthesis
                                             {
-                                                $$ = $3;
+                                                $$ = createNode("UnqualifiedClassInstanceCreationExpression");
+                                                $$->add_child($1);
+                                                $$->add_child($2);
+                                                $$->add_child($3);
+                                                $$->add_children($5);
                                             }
                                             | NEW ClassOrInterfaceTypeToInstantiate LeftParenthesis RightParenthesis ClassBody
                                             {
-                                                $$ = $2;
+                                                $$ = createNode("UnqualifiedClassInstanceCreationExpression");
+                                                $$->add_child($1);
+                                                $$->add_child($2);
+                                                $$->add_child($5);
                                             }
                                             | NEW TypeArguments ClassOrInterfaceTypeToInstantiate LeftParenthesis RightParenthesis ClassBody
                                             {
-                                                $$ = $3;
+                                                $$ = createNode("UnqualifiedClassInstanceCreationExpression");
+                                                $$->add_child($1);
+                                                $$->add_child($2);
+                                                $$->add_child($3);
+                                                $$->add_child($6);
                                             }
                                             | NEW ClassOrInterfaceTypeToInstantiate LeftParenthesis ArgumentList RightParenthesis ClassBody
                                             {
-                                                $$ = $2;
+                                                $$ = createNode("UnqualifiedClassInstanceCreationExpression");
+                                                $$->add_child($1);
+                                                $$->add_child($2);
+                                                $$->add_children($4);
                                             }
                                             | NEW TypeArguments ClassOrInterfaceTypeToInstantiate LeftParenthesis ArgumentList RightParenthesis ClassBody
                                             {
-                                                $$ = $2;
+                                                $$ = createNode("UnqualifiedClassInstanceCreationExpression");
+                                                $$->add_child($1);
+                                                $$->add_child($2);
+                                                $$->add_child($3);
+                                                $$->add_children($5);
+                                                $$->add_child($7);
                                             }
                                             ;
 
@@ -1335,9 +1367,8 @@ MethodInvocation:   Identifier LeftParenthesis  RightParenthesis
                     {
                         $$ = createNode("MethodInvocation");
                         $$->add_child($1);
-                        $$->add_child($3);
+                        $$->add_children($3);
                     }
-
                     | TypeName Dot Identifier LeftParenthesis RightParenthesis
                     {
                         $$ = createNode("MethodInvocation");
@@ -1345,7 +1376,7 @@ MethodInvocation:   Identifier LeftParenthesis  RightParenthesis
                         $2->add_child($3);
                         $$->add_child($2);;
                     }
-                  | TypeName Dot TypeArguments Identifier LeftParenthesis RightParenthesis
+                    | TypeName Dot TypeArguments Identifier LeftParenthesis RightParenthesis
                     {
                         $$ = createNode("MethodInvocation");
                         $2->add_child($1);
@@ -1358,7 +1389,7 @@ MethodInvocation:   Identifier LeftParenthesis  RightParenthesis
                         $2->add_child($1);
                         $2->add_child($3);
                         $$->add_child($2);
-                        $$->add_child($5);
+                        $$->add_children($5);
                     }
                     | TypeName Dot TypeArguments Identifier LeftParenthesis ArgumentList RightParenthesis
                     {
@@ -1366,9 +1397,8 @@ MethodInvocation:   Identifier LeftParenthesis  RightParenthesis
                         $2->add_child($1);
                         $2->add_child($4);
                         $$->add_child($2);
-                        $$->add_child($6);
+                        $$->add_children($6);
                     }
-                    
                     | ExpressionName Dot Identifier LeftParenthesis RightParenthesis
                     {
                         $$ = createNode("MethodInvocation");
@@ -1389,7 +1419,7 @@ MethodInvocation:   Identifier LeftParenthesis  RightParenthesis
                         $2->add_child($1);
                         $2->add_child($3);
                         $$->add_child($2);
-                        $$->add_child($5);
+                        $$->add_children($5);
                     }
                     | ExpressionName Dot TypeArguments Identifier LeftParenthesis ArgumentList RightParenthesis
                     {
@@ -1397,10 +1427,10 @@ MethodInvocation:   Identifier LeftParenthesis  RightParenthesis
                         $2->add_child($1);
                         $2->add_child($4);
                         $$->add_child($2);
-                        $$->add_child($5);
+                        $$->add_children($6);
                     }
-                    
-                    | Primary Dot Identifier LeftParenthesis RightParenthesis {
+                    | Primary Dot Identifier LeftParenthesis RightParenthesis
+                    {
                                             
                         $$ = createNode("MethodInvocation");
                         $2->add_child($1);
@@ -1408,56 +1438,59 @@ MethodInvocation:   Identifier LeftParenthesis  RightParenthesis
                         $$->add_child($2);
                     
                     }
-                    | Primary Dot TypeArguments Identifier LeftParenthesis RightParenthesis{
+                    | Primary Dot TypeArguments Identifier LeftParenthesis RightParenthesis
+                    {
                         $$ = createNode("MethodInvocation");
                         $2->add_child($1);
                         $2->add_child($3);
                         $$->add_child($2);
                     }
-                    | Primary Dot Identifier LeftParenthesis ArgumentList RightParenthesis {
+                    | Primary Dot Identifier LeftParenthesis ArgumentList RightParenthesis
+                    {
                         $$ = createNode("MethodInvocation");
                         $2->add_child($1);
                         $2->add_child($3);
                         $$->add_child($2);
-                        $$->add_child($5);
+                        $$->add_children($5);
                     }
-                    | Primary Dot TypeArguments Identifier LeftParenthesis ArgumentList RightParenthesis{
+                    | Primary Dot TypeArguments Identifier LeftParenthesis ArgumentList RightParenthesis
+                    {
                         $$ = createNode("MethodInvocation");
                         $2->add_child($1);
                         $2->add_child($4);
                         $$->add_child($2);
-                        $$->add_child($5);
+                        $$->add_children($6);
                     }
-                    
-                    | SUPER Dot Identifier LeftParenthesis RightParenthesis {
+                    | SUPER Dot Identifier LeftParenthesis RightParenthesis
+                    {
                         $$ = createNode("MethodInvocation");
                         $2->add_child($1);
                         $2->add_child($3);
-                        $$->add_child($2);          
-   
-                    
+                        $$->add_child($2);
                     }
-                    | SUPER Dot TypeArguments Identifier LeftParenthesis RightParenthesis{
+                    | SUPER Dot TypeArguments Identifier LeftParenthesis RightParenthesis
+                    {
                         $$ = createNode("MethodInvocation");
                         $2->add_child($1);
                         $2->add_child($4);
                         $$->add_child($2);
                     }
-                    | SUPER Dot Identifier LeftParenthesis ArgumentList RightParenthesis {
+                    | SUPER Dot Identifier LeftParenthesis ArgumentList RightParenthesis
+                    {
                         $$ = createNode("MethodInvocation");
                         $2->add_child($1);
                         $2->add_child($3);
                         $$->add_child($2);
-                        $$->add_child($5);
+                        $$->add_children($5);
                     }
-                    | SUPER Dot TypeArguments Identifier LeftParenthesis ArgumentList RightParenthesis{
+                    | SUPER Dot TypeArguments Identifier LeftParenthesis ArgumentList RightParenthesis
+                    {
                         $$ = createNode("MethodInvocation");
                         $2->add_child($1);
                         $2->add_child($4);
                         $$->add_child($2);
-                        $$->add_child($5);
+                        $$->add_children($6);
                     }
-                    
                     | TypeName Dot SUPER Dot Identifier LeftParenthesis RightParenthesis
                     {
                         $$ = createNode("MethodInvocation");
@@ -1484,7 +1517,7 @@ MethodInvocation:   Identifier LeftParenthesis  RightParenthesis
                         $4->add_child($2);
                         $4->add_child($5);
                         $$->add_child($4);
-                        $$->add_child($7);     
+                        $$->add_children($7);
                     }
                     | TypeName Dot SUPER Dot TypeArguments Identifier LeftParenthesis ArgumentList RightParenthesis
                     {
@@ -1494,7 +1527,7 @@ MethodInvocation:   Identifier LeftParenthesis  RightParenthesis
                         $4->add_child($2);
                         $4->add_child($6);
                         $$->add_child($4);
-                        $$->add_child($8); 
+                        $$->add_children($8);
                     }
                     ;
 
@@ -1510,61 +1543,70 @@ ArgumentList:   Expression
                 }
                 ;
 
-MethodReference:    ExpressionName Scope Identifier {
+MethodReference:    ExpressionName Scope Identifier
+                    {
                         $$ = createNode("::");
                         $$->add_child($1);
                         $$->add_child($3);
                     }
 
-                    | ExpressionName Scope TypeArguments Identifier{
+                    | ExpressionName Scope TypeArguments Identifier
+                    {
                         $$ = $2;
                         $$->add_child($1);
                         $$->add_child($3);
                         $$->add_child($4);
                     }
-                    | Primary Scope Identifier{
+                    | Primary Scope Identifier
+                    {
                         $$ = $2;
                         $$->add_child($1);
                         $$->add_child($3);
                     }
-                    | Primary Scope TypeArguments{
+                    | Primary Scope TypeArguments
+                    {
                         $$ = $2;
                         $$->add_child($1);
                         $$->add_child($3);
                     }
 
-                    | UnannReferenceType Scope Identifier{
+                    | UnannReferenceType Scope Identifier
+                    {
                         $$ = $2;
                         $$->add_child($1);
                         $$->add_child($3);
                     }
-                    | UnannReferenceType Scope TypeArguments Identifier{
-                        $$ = $2;
-                        $$->add_child($1);
-                        $$->add_child($3);
-                        $$->add_child($4);
-                    }
-                    
-                    | SUPER Scope Identifier{
-                        $$ = $2;
-                        $$->add_child($1);
-                        $$->add_child($3);
-                    }
-                    | SUPER Scope TypeArguments Identifier{
+                    | UnannReferenceType Scope TypeArguments Identifier
+                    {
                         $$ = $2;
                         $$->add_child($1);
                         $$->add_child($3);
                         $$->add_child($4);
                     }
                     
-                    | TypeName Dot SUPER Scope Identifier{
+                    | SUPER Scope Identifier
+                    {
+                        $$ = $2;
+                        $$->add_child($1);
+                        $$->add_child($3);
+                    }
+                    | SUPER Scope TypeArguments Identifier
+                    {
+                        $$ = $2;
+                        $$->add_child($1);
+                        $$->add_child($3);
+                        $$->add_child($4);
+                    }
+                    | TypeName Dot SUPER Scope Identifier
+                    {
                         $$ = $4;
                         $2->add_child($1);
                         $2->add_child($3);
                         $$->add_child($2);
                          $$->add_child($5);
                     }
-                    | TypeName Dot SUPER Scope TypeArguments Identifier{
+                    | TypeName Dot SUPER Scope TypeArguments Identifier
+                    {
                         $$ = $4;
                         $2->add_child($1);
                         $2->add_child($3);
@@ -1572,19 +1614,21 @@ MethodReference:    ExpressionName Scope Identifier {
                          $$->add_child($5);
                         $$->add_child($6);
                     }
-                    
-                    | UnannClassType Scope NEW{
+                    | UnannClassType Scope NEW
+                    {
                         $$ = $2;
                         $$->add_child($1);
                         $$->add_child($3);
                     }
-                    | UnannClassType Scope TypeArguments NEW{
+                    | UnannClassType Scope TypeArguments NEW
+                    {
                         $$ = $2;
                         $$->add_child($1);
                         $$->add_child($3);
                         $$->add_child($4);
                     }
-                    | ArrayType Scope NEW{
+                    | ArrayType Scope NEW
+                    {
                         $$ = $2;
                         $$->add_child($1);
                         $$->add_child($3);
@@ -1594,21 +1638,25 @@ MethodReference:    ExpressionName Scope Identifier {
 ArrayCreationExpression:    NEW PrimitiveType DimExprs
                             {
                                 $$ = createNode("ArrayCreationExpression");
+                                $$->add_child($1);
                                 $$->add_child($2);
                             }
                             | NEW UnannClassOrInterfaceType DimExprs
                             {
                                 $$ = createNode("ArrayCreationExpression");
+                                $$->add_child($1);
                                 $$->add_child($2);
                             }
                             | NEW PrimitiveType DimExprs Dims
                             {
                                 $$ = createNode("ArrayCreationExpression");
+                                $$->add_child($1);
                                 $$->add_child($2);
                             }
                             | NEW UnannClassOrInterfaceType DimExprs Dims
                             {
                                 $$ = createNode("ArrayCreationExpression");
+                                $$->add_child($1);
                                 $$->add_child($2);
                             }
                             ;

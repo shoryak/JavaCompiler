@@ -41,16 +41,6 @@ while true; do
     esac
 done
 
-if [ -z "$PARSER_EXEC" ]; then
-    echo "Error: Normal parser executible name not found, did you source the configure script?"
-    exit 1
-fi
-
-if [ -z "$DOT" ]; then
-    echo "Error: Dot tool name not set, did you source the configure script?"
-    exit 1
-fi
-
 if [ -z "$INPUT_FILE" ]; then
     echo "Error: Input file not provided."
     exit 1
@@ -64,6 +54,9 @@ fi
 extension=${OUTPUT_FILE#*.}
 filename_noext=$(basename "$OUTPUT_FILE" ".$extension")
 dotfile="$filename_noext.dot"
+
+PARSER_EXEC="src/parser.out"
+DOT="dot"
 
 eval "$PARSER_EXEC $INPUT_FILE $dotfile $verbose_flag" &&\
 eval "$DOT -Tsvg $dotfile -o $OUTPUT_FILE"

@@ -1,7 +1,0 @@
-#!/bin/bash
-
-PARSER_EXEC="src/parser.out"
-DOT="dot"
-
-export PARSER_EXEC
-export DOT
