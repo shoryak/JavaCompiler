@@ -581,17 +581,20 @@ ConstructorBody:    LeftCurlyBrace  RightCurlyBrace
 
 ExplicitConstructorInvocation:  THIS LeftParenthesis RightParenthesis Semicolon {
                                 $$ = $1;
+                                $$->add_child($4);
                             }
                                 | TypeArguments THIS LeftParenthesis RightParenthesis Semicolon {
                                     $$ = createNode("ExplicitConstructorInvocation");
                                     $$->add_child($1);
-                                    $$->add_child($2);                                    
+                                    $$->add_child($2);  
+                                    $$->add_child($5);                                  
                                 }
                                 | THIS LeftParenthesis ArgumentList RightParenthesis Semicolon
                                 {
                                     $$ = createNode("ExplicitConstructorInvocation");
                                     $$->add_child($1);
                                     $$->add_children($3);
+                                    $$->add_child($5);
                                 }
                                 | TypeArguments THIS LeftParenthesis ArgumentList RightParenthesis Semicolon
                                 {
@@ -599,6 +602,7 @@ ExplicitConstructorInvocation:  THIS LeftParenthesis RightParenthesis Semicolon 
                                     $$->add_child($1);
                                     $$->add_child($2);
                                     $$->add_children($4);
+                                    $$->add_child($6);
                                 }
                                 | TypeArguments SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
                                 {
@@ -606,22 +610,26 @@ ExplicitConstructorInvocation:  THIS LeftParenthesis RightParenthesis Semicolon 
                                     $$->add_child($1);
                                     $$->add_child($2);
                                     $$->add_children($4);
+                                    $$->add_child($6);
                                 }
                                 | SUPER LeftParenthesis RightParenthesis Semicolon
                                 {
                                     $$ = createNode("ExplicitConstructorInvocation");
                                     $$->add_child($1);
+                                    $$->add_child($4);
                                 }
                                 | SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
                                 {
                                     $$ = createNode("ExplicitConstructorInvocation");
                                     $$->add_child($1);
                                     $$->add_children($3);
+                                    $$->add_child($5);
                                 }
                                 | TypeArguments SUPER LeftParenthesis  RightParenthesis Semicolon
                                 {
                                     $$ = createNode("ExplicitConstructorInvocation");
                                     $$->add_child($2);
+                                    $$->add_child($5);
                                 }
                                 | ExpressionName Dot TypeArguments SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
                                 {
@@ -637,6 +645,7 @@ ExplicitConstructorInvocation:  THIS LeftParenthesis RightParenthesis Semicolon 
                                     $2->add_child($1);
                                     $2->add_child($4);
                                     $$->add_child($2);
+                                    $$->add_child($7);
                                 }
                                 | ExpressionName Dot SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
                                 {
@@ -645,6 +654,7 @@ ExplicitConstructorInvocation:  THIS LeftParenthesis RightParenthesis Semicolon 
                                     $2->add_child($3);
                                     $$->add_child($2);
                                     $$->add_child($5);
+                                    $$->add_child($7);
                                 }
                                 | ExpressionName Dot SUPER LeftParenthesis RightParenthesis Semicolon
                                 {
@@ -652,6 +662,7 @@ ExplicitConstructorInvocation:  THIS LeftParenthesis RightParenthesis Semicolon 
                                     $2->add_child($1);
                                     $2->add_child($3);
                                     $$->add_child($2);
+                                    $$->add_child($6);
                                 }
                                 | Primary Dot  SUPER LeftParenthesis RightParenthesis Semicolon
                                 {
@@ -659,6 +670,7 @@ ExplicitConstructorInvocation:  THIS LeftParenthesis RightParenthesis Semicolon 
                                     $2->add_child($1);
                                     $2->add_child($3);
                                     $$->add_child($2);
+                                    $$->add_child($6);
                                 }
                                 | Primary Dot TypeArguments SUPER LeftParenthesis RightParenthesis Semicolon
                                 {
@@ -666,6 +678,7 @@ ExplicitConstructorInvocation:  THIS LeftParenthesis RightParenthesis Semicolon 
                                     $2->add_child($1);
                                     $2->add_child($4);
                                     $$->add_child($2);
+                                    $$->add_child($7);
                                 }
                                 | Primary Dot  SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
                                 {
@@ -674,6 +687,7 @@ ExplicitConstructorInvocation:  THIS LeftParenthesis RightParenthesis Semicolon 
                                     $2->add_child($3);
                                     $$->add_child($2);
                                     $$->add_child($5);
+                                    $$->add_child($7);
                                 }
                                 | Primary Dot TypeArguments SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
                                 {
@@ -682,6 +696,7 @@ ExplicitConstructorInvocation:  THIS LeftParenthesis RightParenthesis Semicolon 
                                     $2->add_child($4);
                                     $$->add_child($2);
                                     $$->add_child($6);
+                                    $$->add_child($8);
                                 }
                                 ;
 
@@ -751,6 +766,7 @@ LocalClassOrInterfaceDeclaration:   ClassDeclaration
 
 LocalVariableDeclarationStatement:  LocalVariableDeclaration Semicolon {
                         $$ = $1;
+                        $$->add_child($2);
 }
                                     ;
 
@@ -819,6 +835,7 @@ LabeledStatement:   Identifier COLON Statement
 ExpressionStatement:    StatementExpression Semicolon
                         {
                             $$  = $1;
+                            $$->add_child($2);
                         }
                         ;
 
@@ -871,6 +888,7 @@ AssertStatement:    ASSERT Expression Semicolon
                         $$ = createNode("Assert");
                         $$->add_child($2);
                         $$->add_child($4);
+                        $$->add_child($5);
                     }
                     ;
 
@@ -900,16 +918,22 @@ ForStatementNoShortIf:  BasicForStatementNoShortIf
 BasicForStatement:  FOR LeftParenthesis  Semicolon  Semicolon  RightParenthesis Statement
                     {
                         $$ = createNode("For");
+                        $$->add_child($3);
+                        $$->add_child($4);
                         $$->add_child($6);
                     }
                     | FOR LeftParenthesis ForInit Semicolon  Semicolon  RightParenthesis Statement
                     {
                         $$ = createNode("For");
+                        $$->add_child($4);
+                        $$->add_child($5);
                         $$->add_child($7);
                     }
                     | FOR LeftParenthesis  Semicolon  Semicolon ForUpdate RightParenthesis Statement
                     {
                         $$ = createNode("For");
+                        $$->add_child($3);
+                        $$->add_child($4);
                         $$->add_child($5);
                         $$->add_child($7);
                     }
@@ -917,26 +941,34 @@ BasicForStatement:  FOR LeftParenthesis  Semicolon  Semicolon  RightParenthesis 
                     {
                         $$ = createNode("For");
                         $$->add_child($3);
+                        $$->add_child($4);
+                        $$->add_child($5);
                         $$->add_child($6);
                         $$->add_child($8);
                     }
                     | FOR LeftParenthesis  Semicolon Expression Semicolon  RightParenthesis Statement
                     {
                         $$ = createNode("For");
+                        $$->add_child($3);
                         $$->add_child($4);
+                        $$->add_child($5);
                         $$->add_child($7);
                     }
                     | FOR LeftParenthesis ForInit Semicolon Expression Semicolon  RightParenthesis Statement
                     {
                         $$ = createNode("For");
                         $$->add_child($3);
+                        $$->add_child($4);
                         $$->add_child($5);
+                        $$->add_child($6);
                         $$->add_child($8);
                     }
                     | FOR LeftParenthesis  Semicolon Expression Semicolon ForUpdate RightParenthesis Statement
                     {
                         $$ = createNode("For");
+                        $$->add_child($3);
                         $$->add_child($4);
+                        $$->add_child($5);
                         $$->add_child($6);
                         $$->add_child($8);
                     }
@@ -944,7 +976,9 @@ BasicForStatement:  FOR LeftParenthesis  Semicolon  Semicolon  RightParenthesis 
                     {
                         $$ = createNode("For");
                         $$->add_child($3);
+                        $$->add_child($4);
                         $$->add_child($5);
+                        $$->add_child($6);
                         $$->add_child($7);
                         $$->add_child($9);
                     }
@@ -953,17 +987,23 @@ BasicForStatement:  FOR LeftParenthesis  Semicolon  Semicolon  RightParenthesis 
 BasicForStatementNoShortIf: FOR LeftParenthesis  Semicolon  Semicolon RightParenthesis StatementNoShortIf
                             {
                                 $$ = createNode("For");
+                                $$->add_child($3);
+                                $$->add_child($4);
                                 $$->add_child($6);
                             }
                             | FOR LeftParenthesis ForInit Semicolon  Semicolon RightParenthesis StatementNoShortIf
                             {
                                 $$ = createNode("For");
+                                $$->add_child($4);
+                                $$->add_child($5);
                                 $$->add_child($7);
                             }
                             | FOR LeftParenthesis  Semicolon Expression Semicolon RightParenthesis StatementNoShortIf
                             {
                                 $$ = createNode("For");
+                                $$->add_child($3);
                                 $$->add_child($4);
+                                $$->add_child($5);
                                 $$->add_child($7);
                             }
                             | FOR LeftParenthesis ForInit Semicolon Expression Semicolon RightParenthesis StatementNoShortIf
@@ -976,6 +1016,8 @@ BasicForStatementNoShortIf: FOR LeftParenthesis  Semicolon  Semicolon RightParen
                             | FOR LeftParenthesis  Semicolon  Semicolon ForUpdate RightParenthesis StatementNoShortIf
                             {
                                 $$ = createNode("For");
+                                $$->add_child($3);
+                                $$->add_child($4);
                                 $$->add_child($5);
                                 $$->add_child($7);
                             }
@@ -983,13 +1025,17 @@ BasicForStatementNoShortIf: FOR LeftParenthesis  Semicolon  Semicolon RightParen
                             {
                                 $$ = createNode("For");
                                 $$->add_child($3);
+                                $$->add_child($4);
+                                $$->add_child($5);
                                 $$->add_child($6);
                                 $$->add_child($8);
                             }
                             | FOR LeftParenthesis  Semicolon Expression Semicolon ForUpdate RightParenthesis StatementNoShortIf
                             {
                                 $$ = createNode("For");
+                                $$->add_child($3);
                                 $$->add_child($4);
+                                $$->add_child($5);
                                 $$->add_child($6);
                                 $$->add_child($8);
                             }
@@ -997,7 +1043,9 @@ BasicForStatementNoShortIf: FOR LeftParenthesis  Semicolon  Semicolon RightParen
                             {
                                 $$ = createNode("For");
                                 $$->add_child($3);
+                                $$->add_child($4);
                                 $$->add_child($5);
+                                $$->add_child($6);
                                 $$->add_child($7);
                                 $$->add_child($9);
                             }
@@ -1043,6 +1091,7 @@ BreakStatement: BREAK Identifier Semicolon
                 {
                         $$ = createNode("BREAK");
                         $$->add_child($2);
+                        $$->add_child($3);
 
                 }
                 | BREAK Semicolon
@@ -1059,19 +1108,33 @@ YieldStatement: YIELD Expression Semicolon
                 }
                 ;
 
-ContinueStatement:  CONTINUE Semicolon
+ContinueStatement:  CONTINUE Semicolon 
+                    {  
+                        $$ = createNode("ContinueStatemnet");
+                        $$->add_child($1);
+                        $$->add_child($2);
+
+                    }
                     | CONTINUE Identifier Semicolon
                     {
                         $$ = $1;
                         $$->add_child($2);
+                        $$->add_child($3);
                     }
                     ;
 
 ReturnStatement:    RETURN Semicolon
+                    {  
+                        $$ = createNode("ReturnStatement");
+                        $$->add_child($1);
+                        $$->add_child($2);
+
+                    }
                     | RETURN Expression Semicolon
                     {
                         $$ = $1;
                         $$->add_child($2);
+                        $$->add_child($3);
                     }
                     ;
 
