@@ -869,18 +869,25 @@ StatementExpression:    Assignment
 IfThenStatement:    IF LeftParenthesis Expression RightParenthesis Statement
                     {
                         $$ = createNode("IfThenStatement");
+                        $1 = createNode("If");
                         $1->add_child($3);
                         $$->add_child($1);
-                        $$->add_child($5);
+                        Node *temp = createNode("Then");
+                        temp->add_child($5);
+                        $$->add_child(temp);
                     }
                     ;
 
 IfThenElseStatement:    IF LeftParenthesis Expression RightParenthesis StatementNoShortIf ELSE Statement
                         {
                             $$ = createNode("IfThenElseStatement");
+                            $1 = createNode("If");
                             $1->add_child($3);
                             $$->add_child($1);
-                            $$->add_child($5);
+                            Node *temp = createNode("Then");
+                            temp->add_child($5);
+                            $$->add_child(temp);
+                            $6 = createNode("Else");
                             $6->add_child($7);
                             $$->add_child($6);
                         }
@@ -889,9 +896,13 @@ IfThenElseStatement:    IF LeftParenthesis Expression RightParenthesis Statement
 IfThenElseStatementNoShortIf:   IF LeftParenthesis Expression RightParenthesis StatementNoShortIf ELSE StatementNoShortIf
                                 {
                                     $$ = createNode("IfThenElseStatementNoShortIf");
+                                    $1 = createNode("If");
                                     $1->add_child($3);
                                     $$->add_child($1);
-                                    $$->add_child($5);
+                                    Node *temp = createNode("Then");
+                                    temp->add_child($5);
+                                    $$->add_child(temp);
+                                    $6 = createNode("Else");
                                     $6->add_child($7);
                                     $$->add_child($6);
                                 }
