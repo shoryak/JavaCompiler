@@ -1,6 +1,7 @@
 %{
 #include <vector>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 
 int lines = 0;
@@ -10,7 +11,9 @@ extern "C"
     int yylex(void);
     int yyerror(char* s)
     {
-        printf("ERROR: %s Line Number: %d\n",s,lines);
+        extern int linenum;
+        fprintf(stderr, "ERROR: %s Line Number: %d\n", s, linenum);
+        exit(1);
         return 1;
     }
 }
@@ -127,8 +130,8 @@ int buildTree(Node* node, int parentno, int co)
 %type<node> Dims  TypeBound TypeArguments TypeArgumentList  TypeArgument Wildcard WildcardBounds TypeName PackageOrTypeName
 %type<node> ExpressionName MethodName   UnqualifiedMethodIdentifier 
 %type<node> Literal ClassOrInterfaceTypeToInstantiate
-
-%type<str> ContextualKeywords TypeIdentifierKeywords
+%type<node> ContextualKeywords TypeIdentifierKeywords
+%type<node> EOLLine
 
 %start CompilationUnit
 
@@ -137,7 +140,6 @@ int buildTree(Node* node, int parentno, int co)
 CompilationUnit:    OrdinaryCompilationUnit
                     {
                         root = $$;
-                        freopen("graph.dot", "w", stdout);
                         printf("digraph G {\n");
                         buildTree(root, -1, 0);
                         printf("}\n");
@@ -1249,14 +1251,15 @@ FieldAccess:    Primary Dot Identifier
 
 ArrayAccess:    ExpressionName LeftSquareBracket Expression RightSquareBracket
                 {
-                        $$ = createNode("ArrayAccess");
-                        $$->add_child($1);
-                        $$->add_child($3);
+                    $$ = createNode("[ ]");
+                    $$->add_child($1);
+                    $$->add_child($3);
                 }
-                | PrimaryNoNewArray LeftSquareBracket Expression RightSquareBracket{
-                        $$ = createNode("ArrayAccess");
-                        $$->add_child($1);
-                        $$->add_child($3);
+                | PrimaryNoNewArray LeftSquareBracket Expression RightSquareBracket
+                {
+                    $$ = createNode("[ ]");
+                    $$->add_child($1);
+                    $$->add_child($3);
                 }
                 ;
 

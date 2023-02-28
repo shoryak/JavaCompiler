@@ -10,7 +10,7 @@ extern "C" {
     int yylex(void);
 }
 
-int linenum = 0;
+int linenum = 1;
 
 std::string KEYWORD_PREFIX      = "Keyword__";
 std::string IDENTIFIER_PREFIX   = "Identifier__";
