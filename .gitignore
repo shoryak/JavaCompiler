@@ -6,4 +6,4 @@
 *.ps
 *.dot
 lex.yy.c
-parser.tab.*
+*.tab.*

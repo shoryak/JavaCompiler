@@ -8,7 +8,7 @@ extern int yydebug;
 
 
 int main(int argc, char *argv[]) {
-    #ifdef YYDEBUG
+    #if YYDEBUG == 1
         yydebug = 1;
     #endif
     std::string exec_name = argv[0];

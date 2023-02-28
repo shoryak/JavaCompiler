@@ -61,13 +61,6 @@ int buildTree(Node* node, int parentno, int co)
     }
     return co;
 }
-
-void list_concat(std::vector<Node*>& s, const std::vector<Node*>& t) {
-    for(auto mem: t)
-    {
-        s.push_back(mem);
-    }
-}
 %}
 
 %code requires {
@@ -78,7 +71,6 @@ void list_concat(std::vector<Node*>& s, const std::vector<Node*>& t) {
     Node* createNode(const char* value, std::vector<Node*> children);
     Node* createNode(const char* value);
     int buildTree(Node*, int parentno , int co);
-    void list_concat(std::vector<Node*>& s, const std::vector<Node*>& t);
 }
 
 %union {
@@ -242,7 +234,7 @@ ClassMemberDeclaration: FieldDeclaration
 FieldDeclaration:   ModifierList UnannType VariableDeclaratorList Semicolon
                     {
                         $$ = createNode("FieldDeclaration");
-                        $$->add_child($1);
+                        $$->add_children($1);
                         $$->add_child($2);
                         $$->add_child($3);
                         $$->add_child($4);
@@ -311,25 +303,28 @@ UnannReferenceType: UnannClassOrInterfaceType
 UnannClassOrInterfaceType:  UnannClassType
                             ;
 
-UnannClassType: TypeIdentifier TypeArguments {
+UnannClassType: TypeIdentifier TypeArguments
+                {
                     $$ = createNode("UnnanClassType");
                     $$->add_child($1);
                     $$->add_child($2);
-}
-| UnannClassOrInterfaceType Dot TypeIdentifier TypeArguments {
-                    $$ = createNode("UnnanClassType");
-                    $$->add_child($1);
-                    $$->add_child($2);
-                    $$->add_child($3);
-                    $$->add_child($4);
                 }
-| UnannClassOrInterfaceType Dot TypeIdentifier {
-                    $$ = createNode("UnnanClassType");
+                | UnannClassOrInterfaceType Dot TypeIdentifier TypeArguments
+                {
+                    $$ = createNode(".");
                     $$->add_child($1);
-                    $$->add_child($2);
+                    Node* temp = createNode("UnannClassType");
+                    temp->add_child($3);
+                    temp->add_child($4);
+                    $$->add_child(temp);
+                }
+                | UnannClassOrInterfaceType Dot TypeIdentifier
+                {
+                    $$ = createNode(".");
+                    $$->add_child($1);
                     $$->add_child($3);
-}
-;
+                }
+                ;
 
 UnannArrayType: UnannPrimitiveType Dims
                 { 
@@ -337,12 +332,14 @@ UnannArrayType: UnannPrimitiveType Dims
                     $$->add_child($1);
                     $$->add_child($2);
                 }
-                | UnannClassOrInterfaceType Dims {
+                | UnannClassOrInterfaceType Dims
+                {
                     $$ = createNode("UnannArrayType");
                     $$->add_child($1);
                     $$->add_child($2);
                 }
-                | TypeIdentifier Dims {
+                | TypeIdentifier Dims
+                {
                     $$ = createNode("UnannArrayType");
                     $$->add_child($1);
                     $$->add_child($2);
@@ -351,19 +348,16 @@ UnannArrayType: UnannPrimitiveType Dims
 
 MethodDeclaration:  ModifierList MethodHeader MethodBody
                     {
-                        std::vector<Node*> v;
-                        for(auto child: $1->children)
-                            v.push_back(child);
-                        v.push_back($2);
-                        v.push_back($3);
-                        $$ = createNode("MethodDeclaration" , v);
+                        $$ = createNode("MethodDeclaration");
+                        $$->add_children($1);
+                        $$->add_child($2);
+                        $$->add_child($3);
                     }
                     | MethodHeader MethodBody
                     {
-                        std::vector<Node*> v;
-                        v.push_back($1);
-                        v.push_back($2);
-                        $$ = createNode("MethodDeclaration" , v);
+                        $$ = createNode("MethodDeclaration");
+                        $$->add_child($1);
+                        $$->add_child($2);
                     }
                     ;
 
@@ -396,14 +390,13 @@ MethodDeclarator:   Identifier LeftParenthesis ReceiverParameter Comma RightPare
                         $$ = createNode("MethodDeclarator");
                         $$->add_child($1);
                         $$->add_child($3);
-                        list_concat($$->children, $5->children);
+                        $$->add_children($5);
                     }
                     | Identifier LeftParenthesis FormalParameterList RightParenthesis
                     {
                         $$ = createNode("MethodDeclarator");
                         $$->add_child($1);
-                        list_concat($$->children, $3->children);
-                        
+                        $$->add_children($3);                        
                     }
                     | Identifier LeftParenthesis ReceiverParameter Comma RightParenthesis Dims
                     {
@@ -416,22 +409,21 @@ MethodDeclarator:   Identifier LeftParenthesis ReceiverParameter Comma RightPare
                     {
                         $$ = createNode("MethodDeclarator");
                         $$->add_child($1);
-                        $$->add_child($4);
-      
+                        $$->add_child($4);      
                     }
                     | Identifier LeftParenthesis ReceiverParameter Comma FormalParameterList RightParenthesis Dims
                     {
                         $$ = createNode("MethodDeclarator");
                         $$->add_child($1);
                         $$->add_child($3);
-                        list_concat($$->children, $5->children);
+                        $$->add_children($5);
                         $$->add_child($7);
                     }
                     | Identifier LeftParenthesis FormalParameterList RightParenthesis Dims
                     {
                         $$ = createNode("MethodDeclarator");
                         $$->add_child($1);
-                        list_concat($$->children, $3->children);
+                        $$->add_children($3);
                         $$->add_child($5);
                     }
                     ;
@@ -446,9 +438,10 @@ ReceiverParameter:  UnannType THIS
                     {
                         $$ = createNode("ReceiverParameter");
                         $$->add_child($1);
-                        $3->add_child($2);
-                        $3->add_child($4);
-                        $$->add_child($3);
+                        Node *temp = createNode(".");
+                        temp->add_child($2);
+                        temp->add_child($4);
+                        $$->add_child(temp);
                     }
                     ;
 
@@ -465,13 +458,11 @@ FormalParameterList:    FormalParameterList Comma FormalParameter
                         ;
 
 FormalParameter:    VariableModifierList UnannType VariableDeclaratorId
-                    {                  
-                        std::vector<Node*> v;
-                        for(auto child: $1->children)
-                            v.push_back(child);
-                        v.push_back($2);
-                        v.push_back($3);
-                        $$ = createNode("FormalParameter" , v);
+                    {
+                        $$ = createNode("FormalParameter");
+                        $$->add_children($1);
+                        $$->add_child($2);
+                        $$->add_child($3);
                     }
                     | UnannType VariableDeclaratorId {
                         $$ = createNode("FormalParameter");
@@ -496,7 +487,8 @@ VariableModifierList:   VariableModifier
                             $$ = createNode("VariableModifierList");
                             $$->add_child($1);
                         }
-                        | VariableModifierList VariableModifier{
+                        | VariableModifierList VariableModifier
+                        {
                             $$ = $1;
                             $$->add_child($2);
                         }   
@@ -529,7 +521,7 @@ ConstructorDeclaration: ConstructorDeclarator ConstructorBody
                         | ModifierList ConstructorDeclarator ConstructorBody
                         {
                             $$ = createNode("ConstructorDeclaration");
-                            $$->add_child($1);
+                            $$->add_children($1);
                             $$->add_child($2);
                             $$->add_child($3);
                         }
@@ -545,26 +537,27 @@ ConstructorDeclarator:  SimpleTypeName LeftParenthesis  RightParenthesis
                             $$->add_child($1);
                             $$->add_child($3);
                         }
-                        | SimpleTypeName LeftParenthesis  FormalParameterList RightParenthesis 
+                        | SimpleTypeName LeftParenthesis FormalParameterList RightParenthesis
                         {
                             $$ = createNode("ConstructorDeclarator");
                             $$->add_child($1);
-                            list_concat($$->children, $3->children);
+                            $$->add_children($3);
                         }
-                        | SimpleTypeName LeftParenthesis ReceiverParameter Comma FormalParameterList RightParenthesis{
+                        | SimpleTypeName LeftParenthesis ReceiverParameter Comma FormalParameterList RightParenthesis
+                        {
                             $$ = createNode("ConstructorDeclarator");
                             $$->add_child($1);
                             $$->add_child($3);
-                            list_concat($$->children, $5->children);
+                            $$->add_children($5);
                         }
-;
+                        ;
 
 SimpleTypeName: TypeIdentifier
                 ;
 
 ConstructorBody:    LeftCurlyBrace  RightCurlyBrace
                     {
-                       $$ =  createNode("ConstructorBody");
+                       $$ = createNode("ConstructorBody");
                     }
                     | LeftCurlyBrace ExplicitConstructorInvocation RightCurlyBrace
                     {
@@ -596,21 +589,21 @@ ExplicitConstructorInvocation:  THIS LeftParenthesis RightParenthesis Semicolon 
                                 {
                                     $$ = createNode("ExplicitConstructorInvocation");
                                     $$->add_child($1);
-                                    list_concat($$->children, $3->children);
+                                    $$->add_children($3);
                                 }
                                 | TypeArguments THIS LeftParenthesis ArgumentList RightParenthesis Semicolon
                                 {
                                     $$ = createNode("ExplicitConstructorInvocation");
                                     $$->add_child($1);
                                     $$->add_child($2);
-                                    list_concat($$->children, $4->children);
+                                    $$->add_children($4);
                                 }
                                 | TypeArguments SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
                                 {
                                     $$ = createNode("ExplicitConstructorInvocation");
                                     $$->add_child($1);
                                     $$->add_child($2);
-                                    list_concat($$->children, $4->children);
+                                    $$->add_children($4);
                                 }
                                 | SUPER LeftParenthesis RightParenthesis Semicolon
                                 {
@@ -621,7 +614,7 @@ ExplicitConstructorInvocation:  THIS LeftParenthesis RightParenthesis Semicolon 
                                 {
                                     $$ = createNode("ExplicitConstructorInvocation");
                                     $$->add_child($1);
-                                    list_concat($$->children, $3->children);
+                                    $$->add_children($3);
                                 }
                                 | TypeArguments SUPER LeftParenthesis  RightParenthesis Semicolon
                                 {
@@ -1882,15 +1875,21 @@ ArrayType:  UnannArrayType
 
 Dims:   LeftSquareBracket RightSquareBracket 
         {
-            $$ = createNode("Dims");
-            Node* temp = createNode("[ ]");
-            $$->add_child(temp);
+            $$ = createNode("[ ]");
         }
         | Dims LeftSquareBracket RightSquareBracket 
         {
-            $$ = $1;
-            Node* temp = createNode("[ ]");
-            $$->add_child(temp);
+            if(strcmp($1->value, "Dims") == 0)
+            {
+                $$ = $1;
+                $$->add_child(createNode("[ ]"));
+            }
+            else
+            {
+                $$ = createNode("Dims");
+                $$->add_child($1);
+                $$->add_child(createNode("[ ]"));
+            }
         }
         ;
 
@@ -1907,7 +1906,10 @@ TypeBound:  EXTENDS UnannClassOrInterfaceType
             ;
 
 TypeArguments:  LT TypeArgumentList GT {
-                    $$ = $2;
+                    $$ = createNode("TypeArguments");
+                    $$->add_child($1);
+                    $$->add_children($2);
+                    $$->add_child($3);
                 }
                 ;
 
