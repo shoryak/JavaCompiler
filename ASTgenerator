@@ -61,5 +61,9 @@ if [ -z "$OUTPUT_FILE" ]; then
     exit 1
 fi
 
-eval "$PARSER_EXEC $INPUT_FILE $OUTPUT_FILE $verbose_flag" &&\
-eval "$DOT -Tsvg $OUTPUT_FILE.dot -o $OUTPUT_FILE.svg"
+extension=${OUTPUT_FILE#*.}
+filename_noext=$(basename "$OUTPUT_FILE" ".$extension")
+dotfile="$filename_noext.dot"
+
+eval "$PARSER_EXEC $INPUT_FILE $dotfile $verbose_flag" &&\
+eval "$DOT -Tsvg $dotfile -o $OUTPUT_FILE"

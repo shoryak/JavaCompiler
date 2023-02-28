@@ -28,7 +28,6 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
     yyin = input_file;
-    strcat(output_file_name, ".dot");
     freopen(output_file_name, "w", stdout);
     yyparse();
     return 0;
