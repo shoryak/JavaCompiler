@@ -9,7 +9,7 @@ int yyparse();
 extern "C"
 {        
     int yylex(void);
-    int yyerror(char* s)
+    int yyerror(const char* s)
     {
         extern int linenum;
         fprintf(stderr, "ERROR: %s Line Number: %d\n", s, linenum);
@@ -101,37 +101,35 @@ int buildTree(Node* node, int parentno, int co)
 %token<node> IdentifierChars
 
 %type<node> CompilationUnit  OrdinaryCompilationUnit  
-%type<node> ClassDeclaration  ClassBody ClassExtends  ClassModifier ClassModifierList ClassPermits
+%type<node> ClassDeclaration  ClassBody
 %type<node> TypeIdentifier 
-%type<node> ThrowStatement RelationalExpression 
+%type<node> RelationalExpression 
 %type<node> TopLevelClassOrInterfaceDeclarationList TopLevelClassOrInterfaceDeclaration NormalClassDeclaration 
-%type<node> ClassBodyDeclaration ClassBodyDeclarationList ClassMemberDeclaration FieldDeclaraFieldModifierList FieldDeclaration VariableDeclaratorList
+%type<node> ClassBodyDeclaration ClassBodyDeclarationList ClassMemberDeclaration FieldDeclaration VariableDeclaratorList
 %type<node> VariableDeclarator VariableDeclaratorId VariableInitializer UnannType UnannPrimitiveType UnannReferenceType
-%type<node> UnannClassOrInterfaceType UnannClassType UnannTypeVariable UnannArrayType MethodDeclaration MethodModifierList
-%type<node> MethodModifier MethodHeader Result MethodDeclarator ReceiverParameter FormalParameterList  FormalParameter
-%type<node> VariableArityParameter VariableModifierList VariableModifier Throws ExceptionTypeList ExceptionType MethodBody
-%type<node> InstanceInitializer StaticInitializer ConstructorDeclaration ConstructorModifierList ConstructorModifier ConstructorDeclarator
+%type<node> UnannClassOrInterfaceType UnannClassType UnannArrayType MethodDeclaration
+%type<node> MethodHeader MethodDeclarator ReceiverParameter FormalParameterList  FormalParameter
+%type<node> VariableArityParameter VariableModifierList VariableModifier MethodBody
+%type<node> InstanceInitializer StaticInitializer ConstructorDeclaration ConstructorDeclarator
 %type<node> SimpleTypeName ConstructorBody ExplicitConstructorInvocation ArrayInitializer VariableInitializerList 
-%type<node> Block BlockStatements BlockStatementList BlockStatement LocalClassOrInterfaceDeclaration LocalVariableDeclarationStatement LocalVariableDeclaration
+%type<node> Block BlockStatements BlockStatement LocalClassOrInterfaceDeclaration LocalVariableDeclarationStatement LocalVariableDeclaration
 %type<node> LocalVariableType Statement ForStatementNoShortIf StatementWithoutTrailingSubstatement EmptyStatement LabeledStatement
 %type<node> ExpressionStatement StatementExpression IfThenStatement IfThenElseStatement IfThenElseStatementNoShortIf AssertStatement WhileStatement
 %type<node> WhileStatementNoShortIf ForStatement ModifierList Modifier StatementNoShortIf 
 
 %type<node> BasicForStatement BasicForStatementNoShortIf ForInit ForUpdate StatementExpressionList  EnhancedForStatement EnhancedForStatementNoShortIf BreakStatement YieldStatement ContinueStatement ReturnStatement 
-%type<node> BitOrClassTypeList 
 %type<node> Pattern TypePattern Primary PrimaryNoNewArray ClassLiteral LeftRightSquareList ClassInstanceCreationExpression UnqualifiedClassInstanceCreationExpression
-%type<node> Identifier AmbiguousName
-%type<node> DotIdentifierList TypeArgumentsOrDiamond FieldAccess ArrayAccess MethodInvocation ArgumentList  MethodReference
+%type<node> Identifier
+%type<node> TypeArgumentsOrDiamond FieldAccess ArrayAccess MethodInvocation ArgumentList  MethodReference
 %type<node> ArrayCreationExpression DimExprs DimExprList DimExpr Expression AssignmentExpression Assignment LeftHandSide AssignmentOperator ConditionalExpression
 %type<node> ConditionalOrExpression ConditionalAndExpression InclusiveOrExpression ExclusiveOrExpression AndExpression EqualityExpression InstanceofExpression
 %type<node> ShiftExpression AdditiveExpression MultiplicativeExpression UnaryExpression PreIncrementExpression PreDecrementExpression
 %type<node> UnaryExpressionNotPlusMinus PostfixExpression PostIncrementExpression PostDecrementExpression CastExpression ConstantExpression Type PrimitiveType
-%type<node> NumericType IntegralType FloatingPointType ReferenceType ClassOrInterfaceType ClassType TypeVariable ArrayType
-%type<node> Dims  TypeBound TypeArguments TypeArgumentList  TypeArgument Wildcard WildcardBounds TypeName PackageOrTypeName
-%type<node> ExpressionName MethodName   UnqualifiedMethodIdentifier 
+%type<node> NumericType IntegralType FloatingPointType ArrayType
+%type<node> Dims  TypeBound TypeArguments TypeArgumentList  TypeArgument Wildcard WildcardBounds TypeName
+%type<node> ExpressionName
 %type<node> Literal ClassOrInterfaceTypeToInstantiate
 %type<node> ContextualKeywords TypeIdentifierKeywords
-%type<node> EOLLine
 
 %start CompilationUnit
 
@@ -529,9 +527,10 @@ ConstructorDeclaration: ConstructorDeclarator ConstructorBody
                         }
                         ;
 
-ConstructorDeclarator:  SimpleTypeName LeftParenthesis  RightParenthesis
+ConstructorDeclarator:  SimpleTypeName LeftParenthesis RightParenthesis
                         {
-                            $$ = $1;
+                            $$ = createNode("ConstructorDeclarator");
+                            $$->add_child(createNode("()"));
                         }
                         | SimpleTypeName LeftParenthesis ReceiverParameter Comma RightParenthesis
                         {
@@ -574,7 +573,7 @@ ConstructorBody:    LeftCurlyBrace  RightCurlyBrace
                     {
                         $$ = createNode("ConstructorBody");
                         $$->add_child($2);
-                        $$->add_child($3);
+                        $$->add_children($3);
                     }
                     ;
 
@@ -648,10 +647,15 @@ ExplicitConstructorInvocation:  THIS LeftParenthesis RightParenthesis Semicolon
                                 | ExpressionName Dot TypeArguments SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
                                 {
                                     $$ = createNode("ExplicitConstructorInvocation");
-                                    $2->add_child($1);
-                                    $2->add_child($4);
-                                    $$->add_child($2);
+                                    Node *temp1 = createNode(".");
+                                    Node *temp2 = createNode("GenericClassName");
+                                    temp2->add_child($3);
+                                    temp2->add_child($4);
+                                    temp1->add_child($1);
+                                    temp1->add_child(temp2);
+                                    $$->add_child(temp1);
                                     $$->add_children($6);
+                                    $$->add_child($8);
                                 }
                                 | ExpressionName Dot TypeArguments SUPER LeftParenthesis RightParenthesis Semicolon
                                 {
@@ -664,6 +668,7 @@ ExplicitConstructorInvocation:  THIS LeftParenthesis RightParenthesis Semicolon
                                 | ExpressionName Dot SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
                                 {
                                     $$ = createNode("ExplicitConstructorInvocation");
+                                    $2 = createNode(".");
                                     $2->add_child($1);
                                     $2->add_child($3);
                                     $$->add_child($2);
@@ -673,6 +678,7 @@ ExplicitConstructorInvocation:  THIS LeftParenthesis RightParenthesis Semicolon
                                 | ExpressionName Dot SUPER LeftParenthesis RightParenthesis Semicolon
                                 {
                                     $$ = createNode("ExplicitConstructorInvocation");
+                                    $2 = createNode(".");
                                     $2->add_child($1);
                                     $2->add_child($3);
                                     $$->add_child($2);
@@ -681,6 +687,7 @@ ExplicitConstructorInvocation:  THIS LeftParenthesis RightParenthesis Semicolon
                                 | Primary Dot  SUPER LeftParenthesis RightParenthesis Semicolon
                                 {
                                     $$ = createNode("ExplicitConstructorInvocation");
+                                    $2 = createNode(".");
                                     $2->add_child($1);
                                     $2->add_child($3);
                                     $$->add_child($2);
@@ -689,6 +696,7 @@ ExplicitConstructorInvocation:  THIS LeftParenthesis RightParenthesis Semicolon
                                 | Primary Dot TypeArguments SUPER LeftParenthesis RightParenthesis Semicolon
                                 {
                                     $$ = createNode("ExplicitConstructorInvocation");
+                                    $2 = createNode(".");
                                     $2->add_child($1);
                                     $2->add_child($4);
                                     $$->add_child($2);
@@ -697,6 +705,7 @@ ExplicitConstructorInvocation:  THIS LeftParenthesis RightParenthesis Semicolon
                                 | Primary Dot  SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
                                 {
                                     $$ = createNode("ExplicitConstructorInvocation");
+                                    $2 = createNode(".");
                                     $2->add_child($1);
                                     $2->add_child($3);
                                     $$->add_child($2);
@@ -706,6 +715,7 @@ ExplicitConstructorInvocation:  THIS LeftParenthesis RightParenthesis Semicolon
                                 | Primary Dot TypeArguments SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
                                 {
                                     $$ = createNode("ExplicitConstructorInvocation");
+                                    $2 = createNode(".");
                                     $2->add_child($1);
                                     $2->add_child($4);
                                     $$->add_child($2);
@@ -714,12 +724,12 @@ ExplicitConstructorInvocation:  THIS LeftParenthesis RightParenthesis Semicolon
                                 }
                                 ;
 
-ArrayInitializer:   LeftCurlyBrace  Comma RightCurlyBrace
+ArrayInitializer:   LeftCurlyBrace Comma RightCurlyBrace
                     {
                         $$ = createNode("ArrayInitializer");
                         $$->add_child($2);
                     }
-                    | LeftCurlyBrace  RightCurlyBrace
+                    | LeftCurlyBrace RightCurlyBrace
                     {
                         $$=createNode("ArrayInitializer");
                     }
@@ -743,7 +753,7 @@ VariableInitializerList:    VariableInitializer
                             }
                             | VariableInitializerList Comma VariableInitializer
                             {
-                                $$= $1;
+                                $$ = $1;
                                 $$->add_child($3);
                             }
                             ;
@@ -1238,7 +1248,6 @@ ClassInstanceCreationExpression:    UnqualifiedClassInstanceCreationExpression
                                         $2->add_child($3);
                                         $$->add_child($2);
                                     }
-                                    
                                     ;
 
 UnqualifiedClassInstanceCreationExpression: NEW ClassOrInterfaceTypeToInstantiate LeftParenthesis RightParenthesis
