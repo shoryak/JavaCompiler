@@ -175,7 +175,7 @@ Literals {DecimalIntegerLiteral}|{HexIntegerLiteral}|{OctalIntegerLiteral}|{Floa
 "]" { yylval.node = FixedNode(SEPARATOR_PREFIX, yytext, SEPARATOR_SUFFIX); return RightSquareBracket; }
 ";" { yylval.node = FixedNode(SEPARATOR_PREFIX, yytext, SEPARATOR_SUFFIX); return Semicolon; }
 "," { yylval.node = FixedNode(SEPARATOR_PREFIX, yytext, SEPARATOR_SUFFIX); return Comma; }
-"." { yylval.node = FixedNode(SEPARATOR_PREFIX, yytext, SEPARATOR_SUFFIX); return Dot; }
+"." { yylval.node = FixedNode("", yytext, ""); return Dot; }
 "..." { yylval.node = FixedNode(SEPARATOR_PREFIX, yytext, SEPARATOR_SUFFIX); return ellipsis;}
 "@" { yylval.node = FixedNode(SEPARATOR_PREFIX, yytext, SEPARATOR_SUFFIX); return AtSign;}
 "::" { yylval.node = FixedNode(SEPARATOR_PREFIX, yytext, SEPARATOR_SUFFIX); return Scope;}
