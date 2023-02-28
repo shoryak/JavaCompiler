@@ -869,7 +869,8 @@ StatementExpression:    Assignment
 IfThenStatement:    IF LeftParenthesis Expression RightParenthesis Statement
                     {
                         $$ = createNode("IfThenStatement");
-                        $$->add_child($3);
+                        $1->add_child($3);
+                        $$->add_child($1);
                         $$->add_child($5);
                     }
                     ;
@@ -877,18 +878,22 @@ IfThenStatement:    IF LeftParenthesis Expression RightParenthesis Statement
 IfThenElseStatement:    IF LeftParenthesis Expression RightParenthesis StatementNoShortIf ELSE Statement
                         {
                             $$ = createNode("IfThenElseStatement");
-                            $$->add_child($3);
+                            $1->add_child($3);
+                            $$->add_child($1);
                             $$->add_child($5);
-                            $$->add_child($7);
+                            $6->add_child($7);
+                            $$->add_child($6);
                         }
                         ;
 
 IfThenElseStatementNoShortIf:   IF LeftParenthesis Expression RightParenthesis StatementNoShortIf ELSE StatementNoShortIf
                                 {
                                     $$ = createNode("IfThenElseStatementNoShortIf");
-                                    $$->add_child($3);
+                                    $1->add_child($3);
+                                    $$->add_child($1);
                                     $$->add_child($5);
-                                    $$->add_child($7);
+                                    $6->add_child($7);
+                                    $$->add_child($6);
                                 }
                                 ;
 
@@ -1147,8 +1152,9 @@ ReturnStatement:    RETURN Semicolon
                     }
                     | RETURN Expression Semicolon
                     {
-                        $$ = $1;
-                        $$->add_child($2);
+                        $$ = createNode("ReturnStatement");
+                        $1->add_child($2);
+                        $$->add_child($1);
                         $$->add_child($3);
                     }
                     ;

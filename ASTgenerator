@@ -59,4 +59,4 @@ PARSER_EXEC="src/parser.out"
 DOT="dot"
 
 eval "$PARSER_EXEC $INPUT_FILE $dotfile $verbose_flag" &&\
-eval "$DOT -Tsvg $dotfile -o $OUTPUT_FILE"
+eval "$DOT -Tps $dotfile -o $OUTPUT_FILE"
