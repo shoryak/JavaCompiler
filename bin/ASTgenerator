@@ -1,0 +1,57 @@
+#!/bin/bash
+USAGE="Usage: $0 [--input <input_file>] [--output <output_file>] [--help] [--verbose]"
+HELP=$(cat << EOF
+$USAGE
+Options:
+\t--input\t\tThe input file (Java program) to be parsed
+\t--output\tThe output (The PostScript file containing the input program\'s AST)
+\t--verbose\tShow verbose output when parsing the file
+\t--help\t\tShow this help screen
+EOF
+)
+
+usage() { echo "$USAGE">&2; exit 1; }
+
+help() { echo -e "$HELP"; exit 0; }
+
+OPTIONS=$(getopt -o i:o:hv --long input:,output:,help,verbose -- "$@")
+eval set -- "$OPTIONS"
+
+INPUT_FILE=""
+OUTPUT_FILE=""
+verbose_flag=0
+
+while true; do
+    case "$1" in
+        -i|--input)
+            INPUT_FILE="$2"
+            shift 2;;
+        -o|--output)
+            OUTPUT_FILE="$2"
+            shift 2;;
+        -h|--help)
+            help;;
+        -v|--verbose)
+            verbose_flag=1
+            shift;;
+        --)
+            shift; break;;
+        *)
+            usage;;
+    esac
+done
+
+if [ -z "$INPUT_FILE" ]; then
+    echo "Error: Input file not provided."
+    exit 1
+fi
+
+if [ -z "$OUTPUT_FILE" ]; then
+    echo "Error: Output file not provided."
+    exit 1
+fi
+
+ASTGEN_EXEC="./ASTGen.out"
+DOT="dot"
+
+eval "$ASTGEN_EXEC $INPUT_FILE $OUTPUT_FILE $verbose_flag"

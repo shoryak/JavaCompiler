@@ -1,0 +1,9 @@
+.vscode
+*.o
+*.out
+*.output
+*.svg
+*.ps
+*.dot
+lex.yy.c
+*.tab.*
