@@ -51,12 +51,7 @@ if [ -z "$OUTPUT_FILE" ]; then
     exit 1
 fi
 
-extension=${OUTPUT_FILE#*.}
-filename_noext=$(basename "$OUTPUT_FILE" ".$extension")
-dotfile="$filename_noext.dot"
-
-PARSER_EXEC="src/parser.out"
+ASTGEN_EXEC="./ASTGen.out"
 DOT="dot"
 
-eval "$PARSER_EXEC $INPUT_FILE $dotfile $verbose_flag" &&\
-eval "$DOT -Tps $dotfile -o $OUTPUT_FILE"
+eval "$ASTGEN_EXEC $INPUT_FILE $OUTPUT_FILE $verbose_flag"
