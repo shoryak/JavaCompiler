@@ -8,7 +8,6 @@ int yyparse(void);
 extern int yydebug;
 extern FILE *yyin, *yyout;
 
-
 int main(int argc, char *argv[]) {
     std::string exec_name = argv[0];
     std::string usage = "Usage: " + exec_name + " [input_file] [output_file]\n";
@@ -19,7 +18,7 @@ int main(int argc, char *argv[]) {
     }
     char *input_file_name = argv[0], *output_file_name = argv[1];
     int verbose = atoi(argv[2]);
-    
+
     if(verbose) yydebug = 1;
 
     FILE *input_file = fopen(input_file_name, "r");
