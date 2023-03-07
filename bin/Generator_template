@@ -1,0 +1,66 @@
+#!/bin/bash
+OPTIONS=$(cat << EOF
+Options:
+\t-i, --input FILE\tSpecify input filename
+\t-o, --output FILE\tSpecify output filename
+\t-v, --verbose\t\tWrite parser stack trace to stdout
+\t-h, --help\t\tDisplay this help screen
+EOF
+)
+
+
+function usage {
+    echo "Usage: $1 [OPTIONS]..."
+}
+
+function help {
+    usage $1
+    echo -e "$OPTIONS"
+}
+
+function error_help { help $1 >&2; exit 1; }
+
+function get_args {
+    SCRIPT_NAME="$1"
+    CLI_OPTIONS=$(getopt -o i:o:hv --long input:,output:,help,verbose -- "$@")
+    eval set -- "$CLI_OPTIONS"
+
+    INPUT_FILE=""
+    OUTPUT_FILE=""
+    verbose_flag=0
+
+    while true; do
+        case "$1" in
+            -i|--input)
+                INPUT_FILE="$2"
+                shift 2;;
+            -o|--output)
+                OUTPUT_FILE="$2"
+                shift 2;;
+            -h|--help)
+                help
+                exit 0;;
+            -v|--verbose)
+                verbose_flag=1
+                shift;;
+            --)
+                shift; break;;
+            *)
+                error_help;;
+        esac
+    done
+
+    if [ -z "$INPUT_FILE" ]; then
+        echo "Error: Input file not provided." >&2
+        return 1
+    fi
+    if [ -z "$OUTPUT_FILE" ]; then
+        echo "Error: Output file not provided." >&2
+        return 1
+    fi
+
+    echo "$INPUT_FILE"
+    echo "$OUTPUT_FILE"
+    echo "$verbose_flag"
+    return 0
+}

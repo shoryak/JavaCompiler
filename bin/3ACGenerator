@@ -20,6 +20,6 @@ INPUT_FILE="${args[0]}"
 OUTPUT_FILE="${args[1]}"
 verbose_flag="${args[2]}"
 
-ASTGEN_EXEC="$BIN_DIR/ASTGen.out"
+THREE_ACGEN_EXEC="$BIN_DIR/3ACGen.out"
 
-eval "$ASTGEN_EXEC $INPUT_FILE $OUTPUT_FILE $verbose_flag"
+eval "$THREE_ACGEN_EXEC $INPUT_FILE $OUTPUT_FILE $verbose_flag"
