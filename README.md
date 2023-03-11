@@ -11,5 +11,5 @@ Run the commands
 ```shell
 cd src
 make test
-../bin.test.out
+../bin/test.out
 
