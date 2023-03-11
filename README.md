@@ -2,12 +2,14 @@
 CS335 course project 
 
 To do:
- Add tokens
- 
- Write Grammar
- 
- Write AST and DotScript Code
- 
- Provide required input output functionality 
- 
- Construct Makefile for the MileStone 1 
++ Integrate symbol table into parser
++ Figure out how to support types
++ Semantic analysis
++ 3AC Code gen
+### Test current code
+Run the commands
+```shell
+cd src
+make test
+../bin.test.out
+
