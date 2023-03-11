@@ -1,6 +1,7 @@
 CC = g++
 CFLAGS = -g -std=c++2a -Wall
-OBJS = lexer.o parser.o 3ac.o main.o
+OBJS = lexer.o parser.o symbol_table.o 3ac.o main.o
+TEST_OBJS = lexer.o parser.o symbol_table.o 3ac.o test.o
 
 # Source files
 LEXER_SRC = lexer.l
@@ -10,14 +11,21 @@ PARSER_SRC = parser.y
 # Executible files for different stage outputs
 ASTGEN_EXEC = ASTGen.out
 3ACGEN_EXEC = 3ACGen.out
+TEST_EXEC = test.out
 
 BIN = ../bin
 
 3acgen:			$(OBJS)
 				$(CC) $(CFLAGS) $(OBJS) -o $(BIN)/$(3ACGEN_EXEC)
 
+test:			$(TEST_OBJS)
+				$(CC) $(CFLAGS) $(TEST_OBJS) -o $(BIN)/$(TEST_EXEC)
+
 astgen:			$(OBJS)
 				$(CC) $(CFLAGS) $(OBJS) -o $(BIN)/$(ASTGEN_EXEC)
+
+test.o:			test.cpp
+				$(CC) $(CFLAGS) -c test.cpp -o test.o
 
 lexer.o:		lex.yy.c
 				$(CC) $(CFLAGS) -c lex.yy.c -o lexer.o
@@ -41,5 +49,5 @@ main.o:			main.cpp
 				$(CC) $(CFLAGS) -c main.cpp -o main.o
 
 clean:
-				rm -f $(BIN)/$(ASTGEN_EXEC) $(BIN)/$(3ACGEN_EXEC)
+				rm -f $(BIN)/$(ASTGEN_EXEC) $(BIN)/$(3ACGEN_EXEC) $(BIN)/$(TEST_EXEC)
 				rm -f *.out *.o *.output *.tab.* lex.yy.c *.svg *.ps *.dot
