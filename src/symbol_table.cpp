@@ -1,12 +1,52 @@
 #include "symbol_table.h"
 
 /*
+Print all entries of a particular tableMap (of a symbol table)
+PARAM: scope -- tableMap which contains all symbol table entries
+*/
+void printScope(const std::unordered_map<std::string, SymbolTableEntry*>& scope)
+{
+    std::cerr << "\n~~~~~ BEGIN PRINTING SCOPE ~~~~~\n";
+    for(auto [lexeme, stEntry]: scope)
+    {
+        std::cerr << "Lexeme: " << lexeme << "\n";
+        stEntry->print();
+    }
+    std::cerr << "~~~~~ END PRINTING SCOPE ~~~~~\n";
+}
+
+/*
+Get the lexeme (name) from the Symbol Table Entry
+PARAM: None
+*/
+std::string SymbolTableEntry::getName(void)
+{
+    return name;
+}
+
+/*
+Print a particular symbol table entry (lexeme: attributes)
+PARAM: None
+*/
+void SymbolTableEntry::print()
+{
+    std::cerr << "Name: " << name << " Type: " << type << '\n';
+    std::cerr << "Size: " << size << " Dim: " << dimension;
+    std::cerr << " LoDecl: " << declLine << '\n';
+    std::cerr << std::hex;
+    std::cerr << "Address: " << address << '\n';
+    std::cerr << std::dec;
+    std::cerr << '\n';
+}
+
+/*
 Insert symbol table entry.
 PARAM: name -- Lexeme
 PARAM: stEntry -- Symbol Table Entry to be inserted
 */
-void SymbolTable::insert(const std::string& name, SymbolTableEntry *stEntry)
+void SymbolTable::insert(std::string name, SymbolTableEntry *stEntry)
 {
+    assert(stEntry != nullptr);
     tableMap[name] = stEntry;
 }
 
@@ -33,36 +73,7 @@ PARAM: parent -- Pointer to Symbol Table to be set as parent
 void SymbolTable::setParent(SymbolTable *parent)
 {
     parentTable = parent;
-}
-
-/*
-Print a particular symbol table entry (lexeme: attributes)
-PARAM: None
-*/
-void SymbolTableEntry::print()
-{
-    std::cout << "Name: " << name << " Type: " << type << '\n';
-    std::cout << "Size: " << size << " Dim: " << dimension;
-    std::cout << " LoDecl: " << declLine << '\n';
-    std::cout << std::hex;
-    std::cout << "Address: " << address << '\n';
-    std::cout << std::dec;
-    std::cout << '\n';
-}
-
-/*
-Print all entries of a particular tableMap (of a symbol table)
-PARAM: scope -- tableMap which contains all symbol table entries
-*/
-void printScope(const std::unordered_map<std::string, SymbolTableEntry*>& scope)
-{
-    std::cout << "\n~~~~~ BEGIN PRINTING SCOPE ~~~~~\n";
-    for(auto [lexeme, stEntry]: scope)
-    {
-        std::cout << "Lexeme: " << lexeme << "\n";
-        stEntry->print();
-    }
-    std::cout << "~~~~~ END PRINTING SCOPE ~~~~~\n";
+    parent->__add_child(this);
 }
 
 /*
@@ -73,11 +84,22 @@ PARAM: Noneg
 */
 void SymbolTable::print()
 {
-    std::cout << "~~~~~~~~~~ BEGIN PRINTING TABLE ~~~~~~~~~~\n\n";
-    std::cout << "Open Scopes:\n";
+    std::cerr << "~~~~~~~~~~ BEGIN PRINTING TABLE ~~~~~~~~~~\n\n";
+    std::cerr << "Open Scopes:\n";
     for(auto symTable = this; symTable != nullptr; symTable = symTable->parentTable)
     {
         printScope(symTable->tableMap);
     }
-    std::cout << "\n~~~~~~~~~~ END PRINTING TABLE ~~~~~~~~~~\n";
+    std::cerr << "\n~~~~~~~~~~ END PRINTING TABLE ~~~~~~~~~~\n";
+}
+
+void SymbolTable::__add_child(SymbolTable* symTable)
+{
+    childTables.push_back(symTable);
+}
+
+void SymbolTable::__printAll()
+{
+    printScope(tableMap);
+    for(auto childTable: childTables) childTable->__printAll();
 }

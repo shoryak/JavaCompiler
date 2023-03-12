@@ -3,6 +3,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <cassert>
+#include "symbol_table.h"
 
 int lines = 0;
 int yyparse();
@@ -20,20 +22,70 @@ extern "C"
 extern FILE *yyin;
 extern FILE *yyout;
 
+SymbolTable *globalSymTable = new SymbolTable;
+
 struct Node
 {
+/*  Attributes needed for AST generation    */
     char* value;
     std::vector<Node*> children;
+
+/*  Attributes needed for semantic analysis.
+    All are attributes of the identifier located 
+    in the particular non-terminal (e.g. statement) */
+    SymbolTable *symTable = nullptr;
+
+/*  For a list-type non-terminal (of some individual non-terminal
+    which can have a scope) we need to add all entries to the
+    list-type non-term's symbol table. So we store the individual
+    non-term's entries here   */
+    std::vector<SymbolTableEntry*> stEntries;
+
+/*  If we want to carry up the lexeme so that the required symbol table
+    entry can be created properly   */
+    std::string lexeme = "";
+
+/*  Constructors    */
     Node(char* value, std::vector<Node*> children): value{value}, children{children} {}
     Node(char* value): value{value}, children{std::vector<Node*>()} {}
+
+/*  Add a node as a child   */
     void add_child(Node* nd)
     {
         children.push_back(nd);
     }
+
+/*  Add all children of another node as children    */
     void add_children(Node* nd)
     {
         for(auto& child: nd->children)
             children.push_back(child);
+    }
+
+/*  Allocate memory for the symbol table.
+    Note: this isn't done by default as tokens will use up too much memory  */
+    void allocate_symtable()
+    {
+        symTable = new SymbolTable;
+    }
+
+/*  Add a Symbol Table Entry into the Symbol Table  */
+    void add_entry(SymbolTableEntry* stEntry)
+    {
+        assert(symTable);
+        assert(stEntry);
+        symTable->insert(stEntry->getName(), stEntry);
+    }
+
+/*  Add multiple Symbol Table Entries into the Symbol Table */
+    void add_entries(std::vector<SymbolTableEntry*> stEntries)
+    {
+        assert(symTable);
+        for(auto stEntry: stEntries)
+        {
+            assert(stEntry);
+            symTable->insert(stEntry->getName(), stEntry);
+        }
     }
 };
 
@@ -140,6 +192,8 @@ CompilationUnit:    OrdinaryCompilationUnit
                         root = $$;
                         printf("digraph G {\n");
                         buildTree(root, -1, 0);
+                        globalSymTable = $$->symTable;
+                        globalSymTable->__printAll();
                         printf("}\n");
                     }
                     ;
@@ -151,15 +205,22 @@ TopLevelClassOrInterfaceDeclarationList:    TopLevelClassOrInterfaceDeclaration
                                             {
                                                 std::vector<Node*> v{$1};
                                                 $$ = createNode("JAVA-PROGRAM", v);
+                                                $$->allocate_symtable();
+                                                assert($1->symTable);
+                                                $1->symTable->setParent($$->symTable);
+                                                $$->add_entries($1->stEntries);
                                             }
                                             | TopLevelClassOrInterfaceDeclarationList TopLevelClassOrInterfaceDeclaration
                                             {
                                                 $$ = $1;
                                                 $$->add_child($2);
+                                                assert($2->symTable);
+                                                $2->symTable->setParent($$->symTable);
+                                                $$->add_entries($2->stEntries);
                                             }
                                             ;
 
-TopLevelClassOrInterfaceDeclaration:    ClassDeclaration
+TopLevelClassOrInterfaceDeclaration:    ClassDeclaration 
                                         ;
 
 ClassDeclaration:   NormalClassDeclaration
@@ -169,6 +230,10 @@ NormalClassDeclaration: CLASS TypeIdentifier ClassBody
                         {
                             std::vector<Node*> v{$2, $3};
                             $$ = createNode("class" , v);
+                            $$->symTable = $3->symTable;
+                            std::string lexeme($2->value);
+                            auto stEntry = new SymbolTableEntry(lexeme, "", -1, -1, -1, 0);
+                            $$->stEntries.push_back(stEntry);
                         }
                         | ModifierList CLASS TypeIdentifier ClassBody
                         {
@@ -176,6 +241,10 @@ NormalClassDeclaration: CLASS TypeIdentifier ClassBody
                             $$->add_children($1);
                             $$->add_child($3);
                             $$->add_child($4);
+                            $$->symTable = $4->symTable;
+                            std::string lexeme($3->value);
+                            auto stEntry = new SymbolTableEntry(lexeme, "", -1, -1, -1, 0);
+                            $$->stEntries.push_back(stEntry);
                         }
                         ;
 
@@ -204,6 +273,7 @@ ClassBody:  LeftCurlyBrace ClassBodyDeclarationList RightCurlyBrace
             {
                 $$ = createNode("ClassBody");
                 $$->add_child(createNode("{}"));
+                $$->allocate_symtable();
             }
             ;
 
@@ -211,11 +281,18 @@ ClassBodyDeclarationList:   ClassBodyDeclaration
                             {
                                 $$ = createNode("ClassBody");
                                 $$->add_child($1);
+                                $$->allocate_symtable();
+                                if($1->symTable)
+                                    $1->symTable->setParent($$->symTable);
+                                $$->add_entries($1->stEntries);
                             }
                             | ClassBodyDeclarationList ClassBodyDeclaration
                             {
                                 $$ = $1;
                                 $$->add_child($2);
+                                if($2->symTable)
+                                    $2->symTable->setParent($$->symTable);
+                                $$->add_entries($2->stEntries);
                             }
                             ;
 
@@ -238,6 +315,7 @@ FieldDeclaration:   ModifierList UnannType VariableDeclaratorList Semicolon
                         $$->add_child($2);
                         $$->add_child($3);
                         $$->add_child($4);
+                        $$->stEntries = $3->stEntries;
                     }
                     | UnannType VariableDeclaratorList Semicolon
                     {
@@ -245,6 +323,7 @@ FieldDeclaration:   ModifierList UnannType VariableDeclaratorList Semicolon
                         $$->add_child($1);
                         $$->add_child($2);
                         $$->add_child($3);
+                        $$->stEntries = $2->stEntries;
                     }
                     ;
 
@@ -255,12 +334,18 @@ VariableDeclaratorList: VariableDeclarator
                             {
                                 $$ = $1;
                                 $$->add_child($3);
+                                assert((int)($3->stEntries.size()) == 1);
+                                $$->stEntries.push_back($3->stEntries[0]);
                             }
                             else
                             {
                                 $$ = createNode("Variables");
                                 $$->add_child($1);
                                 $$->add_child($3);
+                                assert((int)($1->stEntries.size()) == 1);
+                                assert((int)($3->stEntries.size()) == 1);
+                                $$->stEntries.push_back($1->stEntries[0]);
+                                $$->stEntries.push_back($3->stEntries[0]);
                             }
                         }
                         ;
@@ -270,6 +355,7 @@ VariableDeclarator: VariableDeclaratorId ASSIGN VariableInitializer
                         $$ = createNode("=");
                         $$->add_child($1);
                         $$->add_child($3);
+                        $$->stEntries = $1->stEntries;
                     }
                     | VariableDeclaratorId
                     ;
@@ -279,8 +365,17 @@ VariableDeclaratorId:   Identifier Dims
                             $$ = createNode("VariableDeclaratorId");
                             $$->add_child($1);
                             $$->add_child($2);
+                            std::string lexeme($1->value);
+                            auto stEntry = new SymbolTableEntry(lexeme, "", -1, -1, -1, 0);
+                            $$->stEntries.push_back(stEntry);
                         }
                         | Identifier
+                        {
+                            $$ = $1;
+                            std::string lexeme($1->value);
+                            auto stEntry = new SymbolTableEntry(lexeme, "", -1, -1, -1, 0);
+                            $$->stEntries.push_back(stEntry);
+                        }
                         ;
 
 VariableInitializer:    Expression

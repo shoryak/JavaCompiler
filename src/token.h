@@ -45,7 +45,7 @@
 extern int yydebug;
 #endif
 /* "%code requires" blocks.  */
-#line 69 "parser.y"
+#line 121 "parser.y"
 
     #include <vector>
     #include <cstdio>
@@ -198,7 +198,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 79 "parser.y"
+#line 131 "parser.y"
 
     Node* node;
     char* str;

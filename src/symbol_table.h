@@ -3,7 +3,9 @@
 
 #include <unordered_map>
 #include <string>
+#include <vector>
 #include <iostream>
+#include <cassert>
 #include "types.h"
 
 class SymbolTable; // Forward declaration
@@ -29,6 +31,7 @@ public:
     )
     : name{name}, type{type}, size{size}, dimension{dimension},
     declLine{declLine}, address{address} {}
+    std::string getName(void);
     void print(void);
 };
 
@@ -37,14 +40,20 @@ class SymbolTable {
     // No need for it in the symbol table entry
     std::unordered_map<std::string, SymbolTableEntry*> tableMap;
     SymbolTable *parentTable;
+    std::vector<SymbolTable*> childTables;
 
 public:
     SymbolTable(void): parentTable{nullptr} {}
-    SymbolTable(SymbolTable *parentSymbolTable): parentTable{parentSymbolTable} {}
-    void insert(const std::string& name, SymbolTableEntry *stEntry);
+    SymbolTable(SymbolTable *parentSymbolTable): parentTable{parentSymbolTable}
+    {
+        parentSymbolTable->__add_child(this);
+    }
+    void insert(std::string name, SymbolTableEntry *stEntry);
     SymbolTableEntry* lookup(const std::string& name);
     void setParent(SymbolTable *parent);
     void print(void);
+    void __add_child(SymbolTable* symTable);
+    void __printAll(void);
 };
 
 #endif
