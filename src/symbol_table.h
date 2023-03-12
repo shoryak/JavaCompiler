@@ -32,6 +32,8 @@ public:
     : name{name}, type{type}, size{size}, dimension{dimension},
     declLine{declLine}, address{address} {}
     std::string getName(void);
+    void setType(std::string type);
+    void setDimension(int32 dimension);
     void print(void);
 };
 

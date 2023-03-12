@@ -10,10 +10,10 @@ int lines = 0;
 int yyparse();
 extern "C"
 {        
+    extern int linenum;
     int yylex(void);
     int yyerror(const char* s)
     {
-        extern int linenum;
         fprintf(stderr, "ERROR: %s Line Number: %d\n", s, linenum);
         exit(1);
         return 1;
@@ -21,6 +21,7 @@ extern "C"
 }
 extern FILE *yyin;
 extern FILE *yyout;
+extern int linenum;
 
 SymbolTable *globalSymTable = new SymbolTable;
 
@@ -45,9 +46,16 @@ struct Node
     entry can be created properly   */
     std::string lexeme = "";
 
+/*  For non-terminals which contain expressions/variables of a particular type  */
+    std::string type = "";
+
+/*  Number of dimensions, only applicable for the Dims non-terminal */
+    int numDims = 0;
+
 /*  Constructors    */
     Node(char* value, std::vector<Node*> children): value{value}, children{children} {}
     Node(char* value): value{value}, children{std::vector<Node*>()} {}
+    Node(char* value, std::string lexeme, std::string type): value{value}, lexeme{lexeme}, type{type} {}
 
 /*  Add a node as a child   */
     void add_child(Node* nd)
@@ -101,6 +109,11 @@ Node* createNode(const char* value)
     return new Node(strdup(value));
 }
 
+Node* createNode(const char* value, std::string lexeme, std::string type)
+{
+    return new Node(strdup(value), lexeme, type);
+}
+
 int buildTree(Node* node, int parentno, int co)
 {
     if(node == NULL) return co;
@@ -125,6 +138,7 @@ int buildTree(Node* node, int parentno, int co)
     struct Node;
     Node* createNode(const char* value, std::vector<Node*> children);
     Node* createNode(const char* value);
+    Node* createNode(const char* value, std::string lexeme, std::string type);
     int buildTree(Node*, int parentno , int co);
 }
 
@@ -205,6 +219,7 @@ TopLevelClassOrInterfaceDeclarationList:    TopLevelClassOrInterfaceDeclaration
                                             {
                                                 std::vector<Node*> v{$1};
                                                 $$ = createNode("JAVA-PROGRAM", v);
+
                                                 $$->allocate_symtable();
                                                 assert($1->symTable);
                                                 $1->symTable->setParent($$->symTable);
@@ -214,6 +229,7 @@ TopLevelClassOrInterfaceDeclarationList:    TopLevelClassOrInterfaceDeclaration
                                             {
                                                 $$ = $1;
                                                 $$->add_child($2);
+
                                                 assert($2->symTable);
                                                 $2->symTable->setParent($$->symTable);
                                                 $$->add_entries($2->stEntries);
@@ -230,9 +246,9 @@ NormalClassDeclaration: CLASS TypeIdentifier ClassBody
                         {
                             std::vector<Node*> v{$2, $3};
                             $$ = createNode("class" , v);
+
                             $$->symTable = $3->symTable;
-                            std::string lexeme($2->value);
-                            auto stEntry = new SymbolTableEntry(lexeme, "", -1, -1, -1, 0);
+                            auto stEntry = new SymbolTableEntry($2->lexeme, $1->type, -1, 0, linenum, 0);
                             $$->stEntries.push_back(stEntry);
                         }
                         | ModifierList CLASS TypeIdentifier ClassBody
@@ -241,9 +257,9 @@ NormalClassDeclaration: CLASS TypeIdentifier ClassBody
                             $$->add_children($1);
                             $$->add_child($3);
                             $$->add_child($4);
+
                             $$->symTable = $4->symTable;
-                            std::string lexeme($3->value);
-                            auto stEntry = new SymbolTableEntry(lexeme, "", -1, -1, -1, 0);
+                            auto stEntry = new SymbolTableEntry($3->lexeme, $2->type, -1, 0, linenum, 0);
                             $$->stEntries.push_back(stEntry);
                         }
                         ;
@@ -273,6 +289,7 @@ ClassBody:  LeftCurlyBrace ClassBodyDeclarationList RightCurlyBrace
             {
                 $$ = createNode("ClassBody");
                 $$->add_child(createNode("{}"));
+
                 $$->allocate_symtable();
             }
             ;
@@ -281,6 +298,7 @@ ClassBodyDeclarationList:   ClassBodyDeclaration
                             {
                                 $$ = createNode("ClassBody");
                                 $$->add_child($1);
+
                                 $$->allocate_symtable();
                                 if($1->symTable)
                                     $1->symTable->setParent($$->symTable);
@@ -290,6 +308,7 @@ ClassBodyDeclarationList:   ClassBodyDeclaration
                             {
                                 $$ = $1;
                                 $$->add_child($2);
+
                                 if($2->symTable)
                                     $2->symTable->setParent($$->symTable);
                                 $$->add_entries($2->stEntries);
@@ -315,7 +334,13 @@ FieldDeclaration:   ModifierList UnannType VariableDeclaratorList Semicolon
                         $$->add_child($2);
                         $$->add_child($3);
                         $$->add_child($4);
+
                         $$->stEntries = $3->stEntries;
+                        for(auto stEntry: $$->stEntries)
+                        {
+                            assert(stEntry);
+                            stEntry->setType($2->type);
+                        }
                     }
                     | UnannType VariableDeclaratorList Semicolon
                     {
@@ -323,7 +348,14 @@ FieldDeclaration:   ModifierList UnannType VariableDeclaratorList Semicolon
                         $$->add_child($1);
                         $$->add_child($2);
                         $$->add_child($3);
+
                         $$->stEntries = $2->stEntries;
+                        for(auto stEntry: $$->stEntries)
+                        {
+                            assert(stEntry);
+                            stEntry->setType($1->type);
+                            stEntry->setDimension($1->numDims);
+                        }
                     }
                     ;
 
@@ -334,6 +366,7 @@ VariableDeclaratorList: VariableDeclarator
                             {
                                 $$ = $1;
                                 $$->add_child($3);
+
                                 assert((int)($3->stEntries.size()) == 1);
                                 $$->stEntries.push_back($3->stEntries[0]);
                             }
@@ -342,6 +375,7 @@ VariableDeclaratorList: VariableDeclarator
                                 $$ = createNode("Variables");
                                 $$->add_child($1);
                                 $$->add_child($3);
+
                                 assert((int)($1->stEntries.size()) == 1);
                                 assert((int)($3->stEntries.size()) == 1);
                                 $$->stEntries.push_back($1->stEntries[0]);
@@ -355,6 +389,7 @@ VariableDeclarator: VariableDeclaratorId ASSIGN VariableInitializer
                         $$ = createNode("=");
                         $$->add_child($1);
                         $$->add_child($3);
+
                         $$->stEntries = $1->stEntries;
                     }
                     | VariableDeclaratorId
@@ -365,15 +400,15 @@ VariableDeclaratorId:   Identifier Dims
                             $$ = createNode("VariableDeclaratorId");
                             $$->add_child($1);
                             $$->add_child($2);
-                            std::string lexeme($1->value);
-                            auto stEntry = new SymbolTableEntry(lexeme, "", -1, -1, -1, 0);
+
+                            auto stEntry = new SymbolTableEntry($1->lexeme, "", -1, $2->numDims, -1, 0);
                             $$->stEntries.push_back(stEntry);
                         }
                         | Identifier
                         {
                             $$ = $1;
-                            std::string lexeme($1->value);
-                            auto stEntry = new SymbolTableEntry(lexeme, "", -1, -1, -1, 0);
+
+                            auto stEntry = new SymbolTableEntry($1->lexeme, "", -1, 0, -1, 0);
                             $$->stEntries.push_back(stEntry);
                         }
                         ;
@@ -403,6 +438,8 @@ UnannClassType: TypeIdentifier TypeArguments
                     $$ = createNode("UnnanClassType");
                     $$->add_child($1);
                     $$->add_child($2);
+
+                    $$->type = $1->type;
                 }
                 | UnannClassOrInterfaceType Dot TypeIdentifier TypeArguments
                 {
@@ -412,12 +449,16 @@ UnannClassType: TypeIdentifier TypeArguments
                     temp->add_child($3);
                     temp->add_child($4);
                     $$->add_child(temp);
+
+                    $$->type = $1->type + "." + $3->type;
                 }
                 | UnannClassOrInterfaceType Dot TypeIdentifier
                 {
                     $$ = createNode(".");
                     $$->add_child($1);
                     $$->add_child($3);
+
+                    $$->type = $1->type + "." + $3->type;
                 }
                 ;
 
@@ -426,18 +467,27 @@ UnannArrayType: UnannPrimitiveType Dims
                     $$ = createNode("UnannArrayType");
                     $$->add_child($1);
                     $$->add_child($2);
+
+                    $$->type = $1->type;
+                    $$->numDims = $2->numDims;
                 }
                 | UnannClassOrInterfaceType Dims
                 {
                     $$ = createNode("UnannArrayType");
                     $$->add_child($1);
                     $$->add_child($2);
+
+                    $$->type = $1->type;
+                    $$->numDims = $2->numDims;
                 }
                 | TypeIdentifier Dims
                 {
                     $$ = createNode("UnannArrayType");
                     $$->add_child($1);
                     $$->add_child($2);
+
+                    $$->type = $1->type;
+                    $$->numDims = $2->numDims;
                 }
                 ;
 
@@ -447,12 +497,20 @@ MethodDeclaration:  ModifierList MethodHeader MethodBody
                         $$->add_children($1);
                         $$->add_child($2);
                         $$->add_child($3);
+
+                        $$->symTable = $3->symTable;
+                        auto stEntry = new SymbolTableEntry($2->lexeme, "$func", -1, -1, -1, 0);
+                        $$->stEntries.push_back(stEntry);
                     }
                     | MethodHeader MethodBody
                     {
                         $$ = createNode("MethodDeclaration");
                         $$->add_child($1);
                         $$->add_child($2);
+
+                        $$->symTable = $2->symTable;
+                        auto stEntry = new SymbolTableEntry($1->lexeme, "$func", -1, -1, -1, 0);
+                        $$->stEntries.push_back(stEntry);
                     }
                     ;
 
@@ -461,12 +519,16 @@ MethodHeader:   UnannType MethodDeclarator
                     $$ = createNode("MethodHeader");
                     $$->add_child($1);
                     $$->add_child($2);
+
+                    $$->lexeme = $2->lexeme;
                 }
                 | VOID MethodDeclarator
                 {
                     $$ = createNode("MethodHeader");
                     $$->add_child($1);
                     $$->add_child($2);
+
+                    $$->lexeme = $2->lexeme;
                 }
                 ;
 
@@ -475,6 +537,8 @@ MethodDeclarator:   Identifier LeftParenthesis ReceiverParameter Comma RightPare
                         $$ = createNode("MethodDeclarator");
                         $$->add_child($1);
                         $$->add_child($3);
+
+                        $$->lexeme = $1->lexeme;
                     }
                     | Identifier LeftParenthesis RightParenthesis
                     {
@@ -486,12 +550,16 @@ MethodDeclarator:   Identifier LeftParenthesis ReceiverParameter Comma RightPare
                         $$->add_child($1);
                         $$->add_child($3);
                         $$->add_children($5);
+
+                        $$->lexeme = $1->lexeme;
                     }
                     | Identifier LeftParenthesis FormalParameterList RightParenthesis
                     {
                         $$ = createNode("MethodDeclarator");
                         $$->add_child($1);
-                        $$->add_children($3);                        
+                        $$->add_children($3);
+
+                        $$->lexeme = $1->lexeme;
                     }
                     | Identifier LeftParenthesis ReceiverParameter Comma RightParenthesis Dims
                     {
@@ -499,12 +567,16 @@ MethodDeclarator:   Identifier LeftParenthesis ReceiverParameter Comma RightPare
                         $$->add_child($1);
                         $$->add_child($3);
                         $$->add_child($6);
+
+                        $$->lexeme = $1->lexeme;
                     }
                     | Identifier LeftParenthesis RightParenthesis Dims
                     {
                         $$ = createNode("MethodDeclarator");
                         $$->add_child($1);
-                        $$->add_child($4);      
+                        $$->add_child($4);
+
+                        $$->lexeme = $1->lexeme;
                     }
                     | Identifier LeftParenthesis ReceiverParameter Comma FormalParameterList RightParenthesis Dims
                     {
@@ -513,6 +585,8 @@ MethodDeclarator:   Identifier LeftParenthesis ReceiverParameter Comma RightPare
                         $$->add_child($3);
                         $$->add_children($5);
                         $$->add_child($7);
+
+                        $$->lexeme = $1->lexeme;
                     }
                     | Identifier LeftParenthesis FormalParameterList RightParenthesis Dims
                     {
@@ -520,6 +594,8 @@ MethodDeclarator:   Identifier LeftParenthesis ReceiverParameter Comma RightPare
                         $$->add_child($1);
                         $$->add_children($3);
                         $$->add_child($5);
+
+                        $$->lexeme = $1->lexeme;
                     }
                     ;
 
@@ -604,6 +680,8 @@ StaticInitializer:  STATIC Block
                         $$ = createNode("StaticInitializer");
                         $$->add_child($1);
                         $$->add_child($2);
+
+                        $$->symTable = $2->symTable;
                     }
                     ;
 
@@ -1272,16 +1350,10 @@ TypePattern:    LocalVariableDeclaration
                 ;
 
 Primary:    PrimaryNoNewArray 
-            {
-                $$ = $1;
-            }
             | ArrayCreationExpression
             ;
 
 PrimaryNoNewArray:  Literal
-                    {
-                        $$ = $1;
-                    }
                     | ClassLiteral
                     | THIS
                     | TypeName Dot THIS
@@ -2111,6 +2183,8 @@ ArrayType:  UnannArrayType
 Dims:   LeftSquareBracket RightSquareBracket 
         {
             $$ = createNode("[ ]");
+
+            $$->numDims = 1;
         }
         | Dims LeftSquareBracket RightSquareBracket 
         {
@@ -2118,12 +2192,17 @@ Dims:   LeftSquareBracket RightSquareBracket
             {
                 $$ = $1;
                 $$->add_child(createNode("[ ]"));
+
+                $$->numDims = $1->numDims + 1;
             }
             else
             {
                 $$ = createNode("Dims");
                 $$->add_child($1);
                 $$->add_child(createNode("[ ]"));
+
+                $$->numDims = $1->numDims + 1;
+                assert($$->numDims == 2);
             }
         }
         ;

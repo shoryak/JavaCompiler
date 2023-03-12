@@ -27,7 +27,7 @@ astgen:			$(OBJS)
 test.o:			test.cpp
 				$(CC) $(CFLAGS) -c test.cpp -o test.o
 
-lexer.o:		lex.yy.c
+lexer.o:		lex.yy.c token.h
 				$(CC) $(CFLAGS) -c lex.yy.c -o lexer.o
 
 lex.yy.c:		$(LEXER_SRC)
@@ -36,18 +36,16 @@ lex.yy.c:		$(LEXER_SRC)
 parser.o:		parser.tab.c
 				$(CC) $(CFLAGS) -c parser.tab.c -o parser.o
 
-parser.tab.c:	$(PARSER_SRC)
-				bison -dvt $(PARSER_SRC)
-				cmp -s parser.tab.h token.h || cp parser.tab.h token.h
-
-lexer.o main.o:	token.h
+parser.tab.c token.h:	$(PARSER_SRC)
+						bison -dvt $(PARSER_SRC)
+						cmp -s parser.tab.h token.h || cp parser.tab.h token.h
 
 3ac.o:			$(3AC_SRC)
 				$(CC) $(CFLAGS) -c $(3AC_SRC) -o 3ac.o
 
-main.o:			main.cpp
+main.o:			main.cpp token.h
 				$(CC) $(CFLAGS) -c main.cpp -o main.o
 
 clean:
 				rm -f $(BIN)/$(ASTGEN_EXEC) $(BIN)/$(3ACGEN_EXEC) $(BIN)/$(TEST_EXEC)
-				rm -f *.out *.o *.output *.tab.* lex.yy.c *.svg *.ps *.dot
+				rm -f *.out *.o *.output *.tab.* lex.yy.c *.svg *.ps *.dot token.h

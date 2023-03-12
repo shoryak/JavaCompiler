@@ -22,12 +22,12 @@ std::string IDENTIFIER_SUFFIX   = "";
 std::string SEPARATOR_SUFFIX    = "";
 std::string LITERAL_SUFFIX      = "";
 
-Node* FixedNode(std::string prefix, const char* matched, std::string suffix)
+Node* FixedNode(std::string prefix, const char* matched, std::string suffix, std::string type = "")
 {
     std::string res = prefix;
     res.append(matched);
     res += suffix;
-    return createNode(strdup(res.c_str()));
+    return createNode(strdup(res.c_str()), std::string(matched), type);
 }
 
 %}
@@ -110,17 +110,17 @@ Literals {DecimalIntegerLiteral}|{HexIntegerLiteral}|{OctalIntegerLiteral}|{Floa
 "if" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return IF ;}
 "package" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return PACKAGE ;}
 "synchronized" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return SYNCHRONIZED ;}
-"boolean" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return BOOLEAN ;}
+"boolean" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX, "boolean"); return BOOLEAN ;}
 "do" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return DO ;}
 "goto" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return GOTO ;}
 "private" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return PRIVATE ;}
 "this" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return THIS ;}
 "break" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return BREAK ;}
-"double" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return DOUBLE ;}
+"double" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX, "double"); return DOUBLE ;}
 "implements" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return IMPLEMENTS ;}
 "protected" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return PROTECTED ;}
 "throw" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return THROW ;}
-"byte" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return BYTE ;}
+"byte" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX, "byte"); return BYTE ;}
 "else" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return ELSE ;}
 "import" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return IMPORT ;}
 "public" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return PUBLIC ;}
@@ -132,21 +132,21 @@ Literals {DecimalIntegerLiteral}|{HexIntegerLiteral}|{OctalIntegerLiteral}|{Floa
 "transient" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return TRANSIENT ;}
 "catch" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return CATCH ;}
 "extends" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return EXTENDS ;}
-"int" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return INT ;}
-"short" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return SHORT ;}
+"int" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX, "int"); return INT ;}
+"short" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX, "short"); return SHORT ;}
 "try" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return TRY ;}
-"char" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return CHAR ;}
+"char" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX, "char"); return CHAR ;}
 "final" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return FINAL ;}
 "interface" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return INTERFACE ;}
 "static" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return STATIC ;}
 "void" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return VOID ;}
-"class" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return CLASS ;}
+"class" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX, "$class"); return CLASS ;}
 "finally" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return FINALLY ;}
-"long" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return LONG ;}
+"long" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX, "long"); return LONG ;}
 "strictfp" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return STRICTFP ;}
 "volatile" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return VOLATILE ;}
 "const" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return CONST ;}
-"float" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return FLOAT ;}
+"float" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX, "float"); return FLOAT ;}
 "native" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return NATIVE ;}
 "super" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return SUPER ;}
 "while" { yylval.node = FixedNode(KEYWORD_PREFIX, yytext, KEYWORD_SUFFIX); return WHILE ;}
@@ -243,7 +243,7 @@ Literals {DecimalIntegerLiteral}|{HexIntegerLiteral}|{OctalIntegerLiteral}|{Floa
 [\'][\'][\'] { std::cout << yytext << " Line number is " << yylineno << " Illegal Character is " << yytext[1] << '\n'; }
 [\'].[\'] { yylval.node = FixedNode(LITERAL_PREFIX, yytext, LITERAL_SUFFIX); return CharacterLiteral; }
 
-[a-zA-Z$_]+[$_a-zA-Z0-9]* { yylval.node = FixedNode(IDENTIFIER_PREFIX, yytext, IDENTIFIER_SUFFIX); return IdentifierChars; }
+[a-zA-Z$_]+[$_a-zA-Z0-9]* { yylval.node = FixedNode(IDENTIFIER_PREFIX, yytext, IDENTIFIER_SUFFIX, std::string(yytext)); return IdentifierChars; }
 
 
 . { std::cout << yytext<<" Line number is " << yylineno << " Illegal Character is " << yytext[0] << '\n'; }

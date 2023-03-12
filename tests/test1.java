@@ -45,6 +45,5 @@ public class EmptyClass {
     long b1=a1--;
     double b2=b1;
 
-    
-
+    int[][] arrx = {{1, 2}, {3, 4}}, arry, arrz;
 }

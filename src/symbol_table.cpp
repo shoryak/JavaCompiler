@@ -25,6 +25,24 @@ std::string SymbolTableEntry::getName(void)
 }
 
 /*
+Set the type in this Symbol Table Entry
+PARAM: type -- type to be set
+*/
+void SymbolTableEntry::setType(std::string type)
+{
+    this->type = type;
+}
+
+/*
+Set the dimension in this Symbol Table Entry
+PARAM: dimension -- dimension to be set
+*/
+void SymbolTableEntry::setDimension(int32 dimension)
+{
+    this->dimension = dimension;
+}
+
+/*
 Print a particular symbol table entry (lexeme: attributes)
 PARAM: None
 */
