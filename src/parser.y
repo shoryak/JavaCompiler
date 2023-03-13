@@ -52,10 +52,17 @@ struct Node
 /*  Number of dimensions, only applicable for the Dims non-terminal */
     int numDims = 0;
 
+/*  This will store the line number of the token found during the lexer phase.
+    Applicable only for tokens/non-terminals    */
+    int lineNumber = -1;
+
 /*  Constructors    */
-    Node(char* value, std::vector<Node*> children): value{value}, children{children} {}
-    Node(char* value): value{value}, children{std::vector<Node*>()} {}
-    Node(char* value, std::string lexeme, std::string type): value{value}, lexeme{lexeme}, type{type} {}
+    Node(char* value, std::vector<Node*> children)
+    : value{value}, children{children}, lineNumber{linenum} {}
+    Node(char* value)
+    : value{value}, children{std::vector<Node*>()}, lineNumber{linenum} {}
+    Node(char* value, std::string lexeme, std::string type)
+    : value{value}, lexeme{lexeme}, type{type}, lineNumber{linenum} {}
 
 /*  Add a node as a child   */
     void add_child(Node* nd)
@@ -223,6 +230,7 @@ TopLevelClassOrInterfaceDeclarationList:    TopLevelClassOrInterfaceDeclaration
                                                 $$->allocate_symtable();
                                                 assert($1->symTable);
                                                 $1->symTable->setParent($$->symTable);
+                                                assert((int)($1->stEntries.size()) == 1);
                                                 $$->add_entries($1->stEntries);
                                             }
                                             | TopLevelClassOrInterfaceDeclarationList TopLevelClassOrInterfaceDeclaration
@@ -232,6 +240,7 @@ TopLevelClassOrInterfaceDeclarationList:    TopLevelClassOrInterfaceDeclaration
 
                                                 assert($2->symTable);
                                                 $2->symTable->setParent($$->symTable);
+                                                assert((int)($1->stEntries.size()) == 1);
                                                 $$->add_entries($2->stEntries);
                                             }
                                             ;
@@ -248,7 +257,7 @@ NormalClassDeclaration: CLASS TypeIdentifier ClassBody
                             $$ = createNode("class" , v);
 
                             $$->symTable = $3->symTable;
-                            auto stEntry = new SymbolTableEntry($2->lexeme, $1->type, -1, 0, linenum, 0);
+                            auto stEntry = new SymbolTableEntry($2->lexeme, $1->type, -1, 0, $2->lineNumber, 0);
                             $$->stEntries.push_back(stEntry);
                         }
                         | ModifierList CLASS TypeIdentifier ClassBody
@@ -259,7 +268,7 @@ NormalClassDeclaration: CLASS TypeIdentifier ClassBody
                             $$->add_child($4);
 
                             $$->symTable = $4->symTable;
-                            auto stEntry = new SymbolTableEntry($3->lexeme, $2->type, -1, 0, linenum, 0);
+                            auto stEntry = new SymbolTableEntry($3->lexeme, $2->type, -1, 0, $3->lineNumber, 0);
                             $$->stEntries.push_back(stEntry);
                         }
                         ;
@@ -401,14 +410,14 @@ VariableDeclaratorId:   Identifier Dims
                             $$->add_child($1);
                             $$->add_child($2);
 
-                            auto stEntry = new SymbolTableEntry($1->lexeme, "", -1, $2->numDims, -1, 0);
+                            auto stEntry = new SymbolTableEntry($1->lexeme, "", -1, $2->numDims, $1->lineNumber, 0);
                             $$->stEntries.push_back(stEntry);
                         }
                         | Identifier
                         {
                             $$ = $1;
 
-                            auto stEntry = new SymbolTableEntry($1->lexeme, "", -1, 0, -1, 0);
+                            auto stEntry = new SymbolTableEntry($1->lexeme, "", -1, 0, $1->lineNumber, 0);
                             $$->stEntries.push_back(stEntry);
                         }
                         ;
