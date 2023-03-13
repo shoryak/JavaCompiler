@@ -1,3 +1,4 @@
+
 %{
 #include <vector>
 #include <cstdio>
@@ -508,7 +509,7 @@ MethodDeclaration:  ModifierList MethodHeader MethodBody
                         $$->add_child($3);
 
                         $$->symTable = $3->symTable;
-                        auto stEntry = new SymbolTableEntry($2->lexeme, "$func", -1, -1, -1, 0);
+                        auto stEntry = new SymbolTableEntry($2->lexeme, "$func", -1, 0, $2->lineNumber, 0);
                         $$->stEntries.push_back(stEntry);
                     }
                     | MethodHeader MethodBody
@@ -518,7 +519,7 @@ MethodDeclaration:  ModifierList MethodHeader MethodBody
                         $$->add_child($2);
 
                         $$->symTable = $2->symTable;
-                        auto stEntry = new SymbolTableEntry($1->lexeme, "$func", -1, -1, -1, 0);
+                        auto stEntry = new SymbolTableEntry($1->lexeme, "$func", -1, -1, $1->lineNumber, 0);
                         $$->stEntries.push_back(stEntry);
                     }
                     ;
@@ -530,6 +531,7 @@ MethodHeader:   UnannType MethodDeclarator
                     $$->add_child($2);
 
                     $$->lexeme = $2->lexeme;
+                    $$->lineNumber = $2->lineNumber;
                 }
                 | VOID MethodDeclarator
                 {
@@ -538,6 +540,7 @@ MethodHeader:   UnannType MethodDeclarator
                     $$->add_child($2);
 
                     $$->lexeme = $2->lexeme;
+                    $$->lineNumber = $2->lineNumber;
                 }
                 ;
 
@@ -548,6 +551,7 @@ MethodDeclarator:   Identifier LeftParenthesis ReceiverParameter Comma RightPare
                         $$->add_child($3);
 
                         $$->lexeme = $1->lexeme;
+                        $$->lineNumber = $1->lineNumber;
                     }
                     | Identifier LeftParenthesis RightParenthesis
                     {
@@ -561,6 +565,7 @@ MethodDeclarator:   Identifier LeftParenthesis ReceiverParameter Comma RightPare
                         $$->add_children($5);
 
                         $$->lexeme = $1->lexeme;
+                        $$->lineNumber = $1->lineNumber;
                     }
                     | Identifier LeftParenthesis FormalParameterList RightParenthesis
                     {
@@ -569,6 +574,7 @@ MethodDeclarator:   Identifier LeftParenthesis ReceiverParameter Comma RightPare
                         $$->add_children($3);
 
                         $$->lexeme = $1->lexeme;
+                        $$->lineNumber = $1->lineNumber;
                     }
                     | Identifier LeftParenthesis ReceiverParameter Comma RightParenthesis Dims
                     {
@@ -578,6 +584,7 @@ MethodDeclarator:   Identifier LeftParenthesis ReceiverParameter Comma RightPare
                         $$->add_child($6);
 
                         $$->lexeme = $1->lexeme;
+                        $$->lineNumber = $1->lineNumber;
                     }
                     | Identifier LeftParenthesis RightParenthesis Dims
                     {
@@ -586,6 +593,7 @@ MethodDeclarator:   Identifier LeftParenthesis ReceiverParameter Comma RightPare
                         $$->add_child($4);
 
                         $$->lexeme = $1->lexeme;
+                        $$->lineNumber = $1->lineNumber;
                     }
                     | Identifier LeftParenthesis ReceiverParameter Comma FormalParameterList RightParenthesis Dims
                     {
@@ -596,6 +604,7 @@ MethodDeclarator:   Identifier LeftParenthesis ReceiverParameter Comma RightPare
                         $$->add_child($7);
 
                         $$->lexeme = $1->lexeme;
+                        $$->lineNumber = $1->lineNumber;
                     }
                     | Identifier LeftParenthesis FormalParameterList RightParenthesis Dims
                     {
@@ -605,6 +614,7 @@ MethodDeclarator:   Identifier LeftParenthesis ReceiverParameter Comma RightPare
                         $$->add_child($5);
 
                         $$->lexeme = $1->lexeme;
+                        $$->lineNumber = $1->lineNumber;
                     }
                     ;
 
@@ -699,6 +709,9 @@ ConstructorDeclaration: ConstructorDeclarator ConstructorBody
                             $$ = createNode("ConstructorDeclaration");
                             $$->add_child($1);
                             $$->add_child($2);
+
+                            $$->symTable = $2->symTable;
+                            $$->stEntries = $1->stEntries;
                         }
                         | ModifierList ConstructorDeclarator ConstructorBody
                         {
@@ -706,6 +719,9 @@ ConstructorDeclaration: ConstructorDeclarator ConstructorBody
                             $$->add_children($1);
                             $$->add_child($2);
                             $$->add_child($3);
+
+                            $$->symTable = $3->symTable;
+                            $$->stEntries = $2->stEntries;
                         }
                         ;
 
@@ -713,18 +729,27 @@ ConstructorDeclarator:  SimpleTypeName LeftParenthesis RightParenthesis
                         {
                             $$ = createNode("ConstructorDeclarator");
                             $$->add_child(createNode("()"));
+
+                            auto stEntry = new SymbolTableEntry($1->lexeme, "$func", -1, 0, $1->lineNumber, 0);
+                            $$->stEntries.push_back(stEntry);
                         }
                         | SimpleTypeName LeftParenthesis ReceiverParameter Comma RightParenthesis
                         {
                             $$ = createNode("ConstructorDeclarator");
                             $$->add_child($1);
                             $$->add_child($3);
+
+                            auto stEntry = new SymbolTableEntry($1->lexeme, "$func", -1, 0, $1->lineNumber, 0);
+                            $$->stEntries.push_back(stEntry);
                         }
                         | SimpleTypeName LeftParenthesis FormalParameterList RightParenthesis
                         {
                             $$ = createNode("ConstructorDeclarator");
                             $$->add_child($1);
                             $$->add_children($3);
+
+                            auto stEntry = new SymbolTableEntry($1->lexeme, "$func", -1, 0, $1->lineNumber, 0);
+                            $$->stEntries.push_back(stEntry);
                         }
                         | SimpleTypeName LeftParenthesis ReceiverParameter Comma FormalParameterList RightParenthesis
                         {
@@ -732,6 +757,9 @@ ConstructorDeclarator:  SimpleTypeName LeftParenthesis RightParenthesis
                             $$->add_child($1);
                             $$->add_child($3);
                             $$->add_children($5);
+
+                            auto stEntry = new SymbolTableEntry($1->lexeme, "$func", -1, 0, $1->lineNumber, 0);
+                            $$->stEntries.push_back(stEntry);
                         }
                         ;
 
@@ -741,11 +769,14 @@ SimpleTypeName: TypeIdentifier
 ConstructorBody:    LeftCurlyBrace  RightCurlyBrace
                     {
                        $$ = createNode("{ }");
+                       $$->allocate_symtable();
                     }
                     | LeftCurlyBrace ExplicitConstructorInvocation RightCurlyBrace
                     {
                         $$ = createNode("ConstructorBody");
                         $$->add_child($2);
+
+                        $$->allocate_symtable();
                     }
                     | LeftCurlyBrace BlockStatements RightCurlyBrace
                     {
@@ -756,6 +787,8 @@ ConstructorBody:    LeftCurlyBrace  RightCurlyBrace
                         $$ = createNode("ConstructorBody");
                         $$->add_child($2);
                         $$->add_children($3);
+
+                        $$->symTable = $3->symTable;
                     }
                     ;
 
@@ -947,6 +980,7 @@ Block:  LeftCurlyBrace BlockStatements RightCurlyBrace
         | LeftCurlyBrace RightCurlyBrace
         {
             $$ = createNode("Block");
+            $$->allocate_symtable();
         }
         ;
 
@@ -954,11 +988,19 @@ BlockStatements:    BlockStatements BlockStatement
                     {
                         $$ = $1;
                         $$->add_child($2);
+                        if($2->symTable)
+                            $2->symTable->setParent($$->symTable);
+                        $$->add_entries($2->stEntries);
                     }
                     | BlockStatement
                     {
                         $$ = createNode("Block");
                         $$->add_child($1);
+                        
+                        $$->allocate_symtable();
+                        if($1->symTable)
+                            $1->symTable->setParent($$->symTable);
+                        $$->add_entries($1->stEntries);
                     }
                     ;
 
@@ -982,6 +1024,13 @@ LocalVariableDeclaration:   LocalVariableType VariableDeclaratorList
                                 $$ = createNode("LocalVariableDeclaration");
                                 $$->add_child($1);
                                 $$->add_child($2);
+
+                                $$->stEntries = $2->stEntries;
+                                for(auto stEntry: $$->stEntries)
+                                {
+                                    assert(stEntry);
+                                    stEntry->setType($1->type);
+                                }
                             }
                             | VariableModifierList LocalVariableType VariableDeclaratorList
                             {
@@ -989,6 +1038,13 @@ LocalVariableDeclaration:   LocalVariableType VariableDeclaratorList
                                 $$->add_child($1);
                                 $$->add_child($2);
                                 $$->add_child($3);
+
+                                $$->stEntries = $3->stEntries;
+                                for(auto stEntry: $$->stEntries)
+                                {
+                                    assert(stEntry);
+                                    stEntry->setType($2->type);
+                                }
                             }
                             ;
 
@@ -1025,16 +1081,19 @@ EmptyStatement: Semicolon
 
 LabeledStatement:   Identifier COLON Statement
                     {
-                        $$ =createNode("LabeledStatement");
+                        $$ = createNode("LabeledStatement");
                         $$->add_child($1);
                         $$->add_child($2);
                         $$->add_child($3);
+
+                        $$->symTable = $3->symTable;
+                        $$->stEntries = $3->stEntries;
                     }
                     ;
 
 ExpressionStatement:    StatementExpression Semicolon
                         {
-                            $$  = $1;
+                            $$ = $1;
                             $$->add_child($2);
                         }
                         ;
@@ -1274,11 +1333,20 @@ ForUpdate:  StatementExpressionList
 StatementExpressionList:    StatementExpression{
                                 $$ = createNode("StatementExpressionList");
                                 $$->add_child($1);
+
+                                $$->allocate_symtable();
+                                if($1->symTable)
+                                    $1->symTable->setParent($$->symTable);
+                                $$->add_entries($1->stEntries);
                             }
                             | StatementExpressionList Comma StatementExpression
                             {
                                 $$ = $1;
                                 $$->add_child($3);
+
+                                if($3->symTable)
+                                    $3->symTable->setParent($$->symTable);
+                                $$->add_entries($3->stEntries);
                             }
                             ;
 
@@ -1448,6 +1516,7 @@ UnqualifiedClassInstanceCreationExpression: NEW ClassOrInterfaceTypeToInstantiat
                                                 $$ = createNode("UnqualifiedClassInstanceCreationExpression");
                                                 $$->add_child($1);
                                                 $$->add_child($2);
+                                                
                                             }
                                             | NEW TypeArguments ClassOrInterfaceTypeToInstantiate LeftParenthesis RightParenthesis
                                             {
