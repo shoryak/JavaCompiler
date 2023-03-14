@@ -1169,6 +1169,8 @@ WhileStatement: WHILE LeftParenthesis Expression RightParenthesis Statement
                     $$ = createNode("While");
                     $$->add_child($3);
                     $$->add_child($5);
+
+                    $$->symTable = $5->symTable; 
                 }
 
 WhileStatementNoShortIf:    WHILE LeftParenthesis Expression RightParenthesis StatementNoShortIf
@@ -1176,6 +1178,8 @@ WhileStatementNoShortIf:    WHILE LeftParenthesis Expression RightParenthesis St
                                 $$ = createNode("While");
                                 $$->add_child($3);
                                 $$->add_child($5);
+
+                                $$->symTable = $5->symTable; 
                             }
                             ;
 
@@ -1193,6 +1197,8 @@ BasicForStatement:  FOR LeftParenthesis  Semicolon  Semicolon  RightParenthesis 
                         $$->add_child($3);
                         $$->add_child($4);
                         $$->add_child($6);
+
+                        $$->symTable = $6->symTable; 
                     }
                     | FOR LeftParenthesis ForInit Semicolon  Semicolon  RightParenthesis Statement
                     {
@@ -1200,6 +1206,9 @@ BasicForStatement:  FOR LeftParenthesis  Semicolon  Semicolon  RightParenthesis 
                         $$->add_child($4);
                         $$->add_child($5);
                         $$->add_child($7);
+
+                        $$->symTable = $7->symTable;
+                        $$->add_entries($3->stEntries); 
                     }
                     | FOR LeftParenthesis  Semicolon  Semicolon ForUpdate RightParenthesis Statement
                     {
@@ -1208,6 +1217,8 @@ BasicForStatement:  FOR LeftParenthesis  Semicolon  Semicolon  RightParenthesis 
                         $$->add_child($4);
                         $$->add_child($5);
                         $$->add_child($7);
+
+                        $$->symTable = $7->symTable; 
                     }
                     | FOR LeftParenthesis ForInit Semicolon  Semicolon ForUpdate RightParenthesis Statement
                     {
@@ -1217,6 +1228,9 @@ BasicForStatement:  FOR LeftParenthesis  Semicolon  Semicolon  RightParenthesis 
                         $$->add_child($5);
                         $$->add_child($6);
                         $$->add_child($8);
+
+                        $$->symTable = $8->symTable; 
+                        $$->add_entries($3->stEntries);
                     }
                     | FOR LeftParenthesis  Semicolon Expression Semicolon  RightParenthesis Statement
                     {
@@ -1225,6 +1239,8 @@ BasicForStatement:  FOR LeftParenthesis  Semicolon  Semicolon  RightParenthesis 
                         $$->add_child($4);
                         $$->add_child($5);
                         $$->add_child($7);
+
+                        $$->symTable = $7->symTable; 
                     }
                     | FOR LeftParenthesis ForInit Semicolon Expression Semicolon  RightParenthesis Statement
                     {
@@ -1234,6 +1250,9 @@ BasicForStatement:  FOR LeftParenthesis  Semicolon  Semicolon  RightParenthesis 
                         $$->add_child($5);
                         $$->add_child($6);
                         $$->add_child($8);
+
+                        $$->symTable = $8->symTable;
+                        $$->add_entries($3->stEntries); 
                     }
                     | FOR LeftParenthesis  Semicolon Expression Semicolon ForUpdate RightParenthesis Statement
                     {
@@ -1243,6 +1262,8 @@ BasicForStatement:  FOR LeftParenthesis  Semicolon  Semicolon  RightParenthesis 
                         $$->add_child($5);
                         $$->add_child($6);
                         $$->add_child($8);
+
+                        $$->symTable = $8->symTable; 
                     }
                     | FOR LeftParenthesis ForInit Semicolon Expression Semicolon ForUpdate RightParenthesis Statement
                     {
@@ -1253,6 +1274,9 @@ BasicForStatement:  FOR LeftParenthesis  Semicolon  Semicolon  RightParenthesis 
                         $$->add_child($6);
                         $$->add_child($7);
                         $$->add_child($9);
+                        
+                        $$->symTable = $9->symTable;
+                        $$->add_entries($3->stEntries);
                     }
                     ;
 
@@ -1262,6 +1286,8 @@ BasicForStatementNoShortIf: FOR LeftParenthesis  Semicolon  Semicolon RightParen
                                 $$->add_child($3);
                                 $$->add_child($4);
                                 $$->add_child($6);
+
+                                $$->symTable = $6->symTable;
                             }
                             | FOR LeftParenthesis ForInit Semicolon  Semicolon RightParenthesis StatementNoShortIf
                             {
@@ -1269,6 +1295,8 @@ BasicForStatementNoShortIf: FOR LeftParenthesis  Semicolon  Semicolon RightParen
                                 $$->add_child($4);
                                 $$->add_child($5);
                                 $$->add_child($7);
+
+                                $$->symTable = $3->symTable;
                             }
                             | FOR LeftParenthesis  Semicolon Expression Semicolon RightParenthesis StatementNoShortIf
                             {
@@ -1277,6 +1305,9 @@ BasicForStatementNoShortIf: FOR LeftParenthesis  Semicolon  Semicolon RightParen
                                 $$->add_child($4);
                                 $$->add_child($5);
                                 $$->add_child($7);
+
+                                $$->symTable = $7->symTable;
+
                             }
                             | FOR LeftParenthesis ForInit Semicolon Expression Semicolon RightParenthesis StatementNoShortIf
                             {
@@ -1284,6 +1315,9 @@ BasicForStatementNoShortIf: FOR LeftParenthesis  Semicolon  Semicolon RightParen
                                 $$->add_child($3);
                                 $$->add_child($5);
                                 $$->add_child($8);
+
+                                $$->symTable = $8->symTable;
+                                $$->add_entries($3->stEntries);
                             }
                             | FOR LeftParenthesis  Semicolon  Semicolon ForUpdate RightParenthesis StatementNoShortIf
                             {
@@ -1292,6 +1326,8 @@ BasicForStatementNoShortIf: FOR LeftParenthesis  Semicolon  Semicolon RightParen
                                 $$->add_child($4);
                                 $$->add_child($5);
                                 $$->add_child($7);
+
+                                $$->symTable = $7->symTable;
                             }
                             | FOR LeftParenthesis ForInit Semicolon  Semicolon ForUpdate RightParenthesis StatementNoShortIf
                             {
@@ -1301,6 +1337,9 @@ BasicForStatementNoShortIf: FOR LeftParenthesis  Semicolon  Semicolon RightParen
                                 $$->add_child($5);
                                 $$->add_child($6);
                                 $$->add_child($8);
+
+                                $$->symTable = $8->symTable;
+                                $$->add_entries($3->stEntries);
                             }
                             | FOR LeftParenthesis  Semicolon Expression Semicolon ForUpdate RightParenthesis StatementNoShortIf
                             {
@@ -1310,6 +1349,8 @@ BasicForStatementNoShortIf: FOR LeftParenthesis  Semicolon  Semicolon RightParen
                                 $$->add_child($5);
                                 $$->add_child($6);
                                 $$->add_child($8);
+
+                                $$->symTable = $8->symTable;
                             }
                             | FOR LeftParenthesis ForInit Semicolon Expression Semicolon ForUpdate RightParenthesis StatementNoShortIf
                             {
@@ -1320,6 +1361,9 @@ BasicForStatementNoShortIf: FOR LeftParenthesis  Semicolon  Semicolon RightParen
                                 $$->add_child($6);
                                 $$->add_child($7);
                                 $$->add_child($9);
+
+                                $$->symTable = $9->symTable;
+                                $$->add_entries($3->stEntries);
                             }
                             ;
 
@@ -1356,6 +1400,9 @@ EnhancedForStatement:   FOR LeftParenthesis LocalVariableDeclaration COLON Expre
                             $$->add_child($3);
                             $$->add_child($5);
                             $$->add_child($7);
+
+                            $$->symTable = $7->symTable;
+                            $$->add_entries($3->stEntries);
                         }
                         ;
 
@@ -1365,6 +1412,9 @@ EnhancedForStatementNoShortIf:  FOR LeftParenthesis LocalVariableDeclaration COL
                                     $$->add_child($3);
                                     $$->add_child($5);
                                     $$->add_child($7);
+
+                                    $$->symTable = $7->symTable;
+                                    $$->add_entries($3->stEntries);
                                 }
                                 ;
 
@@ -1516,7 +1566,8 @@ UnqualifiedClassInstanceCreationExpression: NEW ClassOrInterfaceTypeToInstantiat
                                                 $$ = createNode("UnqualifiedClassInstanceCreationExpression");
                                                 $$->add_child($1);
                                                 $$->add_child($2);
-                                                
+
+
                                             }
                                             | NEW TypeArguments ClassOrInterfaceTypeToInstantiate LeftParenthesis RightParenthesis
                                             {
@@ -1612,6 +1663,8 @@ FieldAccess:    Primary Dot Identifier
                     $4->add_child($5);
                     $$ = $4;
 
+                    $$->stEntries = $1->stEntries;
+
                 }
                 ;
 
@@ -1645,7 +1698,10 @@ MethodInvocation:   Identifier LeftParenthesis  RightParenthesis
                         $$ = createNode("MethodInvocation");
                         $2->add_child($1);
                         $2->add_child($3);
-                        $$->add_child($2);;
+                        $$->add_child($2);
+
+                        $$->stEntries = $1->stEntries;
+
                     }
                     | TypeName Dot TypeArguments Identifier LeftParenthesis RightParenthesis
                     {
@@ -1653,6 +1709,8 @@ MethodInvocation:   Identifier LeftParenthesis  RightParenthesis
                         $2->add_child($1);
                         $2->add_child($4);
                         $$->add_child($2);
+
+                        $$->stEntries = $1->stEntries;
                     }
                     | TypeName Dot Identifier LeftParenthesis ArgumentList RightParenthesis
                     {
@@ -1661,6 +1719,8 @@ MethodInvocation:   Identifier LeftParenthesis  RightParenthesis
                         $2->add_child($3);
                         $$->add_child($2);
                         $$->add_children($5);
+
+                        $$->stEntries = $1->stEntries;
                     }
                     | TypeName Dot TypeArguments Identifier LeftParenthesis ArgumentList RightParenthesis
                     {
@@ -1669,6 +1729,8 @@ MethodInvocation:   Identifier LeftParenthesis  RightParenthesis
                         $2->add_child($4);
                         $$->add_child($2);
                         $$->add_children($6);
+
+                        $$->stEntries = $1->stEntries;
                     }
                     | ExpressionName Dot Identifier LeftParenthesis RightParenthesis
                     {
@@ -1676,6 +1738,7 @@ MethodInvocation:   Identifier LeftParenthesis  RightParenthesis
                         $2->add_child($1);
                         $2->add_child($3);
                         $$->add_child($2);
+
                     }
                     | ExpressionName Dot TypeArguments Identifier LeftParenthesis RightParenthesis
                     {
@@ -1770,6 +1833,8 @@ MethodInvocation:   Identifier LeftParenthesis  RightParenthesis
                         $4->add_child($2);
                         $4->add_child($5);
                         $$->add_child($4);
+
+                        $$->stEntries = $1->stEntries;
                     }
                     | TypeName Dot SUPER Dot TypeArguments Identifier LeftParenthesis RightParenthesis
                     {
@@ -1779,6 +1844,8 @@ MethodInvocation:   Identifier LeftParenthesis  RightParenthesis
                         $4->add_child($2);
                         $4->add_child($6);
                         $$->add_child($4);
+
+                        $$->stEntries = $1->stEntries;
                     }
                     | TypeName Dot SUPER Dot Identifier LeftParenthesis ArgumentList RightParenthesis 
                     {
@@ -1789,6 +1856,8 @@ MethodInvocation:   Identifier LeftParenthesis  RightParenthesis
                         $4->add_child($5);
                         $$->add_child($4);
                         $$->add_children($7);
+
+                        $$->stEntries = $1->stEntries;
                     }
                     | TypeName Dot SUPER Dot TypeArguments Identifier LeftParenthesis ArgumentList RightParenthesis
                     {
@@ -1799,6 +1868,9 @@ MethodInvocation:   Identifier LeftParenthesis  RightParenthesis
                         $4->add_child($6);
                         $$->add_child($4);
                         $$->add_children($8);
+                        
+                        $$->stEntries = $1->stEntries;
+
                     }
                     ;
 
@@ -1911,38 +1983,50 @@ ArrayCreationExpression:    NEW PrimitiveType DimExprs
                                 $$ = createNode("ArrayCreationExpression");
                                 $$->add_child($1);
                                 $$->add_child($2);
+                                $$->add_children($3);
+
                             }
                             | NEW UnannClassOrInterfaceType DimExprs
                             {
                                 $$ = createNode("ArrayCreationExpression");
                                 $$->add_child($1);
                                 $$->add_child($2);
+                                $$->add_children($3);
                             }
                             | NEW PrimitiveType DimExprs Dims
                             {
                                 $$ = createNode("ArrayCreationExpression");
                                 $$->add_child($1);
                                 $$->add_child($2);
+                                $$->add_children($3);
                             }
                             | NEW UnannClassOrInterfaceType DimExprs Dims
                             {
                                 $$ = createNode("ArrayCreationExpression");
                                 $$->add_child($1);
                                 $$->add_child($2);
+                                $$->add_children($3);
                             }
                             ;
 
 DimExprs:   DimExprList
             ;
 
-DimExprList:    DimExpr
-                | DimExprList DimExpr
+DimExprList:    DimExpr{
+                    $$ = createNode("DimExprs");
+                    $$->add_child($1);
+                }
+                | DimExprList DimExpr {
+                    $$= $1;
+                    $$->add_child($2);
+                }
                 ;
 
-DimExpr:    LeftSquareBracket Expression RightSquareBracket {
-    $$=createNode("DimExpr");
-    $$->add_child($2);
-}
+DimExpr:    LeftSquareBracket Expression RightSquareBracket
+            {
+                $$=createNode("DimExpr");
+                $$->add_child($2);
+            }
             ;
 
 Expression: AssignmentExpression
