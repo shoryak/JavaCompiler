@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <cassert>
+#include <stack>
 #include "symbol_table.h"
 
 int lines = 0;
@@ -25,6 +26,9 @@ extern FILE *yyout;
 extern int linenum;
 
 SymbolTable *globalSymTable = new SymbolTable;
+SymbolTable *currSymTable = globalSymTable;
+std::vector<SymbolTableEntry*> stEntryContainer;
+
 
 struct Node
 {
@@ -137,6 +141,24 @@ int buildTree(Node* node, int parentno, int co)
     }
     return co;
 }
+
+void startScope()
+{
+    auto newSymTable = new SymbolTable;
+    newSymTable->setParent(currSymTable);
+    currSymTable = newSymTable;
+}
+
+void endScope()
+{
+    auto parentSymTable = currSymTable->getParent();
+    assert(parentSymTable);
+    currSymTable = parentSymTable;
+}
+
+
+
+
 %}
 
 %code requires {
@@ -214,9 +236,8 @@ CompilationUnit:    OrdinaryCompilationUnit
                         root = $$;
                         printf("digraph G {\n");
                         buildTree(root, -1, 0);
-                        globalSymTable = $$->symTable;
-                        globalSymTable->__printAll();
                         printf("}\n");
+                        globalSymTable->__printAll();
                     }
                     ;
 
@@ -227,22 +248,11 @@ TopLevelClassOrInterfaceDeclarationList:    TopLevelClassOrInterfaceDeclaration
                                             {
                                                 std::vector<Node*> v{$1};
                                                 $$ = createNode("JAVA-PROGRAM", v);
-
-                                                $$->allocate_symtable();
-                                                assert($1->symTable);
-                                                $1->symTable->setParent($$->symTable);
-                                                assert((int)($1->stEntries.size()) == 1);
-                                                $$->add_entries($1->stEntries);
                                             }
                                             | TopLevelClassOrInterfaceDeclarationList TopLevelClassOrInterfaceDeclaration
                                             {
                                                 $$ = $1;
                                                 $$->add_child($2);
-
-                                                assert($2->symTable);
-                                                $2->symTable->setParent($$->symTable);
-                                                assert((int)($1->stEntries.size()) == 1);
-                                                $$->add_entries($2->stEntries);
                                             }
                                             ;
 
@@ -252,25 +262,25 @@ TopLevelClassOrInterfaceDeclaration:    ClassDeclaration
 ClassDeclaration:   NormalClassDeclaration
                     ;
 
-NormalClassDeclaration: CLASS TypeIdentifier ClassBody
+NormalClassDeclaration: CLASS  TypeIdentifier ClassBody
                         {
                             std::vector<Node*> v{$2, $3};
                             $$ = createNode("class" , v);
 
-                            $$->symTable = $3->symTable;
-                            auto stEntry = new SymbolTableEntry($2->lexeme, $1->type, -1, 0, $2->lineNumber, 0);
-                            $$->stEntries.push_back(stEntry);
+                            auto stEntry = new SymbolTableEntry($3->lexeme, " ", -1, 0, $3->lineNumber, 0);
+                            currSymTable->insert(stEntry);
+                          
                         }
-                        | ModifierList CLASS TypeIdentifier ClassBody
+                        | ModifierList CLASS  TypeIdentifier ClassBody
                         {
                             $$ = createNode("class");
                             $$->add_children($1);
                             $$->add_child($3);
                             $$->add_child($4);
 
-                            $$->symTable = $4->symTable;
-                            auto stEntry = new SymbolTableEntry($3->lexeme, $2->type, -1, 0, $3->lineNumber, 0);
-                            $$->stEntries.push_back(stEntry);
+                            auto stEntry = new SymbolTableEntry($4->lexeme, " ", -1, 0, $4->lineNumber, 0);
+                            currSymTable->insert(stEntry);
+                            
                         }
                         ;
 
@@ -291,16 +301,14 @@ ModifierList:   ModifierList Modifier
                 }
                 ;
 
-ClassBody:  LeftCurlyBrace ClassBodyDeclarationList RightCurlyBrace
+ClassBody:  LeftCurlyBrace { startScope(); } ClassBodyDeclarationList RightCurlyBrace { endScope(); }
             {
-                $$ = $2;
+                $$ = $3;
             }
-            | LeftCurlyBrace RightCurlyBrace
+            | LeftCurlyBrace { startScope(); }  RightCurlyBrace { endScope(); }
             {
                 $$ = createNode("ClassBody");
                 $$->add_child(createNode("{}"));
-
-                $$->allocate_symtable();
             }
             ;
 
@@ -308,20 +316,11 @@ ClassBodyDeclarationList:   ClassBodyDeclaration
                             {
                                 $$ = createNode("ClassBody");
                                 $$->add_child($1);
-
-                                $$->allocate_symtable();
-                                if($1->symTable)
-                                    $1->symTable->setParent($$->symTable);
-                                $$->add_entries($1->stEntries);
                             }
                             | ClassBodyDeclarationList ClassBodyDeclaration
                             {
                                 $$ = $1;
                                 $$->add_child($2);
-
-                                if($2->symTable)
-                                    $2->symTable->setParent($$->symTable);
-                                $$->add_entries($2->stEntries);
                             }
                             ;
 
@@ -337,20 +336,13 @@ ClassMemberDeclaration: FieldDeclaration
                         | Semicolon
                         ;
 
-FieldDeclaration:   ModifierList UnannType VariableDeclaratorList Semicolon
+FieldDeclaration:   ModifierList UnannType  VariableDeclaratorList Semicolon
                     {
                         $$ = createNode("FieldDeclaration");
                         $$->add_children($1);
                         $$->add_child($2);
                         $$->add_child($3);
                         $$->add_child($4);
-
-                        $$->stEntries = $3->stEntries;
-                        for(auto stEntry: $$->stEntries)
-                        {
-                            assert(stEntry);
-                            stEntry->setType($2->type);
-                        }
                     }
                     | UnannType VariableDeclaratorList Semicolon
                     {
@@ -358,14 +350,6 @@ FieldDeclaration:   ModifierList UnannType VariableDeclaratorList Semicolon
                         $$->add_child($1);
                         $$->add_child($2);
                         $$->add_child($3);
-
-                        $$->stEntries = $2->stEntries;
-                        for(auto stEntry: $$->stEntries)
-                        {
-                            assert(stEntry);
-                            stEntry->setType($1->type);
-                            stEntry->setDimension($1->numDims);
-                        }
                     }
                     ;
 
@@ -376,20 +360,12 @@ VariableDeclaratorList: VariableDeclarator
                             {
                                 $$ = $1;
                                 $$->add_child($3);
-
-                                assert((int)($3->stEntries.size()) == 1);
-                                $$->stEntries.push_back($3->stEntries[0]);
                             }
                             else
                             {
                                 $$ = createNode("Variables");
                                 $$->add_child($1);
                                 $$->add_child($3);
-
-                                assert((int)($1->stEntries.size()) == 1);
-                                assert((int)($3->stEntries.size()) == 1);
-                                $$->stEntries.push_back($1->stEntries[0]);
-                                $$->stEntries.push_back($3->stEntries[0]);
                             }
                         }
                         ;
@@ -399,8 +375,6 @@ VariableDeclarator: VariableDeclaratorId ASSIGN VariableInitializer
                         $$ = createNode("=");
                         $$->add_child($1);
                         $$->add_child($3);
-
-                        $$->stEntries = $1->stEntries;
                     }
                     | VariableDeclaratorId
                     ;
@@ -412,14 +386,14 @@ VariableDeclaratorId:   Identifier Dims
                             $$->add_child($2);
 
                             auto stEntry = new SymbolTableEntry($1->lexeme, "", -1, $2->numDims, $1->lineNumber, 0);
-                            $$->stEntries.push_back(stEntry);
+                            stEntryContainer.push_back(stEntry);
                         }
                         | Identifier
                         {
                             $$ = $1;
 
                             auto stEntry = new SymbolTableEntry($1->lexeme, "", -1, 0, $1->lineNumber, 0);
-                            $$->stEntries.push_back(stEntry);
+                            stEntryContainer.push_back(stEntry);
                         }
                         ;
 
@@ -501,26 +475,24 @@ UnannArrayType: UnannPrimitiveType Dims
                 }
                 ;
 
-MethodDeclaration:  ModifierList MethodHeader MethodBody
+MethodDeclaration:  ModifierList MethodHeader MethodBody 
                     {
                         $$ = createNode("MethodDeclaration");
                         $$->add_children($1);
                         $$->add_child($2);
                         $$->add_child($3);
 
-                        $$->symTable = $3->symTable;
-                        auto stEntry = new SymbolTableEntry($2->lexeme, "$func", -1, 0, $2->lineNumber, 0);
-                        $$->stEntries.push_back(stEntry);
+                        auto stEntry = new SymbolTableEntry($3->lexeme, "$func", -1, 0, $3->lineNumber, 0);
+                        currSymTable->insert(stEntry);
                     }
-                    | MethodHeader MethodBody
+                    |  MethodHeader MethodBody 
                     {
                         $$ = createNode("MethodDeclaration");
                         $$->add_child($1);
                         $$->add_child($2);
 
-                        $$->symTable = $2->symTable;
-                        auto stEntry = new SymbolTableEntry($1->lexeme, "$func", -1, -1, $1->lineNumber, 0);
-                        $$->stEntries.push_back(stEntry);
+                        auto stEntry = new SymbolTableEntry($2->lexeme, "$func", -1, -1, $2->lineNumber, 0);
+                        currSymTable->insert(stEntry);
                     }
                     ;
 
@@ -544,7 +516,7 @@ MethodHeader:   UnannType MethodDeclarator
                 }
                 ;
 
-MethodDeclarator:   Identifier LeftParenthesis ReceiverParameter Comma RightParenthesis 
+MethodDeclarator:   Identifier LeftParenthesis ReceiverParameter Comma RightParenthesis
                     {
                         $$ = createNode("MethodDeclarator");
                         $$->add_child($1);
@@ -653,11 +625,27 @@ FormalParameter:    VariableModifierList UnannType VariableDeclaratorId
                         $$->add_children($1);
                         $$->add_child($2);
                         $$->add_child($3);
+
+                        for(auto& stEntry: stEntryContainer)
+                        {
+                            assert(stEntry);
+                            stEntry->setType($2->type);
+                            currSymTable->insert(stEntry);
+                        }
+                        stEntryContainer.clear();
                     }
                     | UnannType VariableDeclaratorId {
                         $$ = createNode("FormalParameter");
                         $$->add_child($1);
                         $$->add_child($2);
+
+                        for(auto& stEntry: stEntryContainer)
+                        {
+                            assert(stEntry);
+                            stEntry->setType($2->type);
+                            currSymTable->insert(stEntry);
+                        }
+                        stEntryContainer.clear();
                     }
                     | VariableArityParameter
                     ;
@@ -699,48 +687,46 @@ StaticInitializer:  STATIC Block
                         $$ = createNode("StaticInitializer");
                         $$->add_child($1);
                         $$->add_child($2);
-
-                        $$->symTable = $2->symTable;
                     }
                     ;
 
-ConstructorDeclaration: ConstructorDeclarator ConstructorBody
+ConstructorDeclaration: { startScope(); } ConstructorDeclarator ConstructorBody { endScope(); }
                         {
                             $$ = createNode("ConstructorDeclaration");
-                            $$->add_child($1);
-                            $$->add_child($2);
-
-                            $$->symTable = $2->symTable;
-                            $$->stEntries = $1->stEntries;
-                        }
-                        | ModifierList ConstructorDeclarator ConstructorBody
-                        {
-                            $$ = createNode("ConstructorDeclaration");
-                            $$->add_children($1);
                             $$->add_child($2);
                             $$->add_child($3);
 
-                            $$->symTable = $3->symTable;
-                            $$->stEntries = $2->stEntries;
+                            auto stEntry = new SymbolTableEntry($2->lexeme, "$func", -1, 0, $2->lineNumber, 0);
+                            currSymTable->insert(stEntry);
+                        }
+                        | ModifierList { startScope(); } ConstructorDeclarator ConstructorBody { endScope(); }
+                        {
+                            $$ = createNode("ConstructorDeclaration");
+                            $$->add_children($1);
+                            $$->add_child($3);
+                            $$->add_child($4);
+
+                            auto stEntry = new SymbolTableEntry($3->lexeme, "$func", -1, 0, $3->lineNumber, 0);
+                            currSymTable->insert(stEntry);
                         }
                         ;
 
-ConstructorDeclarator:  SimpleTypeName LeftParenthesis RightParenthesis
+ConstructorDeclarator:  SimpleTypeName LeftParenthesis RightParenthesis 
                         {
                             $$ = createNode("ConstructorDeclarator");
                             $$->add_child(createNode("()"));
 
-                            auto stEntry = new SymbolTableEntry($1->lexeme, "$func", -1, 0, $1->lineNumber, 0);
-                            $$->stEntries.push_back(stEntry);
+                            $$->lexeme = $1->lexeme;
+                            $$->lineNumber = $1->lineNumber;
                         }
-                        | SimpleTypeName LeftParenthesis ReceiverParameter Comma RightParenthesis
+                        | SimpleTypeName LeftParenthesis ReceiverParameter Comma RightParenthesis 
                         {
                             $$ = createNode("ConstructorDeclarator");
                             $$->add_child($1);
                             $$->add_child($3);
 
-                            auto stEntry = new SymbolTableEntry($1->lexeme, "$func", -1, 0, $1->lineNumber, 0);
-                            $$->stEntries.push_back(stEntry);
+                            $$->lexeme = $1->lexeme;
+                            $$->lineNumber = $1->lineNumber;
                         }
                         | SimpleTypeName LeftParenthesis FormalParameterList RightParenthesis
                         {
@@ -748,47 +734,42 @@ ConstructorDeclarator:  SimpleTypeName LeftParenthesis RightParenthesis
                             $$->add_child($1);
                             $$->add_children($3);
 
-                            auto stEntry = new SymbolTableEntry($1->lexeme, "$func", -1, 0, $1->lineNumber, 0);
-                            $$->stEntries.push_back(stEntry);
+                            $$->lexeme = $1->lexeme;
+                            $$->lineNumber = $1->lineNumber;
                         }
-                        | SimpleTypeName LeftParenthesis ReceiverParameter Comma FormalParameterList RightParenthesis
+                        | SimpleTypeName LeftParenthesis ReceiverParameter Comma FormalParameterList RightParenthesis 
                         {
                             $$ = createNode("ConstructorDeclarator");
                             $$->add_child($1);
                             $$->add_child($3);
                             $$->add_children($5);
 
-                            auto stEntry = new SymbolTableEntry($1->lexeme, "$func", -1, 0, $1->lineNumber, 0);
-                            $$->stEntries.push_back(stEntry);
+                            $$->lexeme = $1->lexeme;
+                            $$->lineNumber = $1->lineNumber;
                         }
                         ;
 
 SimpleTypeName: TypeIdentifier
                 ;
 
-ConstructorBody:    LeftCurlyBrace  RightCurlyBrace
+ConstructorBody:    LeftCurlyBrace { startScope(); }  RightCurlyBrace { endScope(); }
                     {
                        $$ = createNode("{ }");
-                       $$->allocate_symtable();
                     }
-                    | LeftCurlyBrace ExplicitConstructorInvocation RightCurlyBrace
+                    | LeftCurlyBrace { startScope(); } ExplicitConstructorInvocation RightCurlyBrace { endScope(); }
                     {
                         $$ = createNode("ConstructorBody");
-                        $$->add_child($2);
-
-                        $$->allocate_symtable();
+                        $$->add_child($3);
                     }
-                    | LeftCurlyBrace BlockStatements RightCurlyBrace
+                    | LeftCurlyBrace { startScope(); } BlockStatements RightCurlyBrace { endScope(); }
                     {
-                        $$ = $2;
+                        $$ = $3;
                     }
-                    | LeftCurlyBrace ExplicitConstructorInvocation BlockStatements RightCurlyBrace
+                    | LeftCurlyBrace { startScope(); } ExplicitConstructorInvocation BlockStatements RightCurlyBrace { endScope(); }
                     {
                         $$ = createNode("ConstructorBody");
-                        $$->add_child($2);
-                        $$->add_children($3);
-
-                        $$->symTable = $3->symTable;
+                        $$->add_child($3);
+                        $$->add_children($4);
                     }
                     ;
 
@@ -973,14 +954,13 @@ VariableInitializerList:    VariableInitializer
                             }
                             ;
 
-Block:  LeftCurlyBrace BlockStatements RightCurlyBrace
+Block:  LeftCurlyBrace { startScope(); } BlockStatements RightCurlyBrace { endScope(); }
         {
-            $$ = $2;
+            $$ = $3;
         }
-        | LeftCurlyBrace RightCurlyBrace
+        | LeftCurlyBrace { startScope(); } RightCurlyBrace { endScope(); }
         {
             $$ = createNode("Block");
-            $$->allocate_symtable();
         }
         ;
 
@@ -988,19 +968,11 @@ BlockStatements:    BlockStatements BlockStatement
                     {
                         $$ = $1;
                         $$->add_child($2);
-                        if($2->symTable)
-                            $2->symTable->setParent($$->symTable);
-                        $$->add_entries($2->stEntries);
                     }
                     | BlockStatement
                     {
                         $$ = createNode("Block");
                         $$->add_child($1);
-                        
-                        $$->allocate_symtable();
-                        if($1->symTable)
-                            $1->symTable->setParent($$->symTable);
-                        $$->add_entries($1->stEntries);
                     }
                     ;
 
@@ -1025,12 +997,13 @@ LocalVariableDeclaration:   LocalVariableType VariableDeclaratorList
                                 $$->add_child($1);
                                 $$->add_child($2);
 
-                                $$->stEntries = $2->stEntries;
-                                for(auto stEntry: $$->stEntries)
+                                for(auto& stEntry: stEntryContainer)
                                 {
                                     assert(stEntry);
                                     stEntry->setType($1->type);
+                                    currSymTable->insert(stEntry);
                                 }
+                                stEntryContainer.clear();
                             }
                             | VariableModifierList LocalVariableType VariableDeclaratorList
                             {
@@ -1039,12 +1012,13 @@ LocalVariableDeclaration:   LocalVariableType VariableDeclaratorList
                                 $$->add_child($2);
                                 $$->add_child($3);
 
-                                $$->stEntries = $3->stEntries;
-                                for(auto stEntry: $$->stEntries)
+                                for(auto& stEntry: stEntryContainer)
                                 {
                                     assert(stEntry);
-                                    stEntry->setType($2->type);
+                                    stEntry->setType($1->type);
+                                    currSymTable->insert(stEntry);
                                 }
+                                stEntryContainer.clear();
                             }
                             ;
 
@@ -1085,9 +1059,6 @@ LabeledStatement:   Identifier COLON Statement
                         $$->add_child($1);
                         $$->add_child($2);
                         $$->add_child($3);
-
-                        $$->symTable = $3->symTable;
-                        $$->stEntries = $3->stEntries;
                     }
                     ;
 
@@ -1169,8 +1140,6 @@ WhileStatement: WHILE LeftParenthesis Expression RightParenthesis Statement
                     $$ = createNode("While");
                     $$->add_child($3);
                     $$->add_child($5);
-
-                    $$->symTable = $5->symTable; 
                 }
 
 WhileStatementNoShortIf:    WHILE LeftParenthesis Expression RightParenthesis StatementNoShortIf
@@ -1178,8 +1147,6 @@ WhileStatementNoShortIf:    WHILE LeftParenthesis Expression RightParenthesis St
                                 $$ = createNode("While");
                                 $$->add_child($3);
                                 $$->add_child($5);
-
-                                $$->symTable = $5->symTable; 
                             }
                             ;
 
@@ -1191,179 +1158,147 @@ ForStatementNoShortIf:  BasicForStatementNoShortIf
                         | EnhancedForStatementNoShortIf
                         ;
 
-BasicForStatement:  FOR LeftParenthesis  Semicolon  Semicolon  RightParenthesis Statement
-                    {
-                        $$ = createNode("For");
-                        $$->add_child($3);
-                        $$->add_child($4);
-                        $$->add_child($6);
-
-                        $$->symTable = $6->symTable; 
-                    }
-                    | FOR LeftParenthesis ForInit Semicolon  Semicolon  RightParenthesis Statement
+BasicForStatement:  FOR { startScope(); } LeftParenthesis  Semicolon  Semicolon  RightParenthesis Statement { endScope(); }
                     {
                         $$ = createNode("For");
                         $$->add_child($4);
                         $$->add_child($5);
                         $$->add_child($7);
-
-                        $$->symTable = $7->symTable;
-                        $$->add_entries($3->stEntries); 
                     }
-                    | FOR LeftParenthesis  Semicolon  Semicolon ForUpdate RightParenthesis Statement
+                    | FOR { startScope(); } LeftParenthesis ForInit Semicolon  Semicolon  RightParenthesis Statement { endScope(); }
                     {
                         $$ = createNode("For");
-                        $$->add_child($3);
-                        $$->add_child($4);
-                        $$->add_child($5);
-                        $$->add_child($7);
-
-                        $$->symTable = $7->symTable; 
-                    }
-                    | FOR LeftParenthesis ForInit Semicolon  Semicolon ForUpdate RightParenthesis Statement
-                    {
-                        $$ = createNode("For");
-                        $$->add_child($3);
                         $$->add_child($4);
                         $$->add_child($5);
                         $$->add_child($6);
                         $$->add_child($8);
-
-                        $$->symTable = $8->symTable; 
-                        $$->add_entries($3->stEntries);
                     }
-                    | FOR LeftParenthesis  Semicolon Expression Semicolon  RightParenthesis Statement
+                    | FOR { startScope(); } LeftParenthesis  Semicolon  Semicolon ForUpdate RightParenthesis Statement { endScope(); }
                     {
                         $$ = createNode("For");
-                        $$->add_child($3);
-                        $$->add_child($4);
-                        $$->add_child($5);
-                        $$->add_child($7);
-
-                        $$->symTable = $7->symTable; 
-                    }
-                    | FOR LeftParenthesis ForInit Semicolon Expression Semicolon  RightParenthesis Statement
-                    {
-                        $$ = createNode("For");
-                        $$->add_child($3);
                         $$->add_child($4);
                         $$->add_child($5);
                         $$->add_child($6);
                         $$->add_child($8);
-
-                        $$->symTable = $8->symTable;
-                        $$->add_entries($3->stEntries); 
                     }
-                    | FOR LeftParenthesis  Semicolon Expression Semicolon ForUpdate RightParenthesis Statement
+                    | FOR { startScope(); } LeftParenthesis ForInit Semicolon  Semicolon ForUpdate RightParenthesis Statement { endScope(); }
                     {
                         $$ = createNode("For");
-                        $$->add_child($3);
-                        $$->add_child($4);
-                        $$->add_child($5);
-                        $$->add_child($6);
-                        $$->add_child($8);
-
-                        $$->symTable = $8->symTable; 
-                    }
-                    | FOR LeftParenthesis ForInit Semicolon Expression Semicolon ForUpdate RightParenthesis Statement
-                    {
-                        $$ = createNode("For");
-                        $$->add_child($3);
                         $$->add_child($4);
                         $$->add_child($5);
                         $$->add_child($6);
                         $$->add_child($7);
                         $$->add_child($9);
-                        
-                        $$->symTable = $9->symTable;
-                        $$->add_entries($3->stEntries);
+                    }
+                    | FOR { startScope(); } LeftParenthesis  Semicolon Expression Semicolon  RightParenthesis Statement { endScope(); }
+                    {
+                        $$ = createNode("For");
+                        $$->add_child($4);
+                        $$->add_child($5);
+                        $$->add_child($6);
+                        $$->add_child($8);
+                    }
+                    | FOR { startScope(); } LeftParenthesis ForInit Semicolon Expression Semicolon  RightParenthesis Statement { endScope(); }
+                    {
+                        $$ = createNode("For");
+                        $$->add_child($4);
+                        $$->add_child($5);
+                        $$->add_child($6);
+                        $$->add_child($7);
+                        $$->add_child($9);
+                    }
+                    | FOR { startScope(); } LeftParenthesis  Semicolon Expression Semicolon ForUpdate RightParenthesis Statement { endScope(); }
+                    {
+                        $$ = createNode("For");
+                        $$->add_child($3);
+                        $$->add_child($4);
+                        $$->add_child($5);
+                        $$->add_child($6);
+                        $$->add_child($8);
+                    }
+                    | FOR { startScope(); } LeftParenthesis ForInit Semicolon Expression Semicolon ForUpdate RightParenthesis Statement { endScope(); }
+                    {
+                        $$ = createNode("For");
+                        $$->add_child($4);
+                        $$->add_child($5);
+                        $$->add_child($6);
+                        $$->add_child($7);
+                        $$->add_child($8);
+                        $$->add_child($10);
                     }
                     ;
 
-BasicForStatementNoShortIf: FOR LeftParenthesis  Semicolon  Semicolon RightParenthesis StatementNoShortIf
-                            {
-                                $$ = createNode("For");
-                                $$->add_child($3);
-                                $$->add_child($4);
-                                $$->add_child($6);
-
-                                $$->symTable = $6->symTable;
-                            }
-                            | FOR LeftParenthesis ForInit Semicolon  Semicolon RightParenthesis StatementNoShortIf
+BasicForStatementNoShortIf: FOR { startScope(); } LeftParenthesis  Semicolon  Semicolon RightParenthesis StatementNoShortIf { endScope(); }
                             {
                                 $$ = createNode("For");
                                 $$->add_child($4);
                                 $$->add_child($5);
                                 $$->add_child($7);
-
-                                $$->symTable = $3->symTable;
                             }
-                            | FOR LeftParenthesis  Semicolon Expression Semicolon RightParenthesis StatementNoShortIf
+                            | FOR { startScope(); } LeftParenthesis ForInit Semicolon  Semicolon RightParenthesis StatementNoShortIf { endScope(); }
                             {
                                 $$ = createNode("For");
-                                $$->add_child($3);
                                 $$->add_child($4);
                                 $$->add_child($5);
-                                $$->add_child($7);
-
-                                $$->symTable = $7->symTable;
-
-                            }
-                            | FOR LeftParenthesis ForInit Semicolon Expression Semicolon RightParenthesis StatementNoShortIf
-                            {
-                                $$ = createNode("For");
-                                $$->add_child($3);
-                                $$->add_child($5);
+                                $$->add_child($6);
                                 $$->add_child($8);
-
-                                $$->symTable = $8->symTable;
-                                $$->add_entries($3->stEntries);
                             }
-                            | FOR LeftParenthesis  Semicolon  Semicolon ForUpdate RightParenthesis StatementNoShortIf
+                            | FOR { startScope(); } LeftParenthesis  Semicolon Expression Semicolon RightParenthesis StatementNoShortIf { endScope(); }
                             {
                                 $$ = createNode("For");
-                                $$->add_child($3);
-                                $$->add_child($4);
-                                $$->add_child($5);
-                                $$->add_child($7);
-
-                                $$->symTable = $7->symTable;
-                            }
-                            | FOR LeftParenthesis ForInit Semicolon  Semicolon ForUpdate RightParenthesis StatementNoShortIf
-                            {
-                                $$ = createNode("For");
-                                $$->add_child($3);
                                 $$->add_child($4);
                                 $$->add_child($5);
                                 $$->add_child($6);
                                 $$->add_child($8);
 
-                                $$->symTable = $8->symTable;
-                                $$->add_entries($3->stEntries);
                             }
-                            | FOR LeftParenthesis  Semicolon Expression Semicolon ForUpdate RightParenthesis StatementNoShortIf
+                            | FOR { startScope(); } LeftParenthesis ForInit Semicolon Expression Semicolon RightParenthesis StatementNoShortIf { endScope(); }
                             {
                                 $$ = createNode("For");
-                                $$->add_child($3);
+                                $$->add_child($4);
+                                $$->add_child($6);
+                                $$->add_child($9);
+
+                            }
+                            | FOR { startScope(); } LeftParenthesis  Semicolon  Semicolon ForUpdate RightParenthesis StatementNoShortIf { endScope(); }
+                            {
+                                $$ = createNode("For");
                                 $$->add_child($4);
                                 $$->add_child($5);
                                 $$->add_child($6);
                                 $$->add_child($8);
 
-                                $$->symTable = $8->symTable;
                             }
-                            | FOR LeftParenthesis ForInit Semicolon Expression Semicolon ForUpdate RightParenthesis StatementNoShortIf
+                            | FOR { startScope(); } LeftParenthesis ForInit Semicolon  Semicolon ForUpdate RightParenthesis StatementNoShortIf { endScope(); }
                             {
                                 $$ = createNode("For");
-                                $$->add_child($3);
                                 $$->add_child($4);
                                 $$->add_child($5);
                                 $$->add_child($6);
                                 $$->add_child($7);
                                 $$->add_child($9);
 
-                                $$->symTable = $9->symTable;
-                                $$->add_entries($3->stEntries);
+                            }
+                            | FOR { startScope(); } LeftParenthesis  Semicolon Expression Semicolon ForUpdate RightParenthesis StatementNoShortIf { endScope(); }
+                            {
+                                $$ = createNode("For");
+                                $$->add_child($4);
+                                $$->add_child($5);
+                                $$->add_child($6);
+                                $$->add_child($7);
+                                $$->add_child($9);
+
+                            }
+                            | FOR { startScope(); } LeftParenthesis ForInit Semicolon Expression Semicolon ForUpdate RightParenthesis StatementNoShortIf { endScope(); }
+                            {
+                                $$ = createNode("For");
+                                $$->add_child($4);
+                                $$->add_child($5);
+                                $$->add_child($6);
+                                $$->add_child($7);
+                                $$->add_child($8);
+                                $$->add_child($10);
+  
                             }
                             ;
 
@@ -1374,61 +1309,47 @@ ForInit:    StatementExpressionList
 ForUpdate:  StatementExpressionList
             ;
 
-StatementExpressionList:    StatementExpression{
+StatementExpressionList:    StatementExpression
+                            {
                                 $$ = createNode("StatementExpressionList");
                                 $$->add_child($1);
-
-                                $$->allocate_symtable();
-                                if($1->symTable)
-                                    $1->symTable->setParent($$->symTable);
-                                $$->add_entries($1->stEntries);
                             }
                             | StatementExpressionList Comma StatementExpression
                             {
                                 $$ = $1;
                                 $$->add_child($3);
-
-                                if($3->symTable)
-                                    $3->symTable->setParent($$->symTable);
-                                $$->add_entries($3->stEntries);
                             }
                             ;
 
-EnhancedForStatement:   FOR LeftParenthesis LocalVariableDeclaration COLON Expression RightParenthesis Statement
+EnhancedForStatement:   FOR { startScope(); } LeftParenthesis LocalVariableDeclaration COLON Expression RightParenthesis Statement { endScope(); }
                         {
                             $$ = createNode("For");
-                            $$->add_child($3);
-                            $$->add_child($5);
-                            $$->add_child($7);
-
-                            $$->symTable = $7->symTable;
-                            $$->add_entries($3->stEntries);
+                            $$->add_child($4);
+                            $$->add_child($6);
+                            $$->add_child($8);
                         }
                         ;
 
-EnhancedForStatementNoShortIf:  FOR LeftParenthesis LocalVariableDeclaration COLON Expression RightParenthesis StatementNoShortIf
+EnhancedForStatementNoShortIf:  FOR { startScope(); } LeftParenthesis LocalVariableDeclaration COLON Expression RightParenthesis StatementNoShortIf { endScope(); }
                                 {
                                     $$ = createNode("For");
-                                    $$->add_child($3);
-                                    $$->add_child($5);
-                                    $$->add_child($7);
-
-                                    $$->symTable = $7->symTable;
-                                    $$->add_entries($3->stEntries);
+                                    $$->add_child($4);
+                                    $$->add_child($6);
+                                    $$->add_child($8);
                                 }
                                 ;
 
 BreakStatement: BREAK Identifier Semicolon 
                 {
-                        $$ = createNode("BREAK");
-                        $$->add_child($2);
-                        $$->add_child($3);
+                    $$ = createNode("BREAK");
+                    $$->add_child($2);
+                    $$->add_child($3);
 
                 }
                 | BREAK Semicolon
                 {
-                        $$ = createNode("BREAK");
-                        $$->add_child($2);
+                    $$ = createNode("BREAK");
+                    $$->add_child($2);
                 }
                 ;
 
@@ -1444,7 +1365,6 @@ ContinueStatement:  CONTINUE Semicolon
                         $$ = createNode("ContinueStatemnet");
                         $$->add_child($1);
                         $$->add_child($2);
-
                     }
                     | CONTINUE Identifier Semicolon
                     {
@@ -1459,7 +1379,6 @@ ReturnStatement:    RETURN Semicolon
                         $$ = createNode("ReturnStatement");
                         $$->add_child($1);
                         $$->add_child($2);
-
                     }
                     | RETURN Expression Semicolon
                     {
@@ -1501,41 +1420,41 @@ PrimaryNoNewArray:  Literal
                     ;
 
 ClassLiteral:   TypeName Dot CLASS {
-                        $$ = createNode("ClassLiteral");
-                        $$->add_child($1);
-                        $$->add_child($2);
-                        $$->add_child($3);
+                    $$ = createNode("ClassLiteral");
+                    $$->add_child($1);
+                    $$->add_child($2);
+                    $$->add_child($3);
                 }
                 | NumericType  Dot CLASS {
-                        $$ = createNode("ClassLiteral");
-                        $$->add_child($1);
-                        $$->add_child($2);
-                        $$->add_child($3);
+                    $$ = createNode("ClassLiteral");
+                    $$->add_child($1);
+                    $$->add_child($2);
+                    $$->add_child($3);
                 }
                 | BOOLEAN  Dot CLASS {
-                        $$ = createNode("ClassLiteral");
-                        $$->add_child($1);
-                        $$->add_child($2);
-                        $$->add_child($3);
+                    $$ = createNode("ClassLiteral");
+                    $$->add_child($1);
+                    $$->add_child($2);
+                    $$->add_child($3);
                 }
                 | VOID Dot CLASS {
-                        $$ = createNode("ClassLiteral");
-                        $$->add_child($1);
-                        $$->add_child($2);
-                        $$->add_child($3);
+                    $$ = createNode("ClassLiteral");
+                    $$->add_child($1);
+                    $$->add_child($2);
+                    $$->add_child($3);
                 }
                 | TypeName LeftRightSquareList Dot CLASS {
-                        $$ = createNode("ClassLiteral");
-                        $$->add_child($1);
-                        $$->add_child($2);
-                        $$->add_child($3);
-                        $$->add_child($4);
+                    $$ = createNode("ClassLiteral");
+                    $$->add_child($1);
+                    $$->add_child($2);
+                    $$->add_child($3);
+                    $$->add_child($4);
                 }
                 | NumericType LeftRightSquareList Dot CLASS {
-                        $$ = createNode("ClassLiteral");
-                        $$->add_child($1);
-                        $$->add_child($3);
-                        $$->add_child($4);
+                    $$ = createNode("ClassLiteral");
+                    $$->add_child($1);
+                    $$->add_child($3);
+                    $$->add_child($4);
                 }
                 | BOOLEAN LeftRightSquareList Dot CLASS {
                         $$ = createNode("ClassLiteral");

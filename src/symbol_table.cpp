@@ -64,8 +64,18 @@ PARAM: stEntry -- Symbol Table Entry to be inserted
 */
 void SymbolTable::insert(std::string name, SymbolTableEntry *stEntry)
 {
-    assert(stEntry != nullptr);
+    assert(stEntry);
     tableMap[name] = stEntry;
+}
+
+/*
+Insert symbol table entry.
+PARAM: stEntry -- Symbol Table Entry to be inserted
+*/
+void SymbolTable::insert(SymbolTableEntry *stEntry)
+{
+    assert(stEntry);
+    tableMap[stEntry->getName()] = stEntry;
 }
 
 /*
@@ -92,6 +102,15 @@ void SymbolTable::setParent(SymbolTable *parent)
 {
     parentTable = parent;
     parent->__add_child(this);
+}
+
+/*
+Get the parent symbol table of the symbol table.
+PARAM: None
+*/
+SymbolTable* SymbolTable::getParent()
+{
+    return parentTable;
 }
 
 /*
