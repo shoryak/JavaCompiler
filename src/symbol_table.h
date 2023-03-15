@@ -51,8 +51,10 @@ public:
         parentSymbolTable->__add_child(this);
     }
     void insert(std::string name, SymbolTableEntry *stEntry);
+    void insert(SymbolTableEntry *stEntry);
     SymbolTableEntry* lookup(const std::string& name);
     void setParent(SymbolTable *parent);
+    SymbolTable* getParent(void);
     void print(void);
     void __add_child(SymbolTable* symTable);
     void __printAll(void);

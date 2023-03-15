@@ -25,7 +25,8 @@ extern FILE *yyout;
 extern int linenum;
 
 SymbolTable *globalSymTable = new SymbolTable;
-SymbolTable* currSymbolTable = globalSymTable;
+SymbolTable *currSymTable = globalSymTable;
+std::vector<SymbolTableEntry*> stEntryContainer;
 
 struct Node
 {
@@ -151,50 +152,55 @@ int buildTree(Node* node, int parentno, int co)
     return co;
 }
 
-void setSymTables(Node* node)
+
+
+void startScope()
 {
-    if(node == NULL) return;
-    if(node->symTable == NULL)
-    {
-        Node* temp = node;
-        while(temp!= NULL && temp->symTable== NULL)
-        {
-            temp = temp->parent;
-        }
-        if(temp!= NULL)
-        {
-            node->symTable = temp->symTable;
-        }
+    auto newSymTable = new SymbolTable;
+    newSymTable->setParent(currSymTable);
+    currSymTable = newSymTable;
+}
+
+void endScope()
+{
+    auto parentSymTable = currSymTable->getParent();
+    assert(parentSymTable);
+    currSymTable = parentSymTable;
+}
+
+void createST(Node* node){
+    if(strcmp(node->value, "{") == 0){
+        startScope();
     }
+    if(strcmp(node->value, "}") == 0){
+        endScope();
+    }
+
+    if(strcmp(node->value, "class") == 0){
+        int n = node->children.size();
+        std::vector<Node*> children = node->children;
+        assert(n>=2);
+        SymbolTableEntry* stEntry = new SymbolTableEntry(children[n-2]->lexeme , "class" , -1 , -1 , 0 , 0 );
+        currSymTable->insert(stEntry);
+    }
+
+    if(strcmp(node->value, "MethodDeclaration") == 0){
+        int n = node->children.size();
+        std::vector<Node*> children = node->children;
+        assert(n>=2);
+        SymbolTableEntry* stEntry = new SymbolTableEntry(children[n-2]->lexeme , "class" , -1 , -1 , 0 , 0 );
+        currSymTable->insert(stEntry);
+    }
+
+
     int n = node->children.size();
     std::vector<Node*> children = node->children;
     for(int i = 0; i < n; i++)
     {
-        setSymTables(children[i]);
+        createST(children[i]);
     }
+
 }
-
-void setSymTables2(Node* node , SymbolTable* currSymbolTable)
-{
-    if(node == NULL) return;
-    if(node->symTable == NULL)
-    {
-        node->nearSymbolTable = currSymbolTable;
-    }
-    else
-    {
-        node->nearSymbolTable = node->symTable;
-        currSymbolTable = node->symTable;
-    }
-    int n = node->children.size();
-    std::vector<Node*> children = node->children;
-    for(int i = 0; i < n; i++)
-    {
-        setSymTables2(children[i], currSymbolTable);
-    }
-}
-
-
 
 
 %}

@@ -69,6 +69,16 @@ void SymbolTable::insert(std::string name, SymbolTableEntry *stEntry)
 }
 
 /*
+Insert symbol table entry.
+PARAM: stEntry -- Symbol Table Entry to be inserted
+*/
+void SymbolTable::insert(SymbolTableEntry *stEntry)
+{
+    assert(stEntry);
+    tableMap[stEntry->getName()] = stEntry;
+}
+
+/*
 Lookup an entry in the symbol table.
 Starting from the current scope (represented by a SymbolTable*),
 go up all the parent scopes and search.
@@ -92,6 +102,15 @@ void SymbolTable::setParent(SymbolTable *parent)
 {
     parentTable = parent;
     parent->__add_child(this);
+}
+
+/*
+Get the parent symbol table of the symbol table.
+PARAM: None
+*/
+SymbolTable* SymbolTable::getParent()
+{
+    return parentTable;
 }
 
 /*
