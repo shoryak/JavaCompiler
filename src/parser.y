@@ -28,6 +28,7 @@ extern int linenum;
 SymbolTable *globalSymTable = new SymbolTable;
 SymbolTable *currSymTable = globalSymTable;
 std::vector<SymbolTableEntry*> stEntryContainer;
+int isNewScope = 1;
 
 
 struct Node
@@ -516,16 +517,21 @@ MethodHeader:   UnannType MethodDeclarator
                 }
                 ;
 
+subroutine:
+  %empty  {  startScope(); isNewScope = 0; }
+;
+
+
 MethodDeclarator:   Identifier LeftParenthesis ReceiverParameter Comma RightParenthesis
                     {
                         $$ = createNode("MethodDeclarator");
                         $$->add_child($1);
-                        $$->add_child($3);
+                        $$->add_child($4);
 
                         $$->lexeme = $1->lexeme;
                         $$->lineNumber = $1->lineNumber;
                     }
-                    | Identifier LeftParenthesis RightParenthesis
+                    | Identifier LeftParenthesis subroutine RightParenthesis
                     {
                         $$ = $1;
                     }
@@ -539,7 +545,7 @@ MethodDeclarator:   Identifier LeftParenthesis ReceiverParameter Comma RightPare
                         $$->lexeme = $1->lexeme;
                         $$->lineNumber = $1->lineNumber;
                     }
-                    | Identifier LeftParenthesis FormalParameterList RightParenthesis
+                    | Identifier LeftParenthesis FormalParameterList  RightParenthesis
                     {
                         $$ = createNode("MethodDeclarator");
                         $$->add_child($1);
@@ -558,7 +564,7 @@ MethodDeclarator:   Identifier LeftParenthesis ReceiverParameter Comma RightPare
                         $$->lexeme = $1->lexeme;
                         $$->lineNumber = $1->lineNumber;
                     }
-                    | Identifier LeftParenthesis RightParenthesis Dims
+                    | Identifier LeftParenthesis  RightParenthesis Dims
                     {
                         $$ = createNode("MethodDeclarator");
                         $$->add_child($1);
@@ -578,7 +584,7 @@ MethodDeclarator:   Identifier LeftParenthesis ReceiverParameter Comma RightPare
                         $$->lexeme = $1->lexeme;
                         $$->lineNumber = $1->lineNumber;
                     }
-                    | Identifier LeftParenthesis FormalParameterList RightParenthesis Dims
+                    | Identifier LeftParenthesis  FormalParameterList RightParenthesis Dims
                     {
                         $$ = createNode("MethodDeclarator");
                         $$->add_child($1);
@@ -675,7 +681,7 @@ VariableModifierList:   VariableModifier
 VariableModifier:   FINAL
                     ;
 
-MethodBody: Block
+MethodBody: Block 
             | Semicolon
             ;
 
@@ -954,11 +960,11 @@ VariableInitializerList:    VariableInitializer
                             }
                             ;
 
-Block:  LeftCurlyBrace { startScope(); } BlockStatements RightCurlyBrace { endScope(); }
+Block:  LeftCurlyBrace BlockStatements RightCurlyBrace 
         {
             $$ = $3;
         }
-        | LeftCurlyBrace { startScope(); } RightCurlyBrace { endScope(); }
+        | LeftCurlyBrace RightCurlyBrace 
         {
             $$ = createNode("Block");
         }
@@ -1026,7 +1032,7 @@ LocalVariableType:  UnannType
                     | VAR
                     ;
 
-Statement:  StatementWithoutTrailingSubstatement
+Statement:  StatementWithoutTrailingSubstatement 
             | LabeledStatement
             | IfThenStatement
             | IfThenElseStatement
@@ -1158,39 +1164,22 @@ ForStatementNoShortIf:  BasicForStatementNoShortIf
                         | EnhancedForStatementNoShortIf
                         ;
 
-BasicForStatement:  FOR { startScope(); } LeftParenthesis  Semicolon  Semicolon  RightParenthesis Statement { endScope(); }
+BasicForStatement:  FOR LeftParenthesis subroutine Semicolon  Semicolon  RightParenthesis Statement
                     {
                         $$ = createNode("For");
                         $$->add_child($4);
                         $$->add_child($5);
                         $$->add_child($7);
                     }
-                    | FOR { startScope(); } LeftParenthesis ForInit Semicolon  Semicolon  RightParenthesis Statement { endScope(); }
-                    {
-                        $$ = createNode("For");
-                        $$->add_child($4);
-                        $$->add_child($5);
-                        $$->add_child($6);
-                        $$->add_child($8);
-                    }
-                    | FOR { startScope(); } LeftParenthesis  Semicolon  Semicolon ForUpdate RightParenthesis Statement { endScope(); }
-                    {
-                        $$ = createNode("For");
-                        $$->add_child($4);
-                        $$->add_child($5);
-                        $$->add_child($6);
-                        $$->add_child($8);
-                    }
-                    | FOR { startScope(); } LeftParenthesis ForInit Semicolon  Semicolon ForUpdate RightParenthesis Statement { endScope(); }
+                    | FOR LeftParenthesis subroutine ForInit Semicolon  Semicolon  RightParenthesis Statement 
                     {
                         $$ = createNode("For");
                         $$->add_child($4);
                         $$->add_child($5);
                         $$->add_child($6);
                         $$->add_child($7);
-                        $$->add_child($9);
                     }
-                    | FOR { startScope(); } LeftParenthesis  Semicolon Expression Semicolon  RightParenthesis Statement { endScope(); }
+                    | FOR LeftParenthesis subroutine  Semicolon  Semicolon ForUpdate RightParenthesis Statement
                     {
                         $$ = createNode("For");
                         $$->add_child($4);
@@ -1198,7 +1187,7 @@ BasicForStatement:  FOR { startScope(); } LeftParenthesis  Semicolon  Semicolon 
                         $$->add_child($6);
                         $$->add_child($8);
                     }
-                    | FOR { startScope(); } LeftParenthesis ForInit Semicolon Expression Semicolon  RightParenthesis Statement { endScope(); }
+                    | FOR LeftParenthesis subroutine ForInit Semicolon  Semicolon ForUpdate RightParenthesis Statement
                     {
                         $$ = createNode("For");
                         $$->add_child($4);
@@ -1207,7 +1196,15 @@ BasicForStatement:  FOR { startScope(); } LeftParenthesis  Semicolon  Semicolon 
                         $$->add_child($7);
                         $$->add_child($9);
                     }
-                    | FOR { startScope(); } LeftParenthesis  Semicolon Expression Semicolon ForUpdate RightParenthesis Statement { endScope(); }
+                    | FOR LeftParenthesis  Semicolon Expression Semicolon  RightParenthesis Statement
+                    {
+                        $$ = createNode("For");
+                        $$->add_child($3);
+                        $$->add_child($4);
+                        $$->add_child($5);
+                        $$->add_child($7);
+                    }
+                    | FOR  LeftParenthesis ForInit Semicolon Expression Semicolon  RightParenthesis Statement 
                     {
                         $$ = createNode("For");
                         $$->add_child($3);
@@ -1216,24 +1213,33 @@ BasicForStatement:  FOR { startScope(); } LeftParenthesis  Semicolon  Semicolon 
                         $$->add_child($6);
                         $$->add_child($8);
                     }
-                    | FOR { startScope(); } LeftParenthesis ForInit Semicolon Expression Semicolon ForUpdate RightParenthesis Statement { endScope(); }
+                    | FOR LeftParenthesis  Semicolon Expression Semicolon ForUpdate RightParenthesis Statement
                     {
                         $$ = createNode("For");
+                        $$->add_child($3);
+                        $$->add_child($4);
+                        $$->add_child($5);
+                        $$->add_child($6);
+                        $$->add_child($8);
+                    }
+                    | FOR  LeftParenthesis ForInit Semicolon Expression Semicolon ForUpdate RightParenthesis Statement 
+                    {
+                        $$ = createNode("For");
+                        $$->add_child($3);
                         $$->add_child($4);
                         $$->add_child($5);
                         $$->add_child($6);
                         $$->add_child($7);
-                        $$->add_child($8);
-                        $$->add_child($10);
+                        $$->add_child($9);
                     }
                     ;
 
-BasicForStatementNoShortIf: FOR { startScope(); } LeftParenthesis  Semicolon  Semicolon RightParenthesis StatementNoShortIf { endScope(); }
+BasicForStatementNoShortIf: FOR LeftParenthesis  Semicolon  Semicolon RightParenthesis StatementNoShortIf
                             {
                                 $$ = createNode("For");
+                                $$->add_child($3);
                                 $$->add_child($4);
-                                $$->add_child($5);
-                                $$->add_child($7);
+                                $$->add_child($6);
                             }
                             | FOR { startScope(); } LeftParenthesis ForInit Semicolon  Semicolon RightParenthesis StatementNoShortIf { endScope(); }
                             {
@@ -1243,7 +1249,7 @@ BasicForStatementNoShortIf: FOR { startScope(); } LeftParenthesis  Semicolon  Se
                                 $$->add_child($6);
                                 $$->add_child($8);
                             }
-                            | FOR { startScope(); } LeftParenthesis  Semicolon Expression Semicolon RightParenthesis StatementNoShortIf { endScope(); }
+                            | FOR { startScope(); } LeftParenthesis  Semicolon Expression Semicolon RightParenthesis StatementNoShortIf
                             {
                                 $$ = createNode("For");
                                 $$->add_child($4);
