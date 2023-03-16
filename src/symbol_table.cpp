@@ -6,13 +6,13 @@ PARAM: scope -- tableMap which contains all symbol table entries
 */
 void printScope(const std::unordered_map<std::string, SymbolTableEntry*>& scope)
 {
-    std::cerr << "\n~~~~~ BEGIN PRINTING SCOPE ~~~~~\n";
+    
     for(auto [lexeme, stEntry]: scope)
     {
         std::cerr << "Lexeme: " << lexeme << "\n";
         stEntry->print();
     }
-    std::cerr << "~~~~~ END PRINTING SCOPE ~~~~~\n";
+    
 }
 
 /*
@@ -137,6 +137,8 @@ void SymbolTable::__add_child(SymbolTable* symTable)
 
 void SymbolTable::__printAll()
 {
+    std::cerr << "\n~~~~~ BEGIN PRINTING SCOPE ~~~~~\n";
     printScope(tableMap);
     for(auto childTable: childTables) childTable->__printAll();
+    std::cerr << "~~~~~ END PRINTING SCOPE ~~~~~\n";
 }

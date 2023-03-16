@@ -57,6 +57,9 @@ struct Node
     entry can be created properly   */
     std::string lexeme = "";
 
+/* field for maintaining original name of the node */
+    std::string namelexeme = "";
+
 /*  For non-terminals which contain expressions/variables of a particular type  */
     std::string type = "";
 
@@ -73,7 +76,7 @@ struct Node
     Node(char* value)
     : value{value}, children{std::vector<Node*>()}, lineNumber{linenum} {}
     Node(char* value, std::string lexeme, std::string type)
-    : value{value}, lexeme{lexeme}, type{type}, lineNumber{linenum} {}
+    : value{value}, lexeme{lexeme}, type{type}, lineNumber{linenum} , namelexeme{lexeme} {}
 
 /*  Add a node as a child   */
     void add_child(Node* nd)
@@ -128,7 +131,7 @@ Node* createNode(const char* value, std::vector<Node*> children)
 
 Node* createNode(const char* value)
 {
-    return new Node(strdup(value));
+    return new Node(strdup(value) , std::string(value) , "");
 }
 
 Node* createNode(const char* value, std::string lexeme, std::string type)
@@ -152,6 +155,45 @@ int buildTree(Node* node, int parentno, int co)
     return co;
 }
 
+void setSymTables(Node* node){
+    if(node == NULL) return;
+    if(node->symTable == NULL){
+        Node* temp = node;
+        while(temp!= NULL && temp->symTable== NULL)
+        {
+            temp = temp->parent;
+        }
+        if(temp!= NULL)
+        {
+            node->symTable = temp->symTable;
+        }
+    }
+    int n = node->children.size();
+    std::vector<Node*> children = node->children;
+    for(int i = 0; i < n; i++)
+    {
+        setSymTables(children[i]);
+    }
+}
+
+void setSymTables2(Node* node , SymbolTable* currSymbolTable){
+    if(node == NULL) return;
+    if(node->symTable == NULL){
+        node->nearSymbolTable = currSymbolTable;
+    }
+    else{
+        node->nearSymbolTable = node->symTable;
+        currSymbolTable = node->symTable;
+    }
+    int n = node->children.size();
+    std::vector<Node*> children = node->children;
+    for(int i = 0; i < n; i++)
+    {
+        setSymTables2(children[i], currSymbolTable);
+    }
+}
+
+
 
 
 void startScope()
@@ -169,35 +211,195 @@ void endScope()
 }
 
 void createST(Node* node){
-    if(strcmp(node->value, "{") == 0){
+    
+    // setting nearest scope symbol table for the node for typechecking 
+    node->nearSymbolTable = currSymTable; 
+
+    int newScope = 0;
+
+    if(node->lexeme == "{"){
+        std::cout<<node->namelexeme<<std::endl;
         startScope();
     }
-    if(strcmp(node->value, "}") == 0){
+    if(node->namelexeme == "}"){
+        std::cout<<node->namelexeme<<std::endl;
         endScope();
     }
 
-    if(strcmp(node->value, "class") == 0){
+    if(node->namelexeme == "class"){
         int n = node->children.size();
+        std::cerr<<node->namelexeme<<std::endl;
+
         std::vector<Node*> children = node->children;
         assert(n>=2);
-        SymbolTableEntry* stEntry = new SymbolTableEntry(children[n-2]->lexeme , "class" , -1 , -1 , 0 , 0 );
+        SymbolTableEntry* stEntry = new SymbolTableEntry(children[n-2]->namelexeme , "class" , -1 , -1 , 0 , 0 );
         currSymTable->insert(stEntry);
     }
 
-    if(strcmp(node->value, "MethodDeclaration") == 0){
+    if(node->namelexeme == "MethodDeclaration"){
+        int decLine = 0;
+       int n = node->children.size();
+        std::vector<Node*> children = node->children;
+        std::string name="";           //modifiers_returntype_functionname
+        for(auto x:children) {
+            if(x->namelexeme == "ModifierList"){
+                for(auto y:x->children){
+                    std::cerr<<name<<std::endl;
+                    if(name!="")name+=" "+ std::string(y->namelexeme);
+                    else  name+=std::string(y->namelexeme);
+                }
+            }
+            else if(x->namelexeme == "MethodHeader"){
+                if(name!="") name+=" ";
+                std::cerr<<name<<std::endl;
+                name+=  std::string(x->children[0]->namelexeme);
+                decLine = (x->children[0]->lineNumber);
+                name+=" " + std::string(x->children[1]->children[0]->children[0]->namelexeme);
+            }
+            std::cerr<<x->namelexeme<<std::endl;
+
+            
+        }
+        SymbolTableEntry* stEntry = new SymbolTableEntry(name , "$func" , -1 , -1 , decLine , 0 );
+        currSymTable->insert(stEntry);
+        newScope=1;
+
+    }
+
+    if(node->namelexeme == "FormalParameter" ){
         int n = node->children.size();
         std::vector<Node*> children = node->children;
+        std::string name = "";
+        std::string type = "";
+        int nDims = 0;
+        int decLine=-1;
         assert(n>=2);
-        SymbolTableEntry* stEntry = new SymbolTableEntry(children[n-2]->lexeme , "class" , -1 , -1 , 0 , 0 );
+        for(auto x:children){
+            if(x->namelexeme == "final"){
+                name+= x->namelexeme;
+            }
+            else if(x->namelexeme == "VariableDeclaratorId"){
+                for(auto y: x->children){
+                   if(y->namelexeme == "Identifier"){
+                       if(name!="") name+= " ";
+                       name+= y->children[0]->namelexeme;
+                       decLine = y->children[0]->lineNumber;
+                   }
+                   if(y->namelexeme == "[]"){
+                       nDims++;
+                   }
+                }
+            }
+            else{
+                if(x->namelexeme == "UnannArrayType"){
+                    type  = x->children[0]->namelexeme;
+                    nDims += x->children.size()-1;
+                }
+            }
+        }
+        SymbolTableEntry* stEntry = new SymbolTableEntry(name , type , -1 , nDims , decLine , 0 );
         currSymTable->insert(stEntry);
+
+    }
+
+    if(node->namelexeme == "FieldDeclaration"){
+        int n = node->children.size();
+        std::vector<Node*> children = node->children;
+        std::string name = "";
+        std::string type = "";
+        int nDims=0;
+        int decLine=-1;
+        assert(n>=2);
+        Node* list = nullptr;
+        for(auto x:children){
+            if(x->namelexeme == "ModifierList"){
+                for(auto y:x->children){
+                    if(name!="")name+=" "+ std::string(y->namelexeme);
+                    else  name+=std::string(y->namelexeme);
+                }
+            }
+            else if(x->namelexeme == "UnannType"){
+                type+=x->namelexeme;
+            }
+            else if(x->namelexeme == "VariableDeclaratorList"){
+                list = x;
+            }
+        }
+        if(list){
+            for(auto y: list->children){
+                SymbolTableEntry* stEntry = new SymbolTableEntry(name , type , -1 , nDims , decLine , 0 );
+                currSymTable->insert(stEntry);
+            }
+        }
+    }
+    
+
+    if(node->namelexeme == "LocalVariableDeclaration"){
+        std::string type;
+        std::string name;
+        int decLine  = node->children[0]->lineNumber;
+        for(auto child : node->children){
+            if(child->namelexeme == "ModifierList"){
+                for(auto y:child->children){
+                    if(name!="")name+=" "+ std::string(y->namelexeme);
+                    else  name+=std::string(y->namelexeme);
+                }
+            }
+            else if(child->namelexeme == "="){
+                if(name!= "") name+= " ";
+                name+= child->children[0]->children[0]->children[0]->namelexeme;
+            }
+            else if(child->namelexeme == "VariableDeclaratorId"){
+                if(name!= "") name+= " ";
+                name+= child->children[0]->children[0]->namelexeme;
+            }
+            else if(child->namelexeme != ";"){
+                type = child->namelexeme;
+            }
+
+        }
+        SymbolTableEntry* stEntry = new SymbolTableEntry(name , type , -1 , 0 , decLine , 0 );
+        currSymTable->insert(stEntry);
+        
+    }
+    
+    // if(node->namelexeme == "ConstructorDeclaration"){
+    //     int n = node->children.size();
+    //     std::vector<Node*> children = node->children;
+    //     std::string name = "";
+    //     std::string type = "";
+    //     int nDims=0;
+    //     int decLine=-1;
+    //     assert(n>=2);
+    //     for(auto x: children){
+    //         if(x->namelexeme == "ModifierList"){
+    //             for(auto y:x->children){
+    //                 if(name!="")name+=" "+ std::string(y->namelexeme);
+    //                 else  name+=std::string(y->namelexeme);
+    //             }
+    //         }
+
+    //     }
+        
+
+    // }
+
+    if(node->namelexeme == "For"){
+        newScope = 1;
     }
 
 
+
+    if(newScope) startScope();
     int n = node->children.size();
     std::vector<Node*> children = node->children;
     for(int i = 0; i < n; i++)
     {
         createST(children[i]);
+    }
+    if(newScope) {
+        endScope();
+        newScope=0;
     }
 
 }
@@ -280,7 +482,8 @@ CompilationUnit:    OrdinaryCompilationUnit
                         root = $$;
                         printf("digraph G {\n");
                         buildTree(root, -1, 0);
-                        globalSymTable = $$->symTable;
+                        createST(root);
+                        // globalSymTable = $$->symTable;
                         globalSymTable->__printAll();
                         printf("}\n");
                     }
@@ -320,8 +523,10 @@ ClassDeclaration:   NormalClassDeclaration
 
 NormalClassDeclaration: CLASS TypeIdentifier ClassBody
                         {
-                            std::vector<Node*> v{$2, $3};
-                            $$ = createNode("class" , v);
+                            
+                            $$ = createNode("class" );
+                            $$->add_child($2);
+                            $$->add_child($3);
 
                             $$->symTable = $3->symTable;
                             auto stEntry = new SymbolTableEntry($2->lexeme, $1->type, -1, 0, $2->lineNumber, 0);
@@ -330,7 +535,7 @@ NormalClassDeclaration: CLASS TypeIdentifier ClassBody
                         | ModifierList CLASS TypeIdentifier ClassBody
                         {
                             $$ = createNode("class");
-                            $$->add_children($1);
+                            $$->add_child($1);
                             $$->add_child($3);
                             $$->add_child($4);
 
@@ -359,12 +564,18 @@ ModifierList:   ModifierList Modifier
 
 ClassBody:  LeftCurlyBrace ClassBodyDeclarationList RightCurlyBrace
             {
-                $$ = $2;
+                $$ = createNode("ClassBody");
+                $$->add_child($1);
+                $$->add_child($2);
+                $$->add_child($3);
+
+                $$->symTable = $2->symTable;
             }
             | LeftCurlyBrace RightCurlyBrace
             {
                 $$ = createNode("ClassBody");
-                $$->add_child(createNode("{}"));
+                $$->add_child($1);
+                $$->add_child($2);
 
                 $$->allocate_symtable();
             }
@@ -406,7 +617,7 @@ ClassMemberDeclaration: FieldDeclaration
 FieldDeclaration:   ModifierList UnannType VariableDeclaratorList Semicolon
                     {
                         $$ = createNode("FieldDeclaration");
-                        $$->add_children($1);
+                        $$->add_child($1);
                         $$->add_child($2);
                         $$->add_child($3);
                         $$->add_child($4);
@@ -482,7 +693,8 @@ VariableDeclaratorId:   Identifier Dims
                         }
                         | Identifier
                         {
-                            $$ = $1;
+                            $$ = createNode("VariableDeclaratorId");
+                            $$->add_child($1);
 
                             auto stEntry = new SymbolTableEntry($1->lexeme, "", -1, 0, $1->lineNumber, 0);
                             $$->stEntries.push_back(stEntry);
@@ -570,13 +782,15 @@ UnannArrayType: UnannPrimitiveType Dims
 MethodDeclaration:  ModifierList MethodHeader MethodBody
                     {
                         $$ = createNode("MethodDeclaration");
-                        $$->add_children($1);
+                        $$->add_child($1);
                         $$->add_child($2);
                         $$->add_child($3);
 
                         $$->symTable = $3->symTable;
                         auto stEntry = new SymbolTableEntry($2->lexeme, "$func", -1, 0, $2->lineNumber, 0);
                         $$->stEntries.push_back(stEntry);
+
+
                     }
                     | MethodHeader MethodBody
                     {
@@ -621,14 +835,15 @@ MethodDeclarator:   Identifier LeftParenthesis ReceiverParameter Comma RightPare
                     }
                     | Identifier LeftParenthesis RightParenthesis
                     {
-                        $$ = $1;
+                        $$ = createNode("MethodDeclarator");
+                        $$->add_child($1);
                     }
                     | Identifier LeftParenthesis ReceiverParameter Comma FormalParameterList RightParenthesis
                     {
                         $$ = createNode("MethodDeclarator");
                         $$->add_child($1);
                         $$->add_child($3);
-                        $$->add_children($5);
+                        $$->add_child($5);
 
                         $$->lexeme = $1->lexeme;
                         $$->lineNumber = $1->lineNumber;
@@ -637,7 +852,7 @@ MethodDeclarator:   Identifier LeftParenthesis ReceiverParameter Comma RightPare
                     {
                         $$ = createNode("MethodDeclarator");
                         $$->add_child($1);
-                        $$->add_children($3);
+                        $$->add_child($3);
 
                         $$->lexeme = $1->lexeme;
                         $$->lineNumber = $1->lineNumber;
@@ -666,7 +881,7 @@ MethodDeclarator:   Identifier LeftParenthesis ReceiverParameter Comma RightPare
                         $$ = createNode("MethodDeclarator");
                         $$->add_child($1);
                         $$->add_child($3);
-                        $$->add_children($5);
+                        $$->add_child($5);
                         $$->add_child($7);
 
                         $$->lexeme = $1->lexeme;
@@ -676,7 +891,7 @@ MethodDeclarator:   Identifier LeftParenthesis ReceiverParameter Comma RightPare
                     {
                         $$ = createNode("MethodDeclarator");
                         $$->add_child($1);
-                        $$->add_children($3);
+                        $$->add_child($3);
                         $$->add_child($5);
 
                         $$->lexeme = $1->lexeme;
@@ -713,10 +928,10 @@ FormalParameterList:    FormalParameterList Comma FormalParameter
                         }
                         ;
 
-FormalParameter:    VariableModifierList UnannType VariableDeclaratorId
+FormalParameter:    VariableModifier UnannType VariableDeclaratorId
                     {
                         $$ = createNode("FormalParameter");
-                        $$->add_children($1);
+                        $$->add_child($1);
                         $$->add_child($2);
                         $$->add_child($3);
                     }
@@ -735,20 +950,10 @@ VariableArityParameter: UnannType ellipsis Identifier
                             $$->add_child($2);
                             $$->add_child($3);
                         }
-                        | VariableModifierList UnannType ellipsis Identifier
+                        | VariableModifier UnannType ellipsis Identifier
                         ;
 
-VariableModifierList:   VariableModifier
-                        {
-                            $$ = createNode("VariableModifierList");
-                            $$->add_child($1);
-                        }
-                        | VariableModifierList VariableModifier
-                        {
-                            $$ = $1;
-                            $$->add_child($2);
-                        }   
-                        ;
+
 
 VariableModifier:   FINAL
                     ;
@@ -782,7 +987,7 @@ ConstructorDeclaration: ConstructorDeclarator ConstructorBody
                         | ModifierList ConstructorDeclarator ConstructorBody
                         {
                             $$ = createNode("ConstructorDeclaration");
-                            $$->add_children($1);
+                            $$->add_child($1);
                             $$->add_child($2);
                             $$->add_child($3);
 
@@ -812,7 +1017,7 @@ ConstructorDeclarator:  SimpleTypeName LeftParenthesis RightParenthesis
                         {
                             $$ = createNode("ConstructorDeclarator");
                             $$->add_child($1);
-                            $$->add_children($3);
+                            $$->add_child($3);
 
                             auto stEntry = new SymbolTableEntry($1->lexeme, "$func", -1, 0, $1->lineNumber, 0);
                             $$->stEntries.push_back(stEntry);
@@ -822,7 +1027,7 @@ ConstructorDeclarator:  SimpleTypeName LeftParenthesis RightParenthesis
                             $$ = createNode("ConstructorDeclarator");
                             $$->add_child($1);
                             $$->add_child($3);
-                            $$->add_children($5);
+                            $$->add_child($5);
 
                             auto stEntry = new SymbolTableEntry($1->lexeme, "$func", -1, 0, $1->lineNumber, 0);
                             $$->stEntries.push_back(stEntry);
@@ -852,7 +1057,7 @@ ConstructorBody:    LeftCurlyBrace  RightCurlyBrace
                     {
                         $$ = createNode("ConstructorBody");
                         $$->add_child($2);
-                        $$->add_children($3);
+                        $$->add_child($3);
 
                         $$->symTable = $3->symTable;
                     }
@@ -879,7 +1084,7 @@ ExplicitConstructorInvocation:  THIS LeftParenthesis RightParenthesis Semicolon
                                 {
                                     $$ = createNode("ExplicitConstructorInvocation");
                                     $$->add_child($1);
-                                    $$->add_children($3);
+                                    $$->add_child($3);
                                     $$->add_child($5);
                                 }
                                 | TypeArguments THIS LeftParenthesis ArgumentList RightParenthesis Semicolon
@@ -889,7 +1094,7 @@ ExplicitConstructorInvocation:  THIS LeftParenthesis RightParenthesis Semicolon
                                     temp->add_child($1);
                                     temp->add_child($2);
                                     $$->add_child(temp);
-                                    $$->add_children($4);
+                                    $$->add_child($4);
                                     $$->add_child($6);
                                 }
                                 | TypeArguments SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
@@ -899,7 +1104,7 @@ ExplicitConstructorInvocation:  THIS LeftParenthesis RightParenthesis Semicolon
                                     temp->add_child($1);
                                     temp->add_child($2);
                                     $$->add_child(temp);
-                                    $$->add_children($4);
+                                    $$->add_child($4);
                                     $$->add_child($6);
                                 }
                                 | SUPER LeftParenthesis RightParenthesis Semicolon
@@ -913,7 +1118,7 @@ ExplicitConstructorInvocation:  THIS LeftParenthesis RightParenthesis Semicolon
                                 {
                                     $$ = createNode("ExplicitConstructorInvocation");
                                     $$->add_child($1);
-                                    $$->add_children($3);
+                                    $$->add_child($3);
                                     $$->add_child($5);
                                 }
                                 | TypeArguments SUPER LeftParenthesis RightParenthesis Semicolon
@@ -935,7 +1140,7 @@ ExplicitConstructorInvocation:  THIS LeftParenthesis RightParenthesis Semicolon
                                     temp1->add_child($1);
                                     temp1->add_child(temp2);
                                     $$->add_child(temp1);
-                                    $$->add_children($6);
+                                    $$->add_child($6);
                                     $$->add_child($8);
                                 }
                                 | ExpressionName Dot TypeArguments SUPER LeftParenthesis RightParenthesis Semicolon
@@ -953,7 +1158,7 @@ ExplicitConstructorInvocation:  THIS LeftParenthesis RightParenthesis Semicolon
                                     $2->add_child($1);
                                     $2->add_child($3);
                                     $$->add_child($2);
-                                    $$->add_children($5);
+                                    $$->add_child($5);
                                     $$->add_child($7);
                                 }
                                 | ExpressionName Dot SUPER LeftParenthesis RightParenthesis Semicolon
@@ -990,7 +1195,7 @@ ExplicitConstructorInvocation:  THIS LeftParenthesis RightParenthesis Semicolon
                                     $2->add_child($1);
                                     $2->add_child($3);
                                     $$->add_child($2);
-                                    $$->add_children($5);
+                                    $$->add_child($5);
                                     $$->add_child($7);
                                 }
                                 | Primary Dot TypeArguments SUPER LeftParenthesis ArgumentList RightParenthesis Semicolon
@@ -1000,7 +1205,7 @@ ExplicitConstructorInvocation:  THIS LeftParenthesis RightParenthesis Semicolon
                                     $2->add_child($1);
                                     $2->add_child($4);
                                     $$->add_child($2);
-                                    $$->add_children($6);
+                                    $$->add_child($6);
                                     $$->add_child($8);
                                 }
                                 ;
@@ -1041,12 +1246,21 @@ VariableInitializerList:    VariableInitializer
 
 Block:  LeftCurlyBrace BlockStatements RightCurlyBrace
         {
-            $$ = $2;
+            $$ = createNode("Block");
+            $$->add_child($1);
+            $$->add_child($2);
+            $$->add_child($3);
+
+            $$->symTable = $2->symTable;
         }
         | LeftCurlyBrace RightCurlyBrace
         {
             $$ = createNode("Block");
+            $$->add_child($1);
+            $$->add_child($2);
             $$->allocate_symtable();
+
+            $$->symTable = $2->symTable;
         }
         ;
 
@@ -1098,7 +1312,7 @@ LocalVariableDeclaration:   LocalVariableType VariableDeclaratorList
                                     stEntry->setType($1->type);
                                 }
                             }
-                            | VariableModifierList LocalVariableType VariableDeclaratorList
+                            | VariableModifier LocalVariableType VariableDeclaratorList
                             {
                                 $$ = createNode("LocalVariableDeclaration");
                                 $$->add_child($1);
@@ -1647,7 +1861,7 @@ UnqualifiedClassInstanceCreationExpression: NEW ClassOrInterfaceTypeToInstantiat
                                                 $$ = createNode("UnqualifiedClassInstanceCreationExpression");
                                                 $$->add_child($1);
                                                 $$->add_child($2);
-                                                $$->add_children($4);
+                                                $$->add_child($4);
                                             }
                                             | NEW TypeArguments ClassOrInterfaceTypeToInstantiate LeftParenthesis ArgumentList RightParenthesis
                                             {
@@ -1655,7 +1869,7 @@ UnqualifiedClassInstanceCreationExpression: NEW ClassOrInterfaceTypeToInstantiat
                                                 $$->add_child($1);
                                                 $$->add_child($2);
                                                 $$->add_child($3);
-                                                $$->add_children($5);
+                                                $$->add_child($5);
                                             }
                                             | NEW ClassOrInterfaceTypeToInstantiate LeftParenthesis RightParenthesis ClassBody
                                             {
@@ -1677,7 +1891,7 @@ UnqualifiedClassInstanceCreationExpression: NEW ClassOrInterfaceTypeToInstantiat
                                                 $$ = createNode("UnqualifiedClassInstanceCreationExpression");
                                                 $$->add_child($1);
                                                 $$->add_child($2);
-                                                $$->add_children($4);
+                                                $$->add_child($4);
                                             }
                                             | NEW TypeArguments ClassOrInterfaceTypeToInstantiate LeftParenthesis ArgumentList RightParenthesis ClassBody
                                             {
@@ -1685,7 +1899,7 @@ UnqualifiedClassInstanceCreationExpression: NEW ClassOrInterfaceTypeToInstantiat
                                                 $$->add_child($1);
                                                 $$->add_child($2);
                                                 $$->add_child($3);
-                                                $$->add_children($5);
+                                                $$->add_child($5);
                                                 $$->add_child($7);
                                             }
                                             ;
@@ -1757,7 +1971,7 @@ MethodInvocation:   Identifier LeftParenthesis  RightParenthesis
                     {
                         $$ = createNode("MethodInvocation");
                         $$->add_child($1);
-                        $$->add_children($3);
+                        $$->add_child($3);
                     }
                     | TypeName Dot Identifier LeftParenthesis RightParenthesis
                     {
@@ -1784,7 +1998,7 @@ MethodInvocation:   Identifier LeftParenthesis  RightParenthesis
                         $2->add_child($1);
                         $2->add_child($3);
                         $$->add_child($2);
-                        $$->add_children($5);
+                        $$->add_child($5);
 
                         $$->stEntries = $1->stEntries;
                     }
@@ -1794,7 +2008,7 @@ MethodInvocation:   Identifier LeftParenthesis  RightParenthesis
                         $2->add_child($1);
                         $2->add_child($4);
                         $$->add_child($2);
-                        $$->add_children($6);
+                        $$->add_child($6);
 
                         $$->stEntries = $1->stEntries;
                     }
@@ -1819,7 +2033,7 @@ MethodInvocation:   Identifier LeftParenthesis  RightParenthesis
                         $2->add_child($1);
                         $2->add_child($3);
                         $$->add_child($2);
-                        $$->add_children($5);
+                        $$->add_child($5);
                     }
                     | ExpressionName Dot TypeArguments Identifier LeftParenthesis ArgumentList RightParenthesis
                     {
@@ -1827,7 +2041,7 @@ MethodInvocation:   Identifier LeftParenthesis  RightParenthesis
                         $2->add_child($1);
                         $2->add_child($4);
                         $$->add_child($2);
-                        $$->add_children($6);
+                        $$->add_child($6);
                     }
                     | Primary Dot Identifier LeftParenthesis RightParenthesis
                     {
@@ -1851,7 +2065,7 @@ MethodInvocation:   Identifier LeftParenthesis  RightParenthesis
                         $2->add_child($1);
                         $2->add_child($3);
                         $$->add_child($2);
-                        $$->add_children($5);
+                        $$->add_child($5);
                     }
                     | Primary Dot TypeArguments Identifier LeftParenthesis ArgumentList RightParenthesis
                     {
@@ -1859,7 +2073,7 @@ MethodInvocation:   Identifier LeftParenthesis  RightParenthesis
                         $2->add_child($1);
                         $2->add_child($4);
                         $$->add_child($2);
-                        $$->add_children($6);
+                        $$->add_child($6);
                     }
                     | SUPER Dot Identifier LeftParenthesis RightParenthesis
                     {
@@ -1881,7 +2095,7 @@ MethodInvocation:   Identifier LeftParenthesis  RightParenthesis
                         $2->add_child($1);
                         $2->add_child($3);
                         $$->add_child($2);
-                        $$->add_children($5);
+                        $$->add_child($5);
                     }
                     | SUPER Dot TypeArguments Identifier LeftParenthesis ArgumentList RightParenthesis
                     {
@@ -1889,7 +2103,7 @@ MethodInvocation:   Identifier LeftParenthesis  RightParenthesis
                         $2->add_child($1);
                         $2->add_child($4);
                         $$->add_child($2);
-                        $$->add_children($6);
+                        $$->add_child($6);
                     }
                     | TypeName Dot SUPER Dot Identifier LeftParenthesis RightParenthesis
                     {
@@ -1921,7 +2135,7 @@ MethodInvocation:   Identifier LeftParenthesis  RightParenthesis
                         $4->add_child($2);
                         $4->add_child($5);
                         $$->add_child($4);
-                        $$->add_children($7);
+                        $$->add_child($7);
 
                         $$->stEntries = $1->stEntries;
                     }
@@ -1933,7 +2147,7 @@ MethodInvocation:   Identifier LeftParenthesis  RightParenthesis
                         $4->add_child($2);
                         $4->add_child($6);
                         $$->add_child($4);
-                        $$->add_children($8);
+                        $$->add_child($8);
                         
                         $$->stEntries = $1->stEntries;
 
@@ -2049,7 +2263,7 @@ ArrayCreationExpression:    NEW PrimitiveType DimExprs
                                 $$ = createNode("ArrayCreationExpression");
                                 $$->add_child($1);
                                 $$->add_child($2);
-                                $$->add_children($3);
+                                $$->add_child($3);
 
                             }
                             | NEW UnannClassOrInterfaceType DimExprs
@@ -2057,21 +2271,21 @@ ArrayCreationExpression:    NEW PrimitiveType DimExprs
                                 $$ = createNode("ArrayCreationExpression");
                                 $$->add_child($1);
                                 $$->add_child($2);
-                                $$->add_children($3);
+                                $$->add_child($3);
                             }
                             | NEW PrimitiveType DimExprs Dims
                             {
                                 $$ = createNode("ArrayCreationExpression");
                                 $$->add_child($1);
                                 $$->add_child($2);
-                                $$->add_children($3);
+                                $$->add_child($3);
                             }
                             | NEW UnannClassOrInterfaceType DimExprs Dims
                             {
                                 $$ = createNode("ArrayCreationExpression");
                                 $$->add_child($1);
                                 $$->add_child($2);
-                                $$->add_children($3);
+                                $$->add_child($3);
                             }
                             ;
 
@@ -2472,7 +2686,7 @@ TypeBound:  EXTENDS UnannClassOrInterfaceType
 TypeArguments:  LT TypeArgumentList GT {
                     $$ = createNode("TypeArguments");
                     $$->add_child($1);
-                    $$->add_children($2);
+                    $$->add_child($2);
                     $$->add_child($3);
                 }
                 ;
@@ -2545,10 +2759,14 @@ TypeIdentifierKeywords: EXPORTS
                         | TRANSITIVE
                         ;
 
-Identifier: IdentifierChars
+Identifier: IdentifierChars {
+                    $$ = createNode("Identifier");
+                    
+                    $$->add_child($1);
+            }
             ;
 
-TypeIdentifier: IdentifierChars
+TypeIdentifier: IdentifierChars 
                 | TypeIdentifierKeywords
                 ;
 

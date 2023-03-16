@@ -23,7 +23,7 @@ class SymbolTableEntry {
     uint64 address;
 
 public:
-    SymbolTableEntry(void): name{""}, type{""}, size{-1}, dimension{-1}, declLine{-1}, address{0} {}
+    SymbolTableEntry(void): name{""},type{""}, size{-1}, dimension{-1}, declLine{-1}, address{0} {}
     SymbolTableEntry(
         std::string name, std::string type,
         int32 size, int32 dimension, int32 declLine,
