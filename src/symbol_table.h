@@ -22,6 +22,7 @@ struct funcproto{
     }
 };
 
+
 class SymbolTableEntry {
     // Type of the identifier
     std::string name, type;

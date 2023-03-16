@@ -36,9 +36,15 @@ struct Node
     std::vector<Node*> children;
     Node* parent;
 
-/* this stores the expression type for applying appropriate type checking 
+/*  this stores the expression type for applying appropriate type checking 
     0 -> operator , 1 -> assignment , 2 -> methods , 3 -> classes */
     int exprType = -1;
+
+/*  If the node is the root of some subtree of an expression in the AST
+    typeForExpr will store the type of it's subexpression and
+    dimsTypeForExpr will storeit's the number of dimensions */
+    std::string typeForExpr = "";
+    int dimsTypeForExpr = -1;
 
 /*  Attributes needed for semantic analysis.
     All are attributes of the identifier located 
@@ -219,7 +225,7 @@ void createST(Node* node){
 
     int newScope = 0;
 
-    if(node->lexeme == "{" && useCurlyForNewScope){
+    if(node->namelexeme == "{" && useCurlyForNewScope){
         std::cout<<node->namelexeme<<std::endl;
         startScope();
     }
@@ -236,7 +242,7 @@ void createST(Node* node){
         assert(n>=2);
         if(node->children[0]->namelexeme == "ModifierList"){
             for(auto y : node->children[0]->children){
-                if(name!="") name+="";
+                if(name!="") name+=" ";
                 name += y->namelexeme;
             }
         }
@@ -503,9 +509,27 @@ void createST(Node* node){
         endScope(); 
         newScope=0;
     }
-
 }
 
+void typecheck(Node *node)
+{
+    std::string nodeName = node->namelexeme;
+    if(nodeName == "=")
+    {
+        assert((int)(node->children.size()) >= 2);
+        Node *leftHandSide = node->children[0];
+        Node *rightHandSide = node->children[1];
+        typecheck(leftHandSide); typecheck(rightHandSide);
+        if(leftHandSide->typeForExpr != rightHandSide->typeForExpr)
+        {
+            // Error
+        }
+    }
+    else if(nodeName == "+")
+    {
+        assert((int)(node->children.size()) >= 2);
+    }
+}
 
 %}
 
