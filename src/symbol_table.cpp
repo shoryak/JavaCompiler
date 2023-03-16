@@ -6,13 +6,13 @@ PARAM: scope -- tableMap which contains all symbol table entries
 */
 void printScope(const std::unordered_map<std::string, SymbolTableEntry*>& scope)
 {
-    std::cerr << "\n~~~~~ BEGIN PRINTING SCOPE ~~~~~\n";
+    
     for(auto [lexeme, stEntry]: scope)
     {
         std::cerr << "Lexeme: " << lexeme << "\n";
         stEntry->print();
     }
-    std::cerr << "~~~~~ END PRINTING SCOPE ~~~~~\n";
+    
 }
 
 /*
@@ -54,7 +54,18 @@ void SymbolTableEntry::print()
     std::cerr << std::hex;
     std::cerr << "Address: " << address << '\n';
     std::cerr << std::dec;
-    std::cerr << '\n';
+  
+    if(type == "$func"){
+        std::cerr << "Number of Arguments "<< functionProto.numArgs<< '\n';
+        std::cerr << "Types of Arguments \n";
+        int pos = 1;
+        for(auto tp : functionProto.argTypes){
+            std::cerr<< "Type "<<pos <<"   "<< tp<< '\n';
+            pos++;
+        }
+    }
+     std::cerr << '\n';
+
 }
 
 /*
@@ -66,6 +77,16 @@ void SymbolTable::insert(std::string name, SymbolTableEntry *stEntry)
 {
     assert(stEntry != nullptr);
     tableMap[name] = stEntry;
+}
+
+/*
+Insert symbol table entry.
+PARAM: stEntry -- Symbol Table Entry to be inserted
+*/
+void SymbolTable::insert(SymbolTableEntry *stEntry)
+{
+    assert(stEntry);
+    tableMap[stEntry->getName()] = stEntry;
 }
 
 /*
@@ -95,6 +116,15 @@ void SymbolTable::setParent(SymbolTable *parent)
 }
 
 /*
+Get the parent symbol table of the symbol table.
+PARAM: None
+*/
+SymbolTable* SymbolTable::getParent()
+{
+    return parentTable;
+}
+
+/*
 Print all symbol tables corresponding to all nested scopes,
 starting from the current scope; we move to parent scope by
 going to the parent symbol table.
@@ -118,6 +148,8 @@ void SymbolTable::__add_child(SymbolTable* symTable)
 
 void SymbolTable::__printAll()
 {
+    std::cerr << "\n~~~~~ BEGIN PRINTING SCOPE ~~~~~\n";
     printScope(tableMap);
     for(auto childTable: childTables) childTable->__printAll();
+    std::cerr << "~~~~~ END PRINTING SCOPE ~~~~~\n";
 }
