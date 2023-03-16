@@ -27,6 +27,7 @@ extern int linenum;
 SymbolTable *globalSymTable = new SymbolTable;
 SymbolTable *currSymTable = globalSymTable;
 std::vector<SymbolTableEntry*> stEntryContainer;
+int useCurlyForNewScope  = 1;
 
 struct Node
 {
@@ -211,18 +212,18 @@ void endScope()
 }
 
 void createST(Node* node){
-    std::cerr<<node->namelexeme<<std::endl;
+    // std::cerr<<node->namelexeme<<std::endl;
 
     // setting nearest scope symbol table for the node for typechecking 
     node->nearSymbolTable = currSymTable; 
 
     int newScope = 0;
 
-    if(node->lexeme == "{"){
+    if(node->lexeme == "{" && useCurlyForNewScope){
         std::cout<<node->namelexeme<<std::endl;
         startScope();
     }
-    if(node->namelexeme == "}"){
+    if(node->namelexeme == "}" && useCurlyForNewScope){
         std::cout<<node->namelexeme<<std::endl;
         endScope();
     }
@@ -230,18 +231,26 @@ void createST(Node* node){
     if(node->namelexeme == "class"){
         int n = node->children.size();
         std::cerr<<node->namelexeme<<std::endl;
-
         std::vector<Node*> children = node->children;
+        std::string name;
         assert(n>=2);
-        SymbolTableEntry* stEntry = new SymbolTableEntry(children[n-2]->namelexeme , "class" , -1 , -1 , 0 , 0 );
+        if(node->children[0]->namelexeme == "ModifierList"){
+            for(auto y : node->children[0]->children){
+                if(name!="") name+="";
+                name += y->namelexeme;
+            }
+        }
+        if(name!="") name+=" ";
+        name += children[n-2]->namelexeme;
+        SymbolTableEntry* stEntry = new SymbolTableEntry( name, "class" , -1 , -1 , node->children[n-2]->lineNumber , 0 );
         currSymTable->insert(stEntry);
     }
 
     if(node->namelexeme == "MethodDeclaration"){
         int decLine = 0;
-       int n = node->children.size();
         std::vector<Node*> children = node->children;
         std::string name="";           //modifiers_returntype_functionname
+        struct funcproto fproto;
         for(auto x:children) {
             if(x->namelexeme == "ModifierList"){
                 for(auto y:x->children){
@@ -252,29 +261,76 @@ void createST(Node* node){
             }
             else if(x->namelexeme == "MethodHeader"){
                 if(name!="") name+=" ";
+                
                 std::cerr<<name<<std::endl;
                 name+=  std::string(x->children[0]->namelexeme);
                 decLine = (x->children[0]->lineNumber);
                 name+=" " + std::string(x->children[1]->children[0]->children[0]->namelexeme);
+                for(auto y: x->children){
+                    if(y->namelexeme == "MethodDeclarator"){
+                        Node* temp = nullptr;
+                        for(auto k : y->children){
+                            if(k->namelexeme == "FormalParameterList"){
+                                temp = k;
+                                break;
+                            }
+                        }
+                        if(temp == nullptr) break;
+                        for(auto z : temp->children){
+                            std::cerr<< "hurray"<< std::endl;
+                            std::string nameParam;
+                            std::string typeParam;
+                            int nDimsParam;
+                            for(auto x: z->children){
+                                if(x->namelexeme == "final"){
+                                    nameParam += x->namelexeme;
+                                }
+                                else if(x->namelexeme == "VariableDeclaratorId"){
+                                    for(auto child: x->children){
+                                        if(child->namelexeme == "Identifier"){
+                                            if(name!="") name+= " ";
+                                            nameParam += child->children[0]->namelexeme;
+                                        }
+                                        if(child->namelexeme == "[ ]"){
+                                            nDimsParam++;
+                                        }
+                                    }
+                                }
+                                else{
+                                    if(x->namelexeme == "UnannArrayType"){
+                                        typeParam  = x->children[0]->namelexeme;
+                                        nDimsParam += x->children.size()-1;
+                                    }
+                                    else{
+                                        typeParam += x->namelexeme;
+                                    }
+
+                                }
+                            }
+                            fproto.numArgs++;
+                            fproto.argTypes.push_back(typeParam);
+                            fproto.argDims.push_back(nDimsParam);
+        
+                        }
+                    }
+                }
             }
             std::cerr<<x->namelexeme<<std::endl;
 
             
         }
-        SymbolTableEntry* stEntry = new SymbolTableEntry(name , "$func" , -1 , -1 , decLine , 0 );
+        SymbolTableEntry* stEntry = new SymbolTableEntry(name , "$func" , -1 , -1 , decLine , 0 , fproto );
         currSymTable->insert(stEntry);
         newScope=1;
 
     }
 
     if(node->namelexeme == "FormalParameter" ){
-        int n = node->children.size();
         std::vector<Node*> children = node->children;
         std::string name = "";
         std::string type = "";
         int nDims = 0;
         int decLine=-1;
-        assert(n>=2);
         for(auto x:children){
             if(x->namelexeme == "final"){
                 name+= x->namelexeme;
@@ -286,7 +342,7 @@ void createST(Node* node){
                        name+= y->children[0]->namelexeme;
                        decLine = y->children[0]->lineNumber;
                    }
-                   if(y->namelexeme == "[]"){
+                   if(y->namelexeme == "[ ]"){
                        nDims++;
                    }
                 }
@@ -296,6 +352,10 @@ void createST(Node* node){
                     type  = x->children[0]->namelexeme;
                     nDims += x->children.size()-1;
                 }
+                else{
+                    type += x->namelexeme;
+                }
+
             }
         }
         SymbolTableEntry* stEntry = new SymbolTableEntry(name , type , -1 , nDims , decLine , 0 );
@@ -334,10 +394,12 @@ void createST(Node* node){
             for(auto y: list->children){
                 if(name!= "") name+= " ";
                 if(y->namelexeme == "="){
+                nDims+= y->children[0]->children.size()-1;
                 SymbolTableEntry* stEntry = new SymbolTableEntry( name + y->children[0]->children[0]->children[0]->namelexeme , type , -1 , nDims , y->children[0]->children[0]->children[0]->lineNumber , 0 );
                 currSymTable->insert(stEntry);
                 }
                 else{
+                    nDims+= y->children[0]->children.size()-1;
                     SymbolTableEntry* stEntry = new SymbolTableEntry( name + y->children[0]->children[0]->namelexeme , type , -1 , nDims , y->children[0]->children[0]->lineNumber , 0 );
                     currSymTable->insert(stEntry);
                 }
@@ -353,11 +415,8 @@ void createST(Node* node){
         int nDims=0;
         Node* list = nullptr;
         for(auto child : node->children){
-            if(child->namelexeme == "ModifierList"){
-                for(auto y:child->children){
-                    if(name!="")name+=" "+ std::string(y->namelexeme);
-                    else  name+=std::string(y->namelexeme);
-                }
+            if(child->namelexeme == "VariableModifier"){
+                name+=std::string(child->children[0]->namelexeme);
             }
             else if(child->namelexeme == "Variables"){
                 list = child;
@@ -371,10 +430,12 @@ void createST(Node* node){
             for(auto y: list->children){
                 if(name!= "") name+= " ";
                 if(y->namelexeme == "="){
-                SymbolTableEntry* stEntry = new SymbolTableEntry( name + y->children[0]->children[0]->children[0]->namelexeme , type , -1 , nDims , y->children[0]->children[0]->children[0]->lineNumber , 0 );
-                currSymTable->insert(stEntry);
+                    nDims+= y->children[0]->children.size()-1;
+                    SymbolTableEntry* stEntry = new SymbolTableEntry( name + y->children[0]->children[0]->children[0]->namelexeme , type , -1 , nDims , y->children[0]->children[0]->children[0]->lineNumber , 0 );
+                    currSymTable->insert(stEntry);
                 }
                 else{
+                    nDims+= y->children[0]->children.size()-1;
                     SymbolTableEntry* stEntry = new SymbolTableEntry( name + y->children[0]->children[0]->namelexeme , type , -1 , nDims , y->children[0]->children[0]->lineNumber , 0 );
                     currSymTable->insert(stEntry);
                 }
@@ -382,28 +443,45 @@ void createST(Node* node){
         }
         
         
+        
     }
     
-    // if(node->namelexeme == "ConstructorDeclaration"){
-    //     int n = node->children.size();
-    //     std::vector<Node*> children = node->children;
-    //     std::string name = "";
-    //     std::string type = "";
-    //     int nDims=0;
-    //     int decLine=-1;
-    //     assert(n>=2);
-    //     for(auto x: children){
-    //         if(x->namelexeme == "ModifierList"){
-    //             for(auto y:x->children){
-    //                 if(name!="")name+=" "+ std::string(y->namelexeme);
-    //                 else  name+=std::string(y->namelexeme);
-    //             }
-    //         }
+    if(node->namelexeme == "ConstructorDeclaration"){
+        int n = node->children.size();
+        std::vector<Node*> children = node->children;
+        std::string name = "";
+        std::string type = "";
+        int nDims=0;
+        int decLine=-1;
+        Node* list = nullptr;
+        assert(n>=2);
+        for(auto x: children){
+            if(x->namelexeme == "ModifierList"){
+                for(auto y:x->children){
+                    if(name!="")name+=" "+ std::string(y->namelexeme);
+                    else  name+=std::string(y->namelexeme);
+                }
+            }
+            else if(x->namelexeme == "ConstructorDeclarator"){
+                if(name!="") name+=" ";
+                std::cerr<<name<<std::endl;
+                name+=  std::string(x->children[0]->namelexeme);
+                decLine = (x->children[0]->lineNumber);
+                //name+=" " + std::string(x->children[1]->children[0]->children[0]->namelexeme);
+                // for(auto y:x->children[1]->children){
+                //     if(name!="") name+=" "+std::string(y->children[0]->namelexeme);
+                //     name+=" " + std::string(y->children[1]->children[0]->children[0]->namelexeme);
+                // }
+            }
 
-    //     }
+        }
+        SymbolTableEntry* stEntry = new SymbolTableEntry(name , type , -1 , nDims , decLine , 0 );
+        currSymTable->insert(stEntry);
+
+        newScope=1;
         
 
-    // }
+    }
 
     if(node->namelexeme == "For"){
         newScope = 1;
@@ -411,7 +489,10 @@ void createST(Node* node){
 
 
 
-    if(newScope) startScope();
+    if(newScope) 
+        {
+            startScope();
+        }
     int n = node->children.size();
     std::vector<Node*> children = node->children;
     for(int i = 0; i < n; i++)
@@ -419,7 +500,7 @@ void createST(Node* node){
         createST(children[i]);
     }
     if(newScope) {
-        endScope();
+        endScope(); 
         newScope=0;
     }
 
@@ -531,7 +612,7 @@ TopLevelClassOrInterfaceDeclarationList:    TopLevelClassOrInterfaceDeclaration
 
                                                 assert($2->symTable);
                                                 $2->symTable->setParent($$->symTable);
-                                                assert((int)($1->stEntries.size()) == 1);
+                                                // assert((int)($1->stEntries.size()) == 1);
                                                 $$->add_entries($2->stEntries);
                                             }
                                             ;
@@ -982,7 +1063,10 @@ VariableArityParameter: UnannType ellipsis Identifier
 
 
 
-VariableModifier:   FINAL
+VariableModifier:   FINAL {
+                        $$ = createNode("VariableModifier");
+                        $$->add_child($1);
+                    }   
                     ;
 
 MethodBody: Block

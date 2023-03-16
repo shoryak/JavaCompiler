@@ -54,7 +54,18 @@ void SymbolTableEntry::print()
     std::cerr << std::hex;
     std::cerr << "Address: " << address << '\n';
     std::cerr << std::dec;
-    std::cerr << '\n';
+  
+    if(type == "$func"){
+        std::cerr << "Number of Arguments "<< functionProto.numArgs<< '\n';
+        std::cerr << "Types of Arguments \n";
+        int pos = 1;
+        for(auto tp : functionProto.argTypes){
+            std::cerr<< "Type "<<pos <<"   "<< tp<< '\n';
+            pos++;
+        }
+    }
+     std::cerr << '\n';
+
 }
 
 /*
