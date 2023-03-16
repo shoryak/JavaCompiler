@@ -211,7 +211,8 @@ void endScope()
 }
 
 void createST(Node* node){
-    
+    std::cerr<<node->namelexeme<<std::endl;
+
     // setting nearest scope symbol table for the node for typechecking 
     node->nearSymbolTable = currSymTable; 
 
@@ -303,13 +304,11 @@ void createST(Node* node){
     }
 
     if(node->namelexeme == "FieldDeclaration"){
-        int n = node->children.size();
         std::vector<Node*> children = node->children;
         std::string name = "";
         std::string type = "";
         int nDims=0;
         int decLine=-1;
-        assert(n>=2);
         Node* list = nullptr;
         for(auto x:children){
             if(x->namelexeme == "ModifierList"){
@@ -318,17 +317,30 @@ void createST(Node* node){
                     else  name+=std::string(y->namelexeme);
                 }
             }
-            else if(x->namelexeme == "UnannType"){
-                type+=x->namelexeme;
-            }
-            else if(x->namelexeme == "VariableDeclaratorList"){
+            else if(x->namelexeme == "Variables"){
                 list = x;
+            }
+            else if(x->namelexeme != ";"){
+                if(x->namelexeme == "UnannArrayType"){
+                    type += x->children[0]->namelexeme;
+                    nDims += x->children[1]->children.size();
+                }
+                else{
+                    type += x->namelexeme;
+                }
             }
         }
         if(list){
             for(auto y: list->children){
-                SymbolTableEntry* stEntry = new SymbolTableEntry(name , type , -1 , nDims , decLine , 0 );
+                if(name!= "") name+= " ";
+                if(y->namelexeme == "="){
+                SymbolTableEntry* stEntry = new SymbolTableEntry( name + y->children[0]->children[0]->children[0]->namelexeme , type , -1 , nDims , y->children[0]->children[0]->children[0]->lineNumber , 0 );
                 currSymTable->insert(stEntry);
+                }
+                else{
+                    SymbolTableEntry* stEntry = new SymbolTableEntry( name + y->children[0]->children[0]->namelexeme , type , -1 , nDims , y->children[0]->children[0]->lineNumber , 0 );
+                    currSymTable->insert(stEntry);
+                }
             }
         }
     }
@@ -338,6 +350,8 @@ void createST(Node* node){
         std::string type;
         std::string name;
         int decLine  = node->children[0]->lineNumber;
+        int nDims=0;
+        Node* list = nullptr;
         for(auto child : node->children){
             if(child->namelexeme == "ModifierList"){
                 for(auto y:child->children){
@@ -345,21 +359,28 @@ void createST(Node* node){
                     else  name+=std::string(y->namelexeme);
                 }
             }
-            else if(child->namelexeme == "="){
-                if(name!= "") name+= " ";
-                name+= child->children[0]->children[0]->children[0]->namelexeme;
-            }
-            else if(child->namelexeme == "VariableDeclaratorId"){
-                if(name!= "") name+= " ";
-                name+= child->children[0]->children[0]->namelexeme;
+            else if(child->namelexeme == "Variables"){
+                list = child;
             }
             else if(child->namelexeme != ";"){
                 type = child->namelexeme;
             }
 
         }
-        SymbolTableEntry* stEntry = new SymbolTableEntry(name , type , -1 , 0 , decLine , 0 );
-        currSymTable->insert(stEntry);
+        if(list){
+            for(auto y: list->children){
+                if(name!= "") name+= " ";
+                if(y->namelexeme == "="){
+                SymbolTableEntry* stEntry = new SymbolTableEntry( name + y->children[0]->children[0]->children[0]->namelexeme , type , -1 , nDims , y->children[0]->children[0]->children[0]->lineNumber , 0 );
+                currSymTable->insert(stEntry);
+                }
+                else{
+                    SymbolTableEntry* stEntry = new SymbolTableEntry( name + y->children[0]->children[0]->namelexeme , type , -1 , nDims , y->children[0]->children[0]->lineNumber , 0 );
+                    currSymTable->insert(stEntry);
+                }
+            }
+        }
+        
         
     }
     
@@ -647,6 +668,10 @@ FieldDeclaration:   ModifierList UnannType VariableDeclaratorList Semicolon
                     ;
 
 VariableDeclaratorList: VariableDeclarator
+                        {
+                            $$ = createNode("Variables");
+                            $$->add_child($1);
+                        }
                         | VariableDeclaratorList Comma VariableDeclarator
                         {
                             if(strcmp($1->value, "Variables") == 0)
@@ -705,7 +730,9 @@ VariableInitializer:    Expression
                         | ArrayInitializer
                         ;
 
-UnannType:  UnannPrimitiveType
+UnannType:  UnannPrimitiveType {
+                
+            }
             | UnannReferenceType
             ;
 
