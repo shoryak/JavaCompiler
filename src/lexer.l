@@ -228,20 +228,24 @@ Literals {DecimalIntegerLiteral}|{HexIntegerLiteral}|{OctalIntegerLiteral}|{Floa
         else if(yytext[i] == '\'') str += "\\\'";
         else str.push_back(yytext[i]);
     }
-    yylval.node = createNode(strdup(str.c_str()));
+    std::string s="";
+    for(int i=0;i<strlen(yytext);i++){
+        if(yytext[i]!='\"') s+=yytext[i]; 
+    }
+    yylval.node = FixedNode(LITERAL_PREFIX, const_cast<char*>(s.c_str()), LITERAL_SUFFIX,"String");
     return StringLiteral;
 }
 
-{DecimalIntegerLiteral}|{HexIntegerLiteral}|{OctalIntegerLiteral}|{BinaryIntegerLiteral} { yylval.node = FixedNode(LITERAL_PREFIX, yytext, LITERAL_SUFFIX); return IntegerLiteral; }
-{FloatingPointLiteral} { yylval.node = FixedNode(LITERAL_PREFIX, yytext, LITERAL_SUFFIX); return FloatingPointLiteral; }
-{BooleanLiteral} { yylval.node = FixedNode(LITERAL_PREFIX, yytext, LITERAL_SUFFIX); return BooleanLiteral; }
-{CharLiteral} { yylval.node = FixedNode(LITERAL_PREFIX, yytext, LITERAL_SUFFIX); return CharacterLiteral; }
-{NullLiteral} { yylval.node = FixedNode(LITERAL_PREFIX, yytext, LITERAL_SUFFIX); return NullLiteral; }
+{DecimalIntegerLiteral}|{HexIntegerLiteral}|{OctalIntegerLiteral}|{BinaryIntegerLiteral} { yylval.node = FixedNode(LITERAL_PREFIX, yytext, LITERAL_SUFFIX,"int"); return IntegerLiteral; }
+{FloatingPointLiteral} { yylval.node = FixedNode(LITERAL_PREFIX, yytext,LITERAL_SUFFIX ,"float"); return FloatingPointLiteral; }
+{BooleanLiteral} { yylval.node = FixedNode(LITERAL_PREFIX, yytext, LITERAL_SUFFIX,"boolean"); return BooleanLiteral; }
+{CharLiteral} { yylval.node = FixedNode(LITERAL_PREFIX, yytext, LITERAL_SUFFIX,"char"); return CharacterLiteral; }
+{NullLiteral} { yylval.node = FixedNode(LITERAL_PREFIX, yytext, LITERAL_SUFFIX,"null"); return NullLiteral; }
 
 (\"\"\")[ ]*([\n\r]|[\r][\n])([^\\]|(\\\\))*(\"\"\") { yylval.node = FixedNode(IDENTIFIER_PREFIX, yytext, IDENTIFIER_SUFFIX); return TextBlock;}
 [\'][\\][\'] { std::cout << yytext << " Line number is " << yylineno << " Illegal Character is " << yytext[0] << '\n'; }
 [\'][\'][\'] { std::cout << yytext << " Line number is " << yylineno << " Illegal Character is " << yytext[1] << '\n'; }
-[\'].[\'] { yylval.node = FixedNode(LITERAL_PREFIX, yytext, LITERAL_SUFFIX); return CharacterLiteral; }
+[\'].[\'] { yylval.node = FixedNode(LITERAL_PREFIX, yytext, LITERAL_SUFFIX, "char"); return CharacterLiteral; }
 
 [a-zA-Z$_]+[$_a-zA-Z0-9]* { yylval.node = FixedNode(IDENTIFIER_PREFIX, yytext, IDENTIFIER_SUFFIX, std::string(yytext)); return IdentifierChars; }
 

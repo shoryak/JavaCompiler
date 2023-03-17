@@ -56,6 +56,7 @@ public:
     declLine{declLine}, address{address}, functionProto{functionProto} {}
     std::string getName(void);
     void setType(std::string type);
+    std::string getType();
     void setDimension(int32 dimension);
     void print(void);
 };

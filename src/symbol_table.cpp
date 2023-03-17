@@ -34,6 +34,15 @@ void SymbolTableEntry::setType(std::string type)
 }
 
 /*
+Get the type in this Symbol Table Entry
+PARAM: type -- type to be set
+*/
+std::string SymbolTableEntry::getType()
+{
+    return this->type;
+}
+
+/*
 Set the dimension in this Symbol Table Entry
 PARAM: dimension -- dimension to be set
 */
@@ -86,7 +95,12 @@ PARAM: stEntry -- Symbol Table Entry to be inserted
 void SymbolTable::insert(SymbolTableEntry *stEntry)
 {
     assert(stEntry);
-    tableMap[stEntry->getName()] = stEntry;
+    std::string name = stEntry->getName();
+    int ind = name.length()-1;
+    while(ind>0 &&  name[ind-1]!=' ') {
+        ind--;
+    }
+    tableMap[name.substr(ind , name.length()-ind )] = stEntry;
 }
 
 /*

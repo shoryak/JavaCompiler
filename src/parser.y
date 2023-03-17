@@ -15,7 +15,7 @@ extern "C"
     int yylex(void);
     int yyerror(const char* s)
     {
-        fprintf(stderr, "ERROR: %s Line Number: %d\n", s, linenum);
+        fprintf(stderr, "ERROR: %s \n\n", s);
         exit(1);
         return 1;
     }
@@ -83,7 +83,7 @@ struct Node
     Node(char* value)
     : value{value}, children{std::vector<Node*>()}, lineNumber{linenum} {}
     Node(char* value, std::string lexeme, std::string type)
-    : value{value}, lexeme{lexeme}, type{type}, lineNumber{linenum} , namelexeme{lexeme} {}
+    : value{value}, lexeme{lexeme}, type{type}, lineNumber{linenum} , namelexeme{lexeme} , typeForExpr{type}  {}
 
 /*  Add a node as a child   */
     void add_child(Node* nd)
@@ -216,6 +216,32 @@ void endScope()
     assert(parentSymTable);
     currSymTable = parentSymTable;
 }
+void typecheck(Node *node);
+
+int setTypeCheckType(std::string type){ // 0->char , 1-> numerical , 2-> boolean , 3->String , 4-> null , 5 -> other
+    if(type=="int" || type== "float" || type=="short" || type == "long" || type == "double"){
+        return 1;
+    }
+    else if(type == "char"){ // char and numerical type are compatible 
+        return 1;
+    }
+    else if(type == "String"){
+        return 3;
+    }
+    else if(type == "boolean"){
+        return 2;
+    }
+    else if (type == "null"){
+        return 4;
+    }
+    else{
+        return 5;
+    }
+
+
+}
+
+
 
 void createST(Node* node){
     // std::cerr<<node->namelexeme<<std::endl;
@@ -226,11 +252,11 @@ void createST(Node* node){
     int newScope = 0;
 
     if(node->namelexeme == "{" && useCurlyForNewScope){
-        std::cout<<node->namelexeme<<std::endl;
+       
         startScope();
     }
     if(node->namelexeme == "}" && useCurlyForNewScope){
-        std::cout<<node->namelexeme<<std::endl;
+       
         endScope();
     }
 
@@ -330,6 +356,7 @@ void createST(Node* node){
         newScope=1;
 
     }
+    
 
     if(node->namelexeme == "FormalParameter" ){
         std::vector<Node*> children = node->children;
@@ -509,6 +536,39 @@ void createST(Node* node){
         endScope(); 
         newScope=0;
     }
+    if( n == 0){
+        if(node->value[0] == 'I' && node->value[1] == 'd'){
+            std::cerr<<node->lexeme<<" "<<node->typeForExpr<<std::endl;
+            auto stEntry = currSymTable->lookup(node->namelexeme);
+            // assert(stEntry);
+            if(stEntry){
+                node->typeForExpr = stEntry->getType();
+                std::cerr<<node->lexeme<<" "<<node->typeForExpr<<std::endl;
+            }
+        }
+        if(node->value[0] == 'L' && node->value[1] == 'i'){
+            std::cerr<<node->lexeme<<" "<<node->typeForExpr<<std::endl;
+        }
+        
+    }
+    else if(n == 1){ // if only one child carry the type
+        node->typeForExpr = node->children[0]->typeForExpr;
+    }
+    
+    if(node->namelexeme == "="){
+        typecheck(node);
+    }
+
+    if(node->namelexeme == "+"){
+        typecheck(node);
+        node->typeForExpr = node->children[0]->typeForExpr;
+    }
+    else if(node->namelexeme == "*" || node->namelexeme == "/" || node->namelexeme == "%" ) {
+        typecheck(node);
+        node->typeForExpr = node->children[0]->typeForExpr;
+
+    }
+    
 }
 
 void typecheck(Node *node)
@@ -519,16 +579,32 @@ void typecheck(Node *node)
         assert((int)(node->children.size()) >= 2);
         Node *leftHandSide = node->children[0];
         Node *rightHandSide = node->children[1];
-        typecheck(leftHandSide); typecheck(rightHandSide);
-        if(leftHandSide->typeForExpr != rightHandSide->typeForExpr)
+        if(setTypeCheckType( leftHandSide->typeForExpr) != setTypeCheckType(rightHandSide->typeForExpr))
         {
-            // Error
+            // yyerror(("Types "+leftHandSide->typeForExpr + " does not match with " + rightHandSide->typeForExpr + " in line number " + std::to_string(node->lineNumber).c_str()));
+            std::string s = "Types "+leftHandSide->typeForExpr + " does not match with " + rightHandSide->typeForExpr + " in line number " + std::to_string(node->lineNumber);
+             yyerror(s.c_str());
+
         }
     }
-    else if(nodeName == "+")
+    else if(nodeName == "+"  || nodeName == "*" || nodeName == "/" || nodeName == "%" || nodeName == "-")
     {
         assert((int)(node->children.size()) >= 2);
+        Node *leftHandSide = node->children[0];
+        Node *rightHandSide = node->children[1];
+        if(setTypeCheckType( leftHandSide->typeForExpr) != setTypeCheckType(rightHandSide->typeForExpr))
+        {
+            // yyerror(("Types "+leftHandSide->typeForExpr + " does not match with " + rightHandSide->typeForExpr + " in line number " + std::to_string(node->lineNumber).c_str()));
+            std::string s = "Type "+leftHandSide->typeForExpr + " does not match with " + rightHandSide->typeForExpr + " in line number " + std::to_string(node->lineNumber);
+            yyerror(s.c_str());
+
+        }
     }
+        
+
+    
+
+    
 }
 
 %}
@@ -608,10 +684,11 @@ CompilationUnit:    OrdinaryCompilationUnit
                         root = $$;
                         printf("digraph G {\n");
                         buildTree(root, -1, 0);
+                        printf("}\n");
                         createST(root);
                         // globalSymTable = $$->symTable;
                         globalSymTable->__printAll();
-                        printf("}\n");
+                        
                     }
                     ;
 
