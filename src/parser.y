@@ -241,6 +241,34 @@ int setTypeCheckType(std::string type){ // 0->char , 1-> numerical , 2-> boolean
 
 }
 
+int setTypeCheckType1(std::string type){
+    // if(type=="byte" || type=="short" || type=="char" || type=="int" || type=="long" || type == "float" || type == "double"){
+    //     return 0;
+    // }
+    if(type=="int"){
+        return 1;
+    }
+    else if(type=="short" || type=="char"){
+        return 2;
+    }
+    // else if(type=="char"){
+    //     return 3;
+    // }
+    else if(type=="int"){
+        return 4;
+    }
+    else if(type=="long"){
+        return 5;
+    }
+    else if(type=="float"){
+        return 6;
+    }
+    else if(type=="double"){
+        return 7;
+    }
+    else return 8;
+}
+
 
 
 void createST(Node* node){
@@ -574,19 +602,54 @@ void createST(Node* node){
 void typecheck(Node *node)
 {
     std::string nodeName = node->namelexeme;
-    if(nodeName == "=")
-    {
+    // if(nodeName == "=")
+    // {
+    //     assert((int)(node->children.size()) >= 2);
+    //     Node *leftHandSide = node->children[0];
+    //     Node *rightHandSide = node->children[1];
+    //     if(setTypeCheckType( leftHandSide->typeForExpr) != setTypeCheckType(rightHandSide->typeForExpr))
+    //     {
+    //         // yyerror(("Types "+leftHandSide->typeForExpr + " does not match with " + rightHandSide->typeForExpr + " in line number " + std::to_string(node->lineNumber).c_str()));
+            
+    //         std::string s = "Types "+leftHandSide->typeForExpr + " does not match with " + rightHandSide->typeForExpr + " in line number " + std::to_string(node->lineNumber);
+    //          yyerror(s.c_str());
+
+    //     }
+    // }
+
+    if(nodeName=="=" || nodeName == "+"  || nodeName == "*" || nodeName == "/" || nodeName == "%" || nodeName == "-"){
         assert((int)(node->children.size()) >= 2);
         Node *leftHandSide = node->children[0];
         Node *rightHandSide = node->children[1];
-        if(setTypeCheckType( leftHandSide->typeForExpr) != setTypeCheckType(rightHandSide->typeForExpr))
-        {
-            // yyerror(("Types "+leftHandSide->typeForExpr + " does not match with " + rightHandSide->typeForExpr + " in line number " + std::to_string(node->lineNumber).c_str()));
-            std::string s = "Types "+leftHandSide->typeForExpr + " does not match with " + rightHandSide->typeForExpr + " in line number " + std::to_string(node->lineNumber);
-             yyerror(s.c_str());
 
+        if(setTypeCheckType1( rightHandSide->typeForExpr)==8 && setTypeCheckType1( leftHandSide->typeForExpr)!=8){
+            std::string s = "Type here"+leftHandSide->typeForExpr + " does not match with " + rightHandSide->typeForExpr + " in line number " + std::to_string(node->lineNumber);
+            yyerror(s.c_str());
+        }
+        else if(setTypeCheckType1( leftHandSide->typeForExpr)==8 && setTypeCheckType1( rightHandSide->typeForExpr)!=8){
+            std::string s = "Type here"+leftHandSide->typeForExpr + " does not match with " + rightHandSide->typeForExpr + " in line number " + std::to_string(node->lineNumber);
+            yyerror(s.c_str());
+        }
+        else if(setTypeCheckType1( leftHandSide->typeForExpr)!=8 && setTypeCheckType1( rightHandSide->typeForExpr)!=8){
+            if(setTypeCheckType1( leftHandSide->typeForExpr)< setTypeCheckType1( rightHandSide->typeForExpr)){
+                leftHandSide->typeForExpr = rightHandSide->typeForExpr;
+            }
+            else if(setTypeCheckType1( leftHandSide->typeForExpr) > setTypeCheckType1( rightHandSide->typeForExpr)){
+                rightHandSide->typeForExpr = leftHandSide->typeForExpr;
+            }
+            else {
+                // if both are at same level , then no change in conversion 
+                // short or char are taken at same level so no interchange
+            }
+        }
+        else{
+            // for other data types
         }
     }
+
+
+
+
     else if(nodeName == "+"  || nodeName == "*" || nodeName == "/" || nodeName == "%" || nodeName == "-")
     {
         assert((int)(node->children.size()) >= 2);
@@ -600,6 +663,7 @@ void typecheck(Node *node)
 
         }
     }
+
         
 
     
