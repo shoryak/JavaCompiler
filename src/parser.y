@@ -28,6 +28,7 @@ SymbolTable *globalSymTable = new SymbolTable;
 SymbolTable *currSymTable = globalSymTable;
 std::vector<SymbolTableEntry*> stEntryContainer;
 int useCurlyForNewScope  = 1;
+std::vector<int> curlyScopes;
 
 struct Node
 {
@@ -120,12 +121,12 @@ struct Node
 /*  Add multiple Symbol Table Entries into the Symbol Table */
     void add_entries(std::vector<SymbolTableEntry*> stEntries)
     {
-        assert(symTable);
-        for(auto stEntry: stEntries)
-        {
-            assert(stEntry);
-            symTable->insert(stEntry->getName(), stEntry);
-        }
+        // assert(symTable);
+        // for(auto stEntry: stEntries)
+        // {
+        //     assert(stEntry);
+        //     symTable->insert(stEntry->getName(), stEntry);
+        // }
     }
 };
 
@@ -270,6 +271,61 @@ int setTypeCheckType1(std::string type){
 }
 
 
+void methodTypeCheck(Node* node){
+    
+    // iterating over children to find methodInvocation if exist
+    for(int i = 0; i < node->children.size(); i++)
+    {
+        methodTypeCheck(node->children[i]);
+    }
+
+    if(node->namelexeme == "MethodInvocation"){
+        int nArgs = 0;
+        std::string methodName;
+        std::vector<std::string> args; 
+        if(node->children[0]->namelexeme ==  "Identifier"){
+            methodName = node->children[0]->children[0]->namelexeme;
+        }
+        else if(node->children[0]->namelexeme == "."){
+            methodName = node->children[0]->children[1]->children[0]->namelexeme;
+        }
+        for(auto child : node->children){
+            if(child->namelexeme == "Arguments"){
+                nArgs = child->children.size();
+                for(auto arg : child->children){
+                    Node* leaf = arg;
+                    while(leaf->children.size()){
+                        leaf = leaf->children[0];
+                    }
+                    args.push_back(leaf->namelexeme);
+                }
+            }
+        }
+        std::cerr<< methodName <<" "<< nArgs<<" "<<std::endl;
+        if(args.size()){
+            for(auto arg : args){
+                std::cerr<< arg << std::endl;
+            }
+        }
+        SymbolTableEntry* stEntry = node->nearSymbolTable->lookup(methodName);
+        node->nearSymbolTable->print();
+        // stEntry->print();
+        if(stEntry){
+            funcproto fp = stEntry->getFuncProto();
+            if(nArgs !=  fp.numArgs){
+               std::string err = "Incorrect number of Arguments in" + methodName +" Invoked on line " + std::to_string(node->lineNumber);
+                yyerror(err.c_str()); 
+            }
+        }
+        else{
+            std::string err = "Undeclared function " + methodName +" Invoked on line " + std::to_string(node->lineNumber);
+            yyerror(err.c_str());
+        }
+    }
+    
+
+}
+
 
 void createST(Node* node){
     // std::cerr<<node->namelexeme<<std::endl;
@@ -279,13 +335,21 @@ void createST(Node* node){
 
     int newScope = 0;
 
-    if(node->namelexeme == "{" && useCurlyForNewScope){
-       
-        startScope();
+    if(node->namelexeme == "{"  ){
+        if(useCurlyForNewScope){
+            startScope();
+            curlyScopes.push_back(1);
+        }
+        else{
+            useCurlyForNewScope=1;
+            curlyScopes.push_back(0);
+        }
     }
-    if(node->namelexeme == "}" && useCurlyForNewScope){
-       
-        endScope();
+    if(node->namelexeme == "}"){
+        if(curlyScopes.back()){
+            endScope();
+        }
+        curlyScopes.pop_back();
     }
 
     if(node->namelexeme == "class"){
@@ -302,6 +366,11 @@ void createST(Node* node){
         }
         if(name!="") name+=" ";
         name += children[n-2]->namelexeme;
+        auto alreadDeclared = currSymTable->lookup(children[n-2]->namelexeme);
+        if(alreadDeclared){
+            std::string s = "Redeclaration of class in line number " + std::to_string(node->children[n-2]->lineNumber);
+            yyerror(s.c_str());
+        }
         SymbolTableEntry* stEntry = new SymbolTableEntry( name, "class" , -1 , -1 , node->children[n-2]->lineNumber , 0 );
         currSymTable->insert(stEntry);
     }
@@ -337,7 +406,6 @@ void createST(Node* node){
                         }
                         if(temp == nullptr) break;
                         for(auto z : temp->children){
-                            std::cerr<< "hurray"<< std::endl;
                             std::string nameParam;
                             std::string typeParam;
                             int nDimsParam;
@@ -380,8 +448,10 @@ void createST(Node* node){
             
         }
         SymbolTableEntry* stEntry = new SymbolTableEntry(name , "$func" , -1 , -1 , decLine , 0 , fproto );
+        node->lineNumber = decLine;
         currSymTable->insert(stEntry);
         newScope=1;
+        useCurlyForNewScope=0;
 
     }
     
@@ -456,11 +526,21 @@ void createST(Node* node){
                 if(name!= "") name+= " ";
                 if(y->namelexeme == "="){
                 nDims+= y->children[0]->children.size()-1;
+                auto alreadDeclared = currSymTable->currentScopeLookup(y->children[0]->children[0]->children[0]->namelexeme );
+                if(alreadDeclared){
+                    std::string s = "Redeclaration of " + y->children[0]->children[0]->children[0]->namelexeme + " in line number " + std::to_string(y->children[0]->children[0]->children[0]->lineNumber );
+                    yyerror(s.c_str());
+                }
                 SymbolTableEntry* stEntry = new SymbolTableEntry( name + y->children[0]->children[0]->children[0]->namelexeme , type , -1 , nDims , y->children[0]->children[0]->children[0]->lineNumber , 0 );
                 currSymTable->insert(stEntry);
                 }
                 else{
                     nDims+= y->children[0]->children.size()-1;
+                    auto alreadDeclared = currSymTable->currentScopeLookup(y->children[0]->children[0]->namelexeme );
+                    if(alreadDeclared){
+                        std::string s = "Redeclaration of " + y->children[0]->children[0]->namelexeme + " in line number " + std::to_string(y->children[0]->children[0]->lineNumber );
+                        yyerror(s.c_str());
+                    }
                     SymbolTableEntry* stEntry = new SymbolTableEntry( name + y->children[0]->children[0]->namelexeme , type , -1 , nDims , y->children[0]->children[0]->lineNumber , 0 );
                     currSymTable->insert(stEntry);
                 }
@@ -492,11 +572,21 @@ void createST(Node* node){
                 if(name!= "") name+= " ";
                 if(y->namelexeme == "="){
                     nDims+= y->children[0]->children.size()-1;
+                    auto alreadDeclared = currSymTable->currentScopeLookup(y->children[0]->children[0]->children[0]->namelexeme );
+                    if(alreadDeclared){
+                        std::string s = "Redeclaration of " + y->children[0]->children[0]->children[0]->namelexeme + " in line number " + std::to_string(y->children[0]->children[0]->children[0]->lineNumber );
+                        yyerror(s.c_str());
+                    }
                     SymbolTableEntry* stEntry = new SymbolTableEntry( name + y->children[0]->children[0]->children[0]->namelexeme , type , -1 , nDims , y->children[0]->children[0]->children[0]->lineNumber , 0 );
                     currSymTable->insert(stEntry);
                 }
                 else{
                     nDims+= y->children[0]->children.size()-1;
+                    auto alreadDeclared = currSymTable->currentScopeLookup(y->children[0]->children[0]->namelexeme );
+                    if(alreadDeclared){
+                        std::string s = "Redeclaration of " + y->children[0]->children[0]->namelexeme + " in line number " + std::to_string(y->children[0]->children[0]->lineNumber );
+                        yyerror(s.c_str());
+                    }
                     SymbolTableEntry* stEntry = new SymbolTableEntry( name + y->children[0]->children[0]->namelexeme , type , -1 , nDims , y->children[0]->children[0]->lineNumber , 0 );
                     currSymTable->insert(stEntry);
                 }
@@ -546,6 +636,7 @@ void createST(Node* node){
 
     if(node->namelexeme == "For"){
         newScope = 1;
+        useCurlyForNewScope= 0;
     }
 
 
@@ -563,6 +654,7 @@ void createST(Node* node){
     if(newScope) {
         endScope(); 
         newScope=0;
+        useCurlyForNewScope = 1;
     }
     if( n == 0){
         if(node->value[0] == 'I' && node->value[1] == 'd'){
@@ -582,6 +674,9 @@ void createST(Node* node){
     else if(n == 1){ // if only one child carry the type
         node->typeForExpr = node->children[0]->typeForExpr;
     }
+    if(node->namelexeme == "class"){
+        methodTypeCheck(node);
+    }
     
     if(node->namelexeme == "="){
         typecheck(node);
@@ -591,11 +686,16 @@ void createST(Node* node){
         typecheck(node);
         node->typeForExpr = node->children[0]->typeForExpr;
     }
-    else if(node->namelexeme == "*" || node->namelexeme == "/" || node->namelexeme == "%" ) {
+    else if(node->namelexeme == "*" || node->namelexeme == "/" || node->namelexeme == "%" || node->namelexeme == "-" ) {
         typecheck(node);
         node->typeForExpr = node->children[0]->typeForExpr;
 
     }
+    else if(node->namelexeme == "CastExpression"){
+        typecheck(node);
+        node->typeForExpr = node->children[0]->typeForExpr;
+    }
+
     
 }
 
@@ -623,11 +723,11 @@ void typecheck(Node *node)
         Node *rightHandSide = node->children[1];
 
         if(setTypeCheckType1( rightHandSide->typeForExpr)==8 && setTypeCheckType1( leftHandSide->typeForExpr)!=8){
-            std::string s = "Type here"+leftHandSide->typeForExpr + " does not match with " + rightHandSide->typeForExpr + " in line number " + std::to_string(node->lineNumber);
+           std::string s = "Type Mismatch "+leftHandSide->typeForExpr + " and " + rightHandSide->typeForExpr + " does not match under " + nodeName +  " in line number " + std::to_string(node->lineNumber);
             yyerror(s.c_str());
         }
         else if(setTypeCheckType1( leftHandSide->typeForExpr)==8 && setTypeCheckType1( rightHandSide->typeForExpr)!=8){
-            std::string s = "Type here"+leftHandSide->typeForExpr + " does not match with " + rightHandSide->typeForExpr + " in line number " + std::to_string(node->lineNumber);
+            std::string s = "Type Mismatch "+leftHandSide->typeForExpr + " and " + rightHandSide->typeForExpr + " does not match under " + nodeName +  " in line number " + std::to_string(node->lineNumber);
             yyerror(s.c_str());
         }
         else if(setTypeCheckType1( leftHandSide->typeForExpr)!=8 && setTypeCheckType1( rightHandSide->typeForExpr)!=8){
@@ -647,22 +747,21 @@ void typecheck(Node *node)
         }
     }
 
+    // else if(nodeName == "+"  || nodeName == "*" || nodeName == "/" || nodeName == "%" || nodeName == "-")
+    // {
+    //     assert((int)(node->children.size()) >= 2);
+    //     Node *leftHandSide = node->children[0];
+    //     Node *rightHandSide = node->children[1];
+    //     if(setTypeCheckType( leftHandSide->typeForExpr) != setTypeCheckType(rightHandSide->typeForExpr))
+    //     {
+    //         // yyerror(("Types "+leftHandSide->typeForExpr + " does not match with " + rightHandSide->typeForExpr + " in line number " + std::to_string(node->lineNumber).c_str()));
+    //         std::string s = "Type "+leftHandSide->typeForExpr + " does not match with " + rightHandSide->typeForExpr + " in line number " + std::to_string(node->lineNumber);
+    //         yyerror(s.c_str());
 
+    //     }
+    // }
+    
 
-
-    else if(nodeName == "+"  || nodeName == "*" || nodeName == "/" || nodeName == "%" || nodeName == "-")
-    {
-        assert((int)(node->children.size()) >= 2);
-        Node *leftHandSide = node->children[0];
-        Node *rightHandSide = node->children[1];
-        if(setTypeCheckType( leftHandSide->typeForExpr) != setTypeCheckType(rightHandSide->typeForExpr))
-        {
-            // yyerror(("Types "+leftHandSide->typeForExpr + " does not match with " + rightHandSide->typeForExpr + " in line number " + std::to_string(node->lineNumber).c_str()));
-            std::string s = "Type "+leftHandSide->typeForExpr + " does not match with " + rightHandSide->typeForExpr + " in line number " + std::to_string(node->lineNumber);
-            yyerror(s.c_str());
-
-        }
-    }
 
         
 

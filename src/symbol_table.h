@@ -57,6 +57,8 @@ public:
     std::string getName(void);
     void setType(std::string type);
     std::string getType();
+    int getDeclLine();
+    funcproto getFuncProto();
     void setDimension(int32 dimension);
     void print(void);
 };
@@ -77,6 +79,7 @@ public:
     void insert(std::string name, SymbolTableEntry *stEntry);
     void insert(SymbolTableEntry *stEntry);
     SymbolTableEntry* lookup(const std::string& name);
+    SymbolTableEntry* currentScopeLookup(const std::string& name);
     void setParent(SymbolTable *parent);
     SymbolTable* getParent(void);
     void print(void);

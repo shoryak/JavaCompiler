@@ -35,11 +35,25 @@ void SymbolTableEntry::setType(std::string type)
 
 /*
 Get the type in this Symbol Table Entry
-PARAM: type -- type to be set
 */
 std::string SymbolTableEntry::getType()
 {
     return this->type;
+}
+
+/*
+Get the declLine in this Symbol Table Entry
+*/
+int SymbolTableEntry::getDeclLine()
+{
+    return this->declLine;
+}
+
+/*
+Get the funcproto in this Symbol Table Entry
+*/
+funcproto SymbolTableEntry::getFuncProto(){
+    return this->functionProto;
 }
 
 /*
@@ -116,6 +130,15 @@ SymbolTableEntry* SymbolTable::lookup(const std::string& name)
         if(symTable->tableMap.find(name) != symTable->tableMap.end())
             return symTable->tableMap[name];
     }
+    return nullptr;
+}
+
+SymbolTableEntry* SymbolTable::currentScopeLookup(const std::string& name)
+{
+    auto symTable = this; 
+    if(symTable->tableMap.find(name) != symTable->tableMap.end())
+        return symTable->tableMap[name];
+    
     return nullptr;
 }
 
