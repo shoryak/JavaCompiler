@@ -241,10 +241,11 @@ int setTypeCheckType1(std::string type)
     // else if(type=="char"){
     //     return 3;
     // }
-    else if(type=="int") return 4;
-    else if(type=="long") return 5;
-    else if(type=="float") return 6;
-    else if(type=="double") return 7;
+    else if(type=="int") return 3;
+    else if(type=="long") return 4;
+    else if(type=="float") return 5;
+    else if(type=="double") return 6;
+    else if(type=="boolean") return 7;
     else return 8;
 }
 
@@ -711,12 +712,12 @@ void createST(Node* node)
         node->typeForExpr = node->children[0]->typeForExpr;
     }
 
-    else if(nodeName == "*" || nodeName == "/" || nodeName == "%" || nodeName == "-"  || nodeName=="&" ||nodeName=="=" || nodeName=="^")
+    else if(nodeName == "*" || nodeName == "/" || nodeName == "%" || nodeName == "-"  || nodeName=="&" ||nodeName=="=" || nodeName=="^" || nodeName=="|")
     {
         typecheck(node);
         node->typeForExpr = node->children[0]->typeForExpr;
     }
-    else if(nodeName == "<" || nodeName == ">" || nodeName == "<=" || nodeName == ">=" || nodeName== "==" || nodeName=="!="){
+    else if(nodeName == "<" || nodeName == ">" || nodeName == "<=" || nodeName == ">=" || nodeName== "==" || nodeName=="!=" || nodeName=="||" || nodeName=="&&"){
         typecheck(node);
         node->typeForExpr = "boolean";
     }
@@ -759,7 +760,7 @@ void typecheck(Node *node)
     //     }
     // }
 
-    if(nodeName=="=" || nodeName == "+"  || nodeName == "*" || nodeName == "/" || nodeName == "%" || nodeName == "-" || nodeName == "<" || nodeName == ">" || nodeName == "<=" || nodeName == ">=" || nodeName== "==" || nodeName=="!=" || nodeName=="&" ||nodeName=="=" || nodeName=="^"){
+    if(nodeName=="=" || nodeName == "+"  || nodeName == "*" || nodeName == "/" || nodeName == "%" || nodeName == "-" || nodeName == "<" || nodeName == ">" || nodeName == "<=" || nodeName == ">=" || nodeName== "==" || nodeName=="!=" || nodeName=="&" ||nodeName=="=" || nodeName=="^" || nodeName=="||" || nodeName=="&&"){
         assert((int)(node->children.size()) >= 2);
         Node *leftHandSide = node->children[0];
         Node *rightHandSide = node->children[1];
