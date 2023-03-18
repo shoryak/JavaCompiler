@@ -603,6 +603,7 @@ void createST(Node* node)
                         std::string s = "Redeclaration of " + y->children[0]->children[0]->children[0]->namelexeme + " in line number " + std::to_string(y->children[0]->children[0]->children[0]->lineNumber);
                         yyerror(s.c_str());
                     }
+                    // Problematic to create symbol table entry here for cases like int x = x+1;
                     SymbolTableEntry* stEntry = new SymbolTableEntry(name + y->children[0]->children[0]->children[0]->namelexeme, type, -1, nDims, y->children[0]->children[0]->children[0]->lineNumber, 0);
                     currSymTable->insert(stEntry);
                 }
@@ -704,7 +705,9 @@ void createST(Node* node)
     }
     if(nodeName == "class") methodTypeCheck(node);
     
-    else if(nodeName == "=") typecheck(node);
+    else if(nodeName == "=") {
+        typecheck(node);
+    }
     
     else if(nodeName == "+")
     {
@@ -712,12 +715,12 @@ void createST(Node* node)
         node->typeForExpr = node->children[0]->typeForExpr;
     }
 
-    else if(nodeName == "*" || nodeName == "/" || nodeName == "%" || nodeName == "-"  || nodeName=="&" ||nodeName=="=" || nodeName=="^" || nodeName=="|")
+    else if(nodeName == "*" || nodeName == "/" || nodeName == "%" || nodeName=="%=" || nodeName == "-"  || nodeName=="&" ||nodeName=="=" || nodeName=="^" || nodeName=="^="  || nodeName=="|" ||  nodeName=="|=" || nodeName==":" || nodeName=="+=" || nodeName=="-=" || nodeName=="*=" || nodeName=="/=" || nodeName=="&=" )
     {
         typecheck(node);
         node->typeForExpr = node->children[0]->typeForExpr;
     }
-    else if(nodeName == "<" || nodeName == ">" || nodeName == "<=" || nodeName == ">=" || nodeName== "==" || nodeName=="!=" || nodeName=="||" || nodeName=="&&"){
+    else if(nodeName == "<" || nodeName == ">" || nodeName == "<=" || nodeName == ">=" || nodeName== "==" || nodeName=="!=" || nodeName=="||" || nodeName=="&&" ){
         typecheck(node);
         node->typeForExpr = "boolean";
     }
@@ -760,7 +763,7 @@ void typecheck(Node *node)
     //     }
     // }
 
-    if(nodeName=="=" || nodeName == "+"  || nodeName == "*" || nodeName == "/" || nodeName == "%" || nodeName == "-" || nodeName == "<" || nodeName == ">" || nodeName == "<=" || nodeName == ">=" || nodeName== "==" || nodeName=="!=" || nodeName=="&" ||nodeName=="=" || nodeName=="^" || nodeName=="||" || nodeName=="&&"){
+    if(nodeName=="=" || nodeName == "+"  || nodeName == "*" || nodeName == "/" || nodeName == "%" || nodeName == "-" || nodeName == "<" || nodeName == ">" || nodeName == "<=" || nodeName == ">=" || nodeName== "==" || nodeName=="!=" || nodeName=="&" ||nodeName=="|" || nodeName==":" || nodeName=="^" || nodeName=="||" || nodeName=="&&" || nodeName=="+=" || nodeName=="-=" || nodeName=="*=" || nodeName=="/=" || nodeName=="&=" || nodeName=="|=" || nodeName=="^=" ||nodeName=="%=" ){
         assert((int)(node->children.size()) >= 2);
         Node *leftHandSide = node->children[0];
         Node *rightHandSide = node->children[1];
