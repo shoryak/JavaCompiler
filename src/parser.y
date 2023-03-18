@@ -596,8 +596,8 @@ void createST(Node* node)
                 if(y->namelexeme == "=")
                 {
                     nDims += y->children[0]->children.size()-1;
-                    auto alreadDeclared = currSymTable->currentScopeLookup(y->children[0]->children[0]->children[0]->namelexeme);
-                    if(alreadDeclared)
+                    auto alreadyDeclared = currSymTable->currentScopeLookup(y->children[0]->children[0]->children[0]->namelexeme);
+                    if(alreadyDeclared)
                     {
                         std::string s = "Redeclaration of " + y->children[0]->children[0]->children[0]->namelexeme + " in line number " + std::to_string(y->children[0]->children[0]->children[0]->lineNumber);
                         yyerror(s.c_str());
@@ -711,10 +711,14 @@ void createST(Node* node)
         node->typeForExpr = node->children[0]->typeForExpr;
     }
 
-    else if(nodeName == "*" || nodeName == "/" || nodeName == "%" || nodeName == "-" )
+    else if(nodeName == "*" || nodeName == "/" || nodeName == "%" || nodeName == "-"  || nodeName=="&" ||nodeName=="=" || nodeName=="^")
     {
         typecheck(node);
         node->typeForExpr = node->children[0]->typeForExpr;
+    }
+    else if(nodeName == "<" || nodeName == ">" || nodeName == "<=" || nodeName == ">=" || nodeName== "==" || nodeName=="!="){
+        typecheck(node);
+        node->typeForExpr = "boolean";
     }
 
     else if(nodeName == "CastExpression")
@@ -722,6 +726,19 @@ void createST(Node* node)
         typecheck(node);
         node->typeForExpr = node->children[0]->typeForExpr;
     }
+
+    else if(nodeName=="PreDecrementExpression" || nodeName=="PreIncrementExpression"){
+        typecheck(node);
+        node->typeForExpr = node->children[1]->typeForExpr;
+        
+    }
+    else if(nodeName=="PostDecrementExpression" || nodeName=="PostIncrementExpression"){
+        typecheck(node);
+        node->typeForExpr = node->children[0]->typeForExpr;
+        
+    }
+
+
 }
 
 void typecheck(Node *node)
