@@ -110,6 +110,9 @@ void SymbolTable::insert(SymbolTableEntry *stEntry)
 {
     assert(stEntry);
     std::string name = stEntry->getName();
+    while(name.back() == ' '){
+        name.pop_back();
+    }
     int ind = name.length()-1;
     while(ind>0 &&  name[ind-1]!=' ') {
         ind--;
@@ -127,6 +130,10 @@ SymbolTableEntry* SymbolTable::lookup(const std::string& name)
 {
     for(auto symTable = this; symTable != nullptr; symTable = symTable->parentTable)
     {
+        // std::cerr<<name<<std::endl;
+        // for(auto i : symTable->tableMap){
+        //     std::cerr<<i.first<<std::endl;
+        // }
         if(symTable->tableMap.find(name) != symTable->tableMap.end())
             return symTable->tableMap[name];
     }
