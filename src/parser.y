@@ -86,6 +86,9 @@ struct Node
 /*  List of next instructions which can be jumped to    */
     std::vector<int> nextList;
 
+/*  Store the temporary variable */
+    qid node_tmp;    
+
 /*  Constructors    */
     Node(char* value, std::vector<Node*> children)
     : value{value}, children{children}, lineNumber{linenum} , isId{1} {}
@@ -608,7 +611,7 @@ void createST(Node* node)
                     currSymTable->insert(stEntry);
 
                     //3 AC
-                    y->position = qid(nodeName, stEntry);
+                    y->position = qid(y->children[0]->children[0]->children[0]->namelexeme , stEntry);
                     y->nextList.clear();
                 }
                 else
@@ -628,7 +631,7 @@ void createST(Node* node)
                     SymbolTableEntry* stEntry = new SymbolTableEntry( name + y->children[0]->children[0]->namelexeme, type, -1, nDims, y->children[0]->children[0]->lineNumber, 0);
                     currSymTable->insert(stEntry);
                     //3 AC
-                    y->position = qid(nodeName, stEntry);
+                    y->position = qid( y->children[0]->children[0]->namelexeme, stEntry);
                     y->nextList.clear();
 
                 }
@@ -676,7 +679,7 @@ void createST(Node* node)
                     currSymTable->insert(stEntry);
 
                     //3 AC
-                    y->position = qid(nodeName, stEntry);
+                    y->position = qid(y->children[0]->children[0]->children[0]->namelexeme, stEntry);
                     y->nextList.clear();
                 }
                 else
@@ -697,7 +700,7 @@ void createST(Node* node)
                     currSymTable->insert(stEntry);
 
                     //3 AC
-                    y->position = qid(nodeName, stEntry);
+                    y->position = qid(y->children[0]->children[0]->namelexeme, stEntry);
                     y->nextList.clear();
                 }
             }
@@ -811,6 +814,7 @@ void createST(Node* node)
     {
         // if only one child carry the type and number of dimensions
         node->typeForExpr = node->children[0]->typeForExpr;
+        node->position = node->children[0]->position;
      
     }
     if(nodeName == "class") methodTypeCheck(node);
@@ -868,6 +872,26 @@ void createST(Node* node)
         
     }
 
+
+}
+
+void three_AC(Node *node){
+    std::string nodeName = node->namelexeme;
+    if(nodeName == "="){
+        generate(qid("=",NULL),   node->children[1]->node_tmp , qid("", NULL), node->children[0]->node_tmp, -1);
+    } 
+
+    if(nodeName == "+"){
+        node->node_tmp = newtemp(node->children[0]->typeForExpr, node->nearSymbolTable);
+        generate(qid("+",NULL) , node->children[1]->node_tmp , node->children[2]->node_tmp , node->children[0]->node_tmp,-1);
+    }
+
+    if(nodeName == "-"){
+        node->node_tmp = newtemp(node->children[0]->typeForExpr, node->nearSymbolTable);
+        generate(qid("-",NULL),   node->children[1]->node_tmp , qid("", NULL), node->children[0]->node_tmp, -1);
+    } 
+
+    
 
 }
 
