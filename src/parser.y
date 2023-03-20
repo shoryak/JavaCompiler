@@ -36,6 +36,7 @@ struct Node
     char* value;
     std::vector<Node*> children;
     Node* parent;
+    int isId;
 
 /*  this stores the expression type for applying appropriate type checking 
     0 -> operator , 1 -> assignment , 2 -> methods , 3 -> classes */
@@ -80,11 +81,11 @@ struct Node
 
 /*  Constructors    */
     Node(char* value, std::vector<Node*> children)
-    : value{value}, children{children}, lineNumber{linenum} {}
+    : value{value}, children{children}, lineNumber{linenum} , isId{1} {}
     Node(char* value)
-    : value{value}, children{std::vector<Node*>()}, lineNumber{linenum} {}
+    : value{value}, children{std::vector<Node*>()}, lineNumber{linenum} , isId{1} {}
     Node(char* value, std::string lexeme, std::string type)
-    : value{value}, lexeme{lexeme}, type{type}, lineNumber{linenum} , namelexeme{lexeme} , typeForExpr{type}  {}
+    : value{value}, lexeme{lexeme}, type{type}, lineNumber{linenum} , namelexeme{lexeme} , typeForExpr{type} , isId{1}  {}
 
 /*  Add a node as a child   */
     void add_child(Node* nd)
@@ -249,6 +250,18 @@ int setTypeCheckType1(std::string type)
     else return 8;
 }
 
+void declarationTypeCheck(Node* node){
+    if(node->children.size()==0 && node->value[0] == 'I' && node->value[1]=='d'){
+        auto stEntry = currSymTable->lookup(node->namelexeme);
+        if(!stEntry){
+             std::string err = "Undeclared Variable " + node->namelexeme +" on line " + std::to_string(node->lineNumber);
+            yyerror(err.c_str());
+        }
+    }
+    for(auto child : node->children) declarationTypeCheck(child);
+
+}
+
 
 void methodTypeCheck(Node* node)
 {
@@ -305,9 +318,21 @@ void methodTypeCheck(Node* node)
             else
             {
                 int indArg=0;
-                // for(int i=0;i<args.size(); i++){
-                    
-                // }
+                std::vector<std::string > types;
+                for(int i=0;i<args.size(); i++){
+                    auto argEntry = node->nearSymbolTable->lookup(args[i]);
+                    if(argEntry == nullptr){
+                        // error
+                    }
+                    else{
+                        types.push_back(argEntry->getType());
+                    }
+                }
+                for(int i =0; i<types.size();i++){
+                    if(types[i] != fp.argTypes[i]){
+                        // error
+                    }
+                }
             }
         }
         else
@@ -547,7 +572,12 @@ void createST(Node* node)
                 if(name != "") name += " ";
                 if(y->namelexeme == "=")
                 {
-                    nDims+= y->children[0]->children.size()-1;
+                    declarationTypeCheck(y->children[1]);
+                    for(auto child : y->children[0]->children){
+                        if(child->namelexeme == "Dims"){
+                            nDims += child->children.size();
+                        }
+                    }
                     auto alreadDeclared = currSymTable->currentScopeLookup(y->children[0]->children[0]->children[0]->namelexeme);
                     if(alreadDeclared)
                     {
@@ -559,7 +589,12 @@ void createST(Node* node)
                 }
                 else
                 {
-                    nDims += y->children[0]->children.size()-1;
+                    for(auto child : y->children){
+                        // std::cerr<<child->namelexeme<<"\n";
+                        if(child->namelexeme == "Dims"){
+                            nDims += child->children.size();
+                        }
+                    }
                     auto alreadDeclared = currSymTable->currentScopeLookup(y->children[0]->children[0]->namelexeme);
                     if(alreadDeclared)
                     {
@@ -596,7 +631,12 @@ void createST(Node* node)
                 if(name != "") name += " ";
                 if(y->namelexeme == "=")
                 {
-                    nDims += y->children[0]->children.size()-1;
+                    declarationTypeCheck(y->children[1]);
+                    for(auto child : y->children[0]->children){
+                        if(child->namelexeme == "Dims"){
+                            nDims += child->children.size();
+                        }
+                    }
                     auto alreadyDeclared = currSymTable->currentScopeLookup(y->children[0]->children[0]->children[0]->namelexeme);
                     if(alreadyDeclared)
                     {
@@ -608,8 +648,13 @@ void createST(Node* node)
                     currSymTable->insert(stEntry);
                 }
                 else
-                {
-                    nDims += y->children[0]->children.size()-1;
+                {   
+                    for(auto child : y->children){
+                        // std::cerr<<child->namelexeme<<"\n";
+                        if(child->namelexeme == "Dims"){
+                            nDims += child->children.size();
+                        }
+                    }
                     auto alreadDeclared = currSymTable->currentScopeLookup(y->children[0]->children[0]->namelexeme);
                     if(alreadDeclared)
                     {
@@ -660,6 +705,30 @@ void createST(Node* node)
         
 
     }
+    else if(nodeName == "Identifier" && node->parent->namelexeme != "VariableDeclaratorId" && node->parent->namelexeme!= "UnqualifiedClassInstanceCreationExpression" && node->parent->namelexeme != "MethodInvocation"){
+        std::cerr<<"Identifier "<<node->children[0]->namelexeme<<"\n";
+        auto stEntry = currSymTable->lookup(node->children[0]->namelexeme);
+        if(!stEntry){
+             std::string err = "Undeclared Variable " + node->children[0]->namelexeme +" on line " + std::to_string(node->children[0]->lineNumber);
+            yyerror(err.c_str());
+        }
+        else{
+            node->typeForExpr = stEntry->getType();
+            node->numDims = stEntry->getDimension();
+        }
+    }
+    else if(nodeName == "VariableDeclaratorId"){
+        for(auto child : node->children){
+                        // std::cerr<<child->namelexeme<<"\n";
+                        if(child->namelexeme == "Dims"){
+                            node->numDims = child->children.size();
+            }
+        }
+    }
+    else if(nodeName == "ArrayCreationExpression"){
+        node->typeForExpr = node->children[1]->lexeme;
+        node->numDims = node->children[2]->children.size();
+    }
 
     if(nodeName == "For")
     {
@@ -700,8 +769,9 @@ void createST(Node* node)
     }
     else if(n == 1)
     {
-        // if only one child carry the type
+        // if only one child carry the type and number of dimensions
         node->typeForExpr = node->children[0]->typeForExpr;
+     
     }
     if(nodeName == "class") methodTypeCheck(node);
     
@@ -741,6 +811,22 @@ void createST(Node* node)
         node->typeForExpr = node->children[0]->typeForExpr;
         
     }
+    else if(nodeName == "VariableDeclaratorId"){
+        node->typeForExpr = node->children[0]->typeForExpr;
+    }
+     else if(nodeName == "[ ]"){
+        int nc = 0;
+        Node* leaf = node;
+        if(node->parent->namelexeme != "Dims"){
+            while(leaf->children.size()){
+                nc++;
+                leaf = leaf->children[0];
+            }
+            node->typeForExpr = leaf->nearSymbolTable->lookup(leaf->namelexeme)->getType();
+        node->numDims =  leaf->nearSymbolTable->lookup(leaf->namelexeme)->getDimension() - nc + 1;
+        } 
+        
+    }
 
 
 }
@@ -768,6 +854,11 @@ void typecheck(Node *node)
         Node *leftHandSide = node->children[0];
         Node *rightHandSide = node->children[1];
 
+        if(leftHandSide->numDims !=  rightHandSide->numDims){
+            std::cerr<<leftHandSide->numDims <<" " <<rightHandSide->numDims<<"\n";
+            std::string s = "Number of dimensions does not match on leftHandSide  and rightHandSide "  + nodeName +  " in line number " + std::to_string(node->lineNumber);
+            yyerror(s.c_str());
+        }
         if(setTypeCheckType1( rightHandSide->typeForExpr)==8 && setTypeCheckType1( leftHandSide->typeForExpr)!=8){
            std::string s = "Type Mismatch "+leftHandSide->typeForExpr + " and " + rightHandSide->typeForExpr + " does not match under " + nodeName +  " in line number " + std::to_string(node->lineNumber);
             yyerror(s.c_str());
@@ -833,6 +924,8 @@ void typecheck(Node *node)
 
     //     }
     // }
+
+
     
 
 
@@ -921,6 +1014,12 @@ CompilationUnit:    OrdinaryCompilationUnit
                         printf("digraph G {\n");
                         buildTree(root, -1, 0);
                         printf("}\n");
+                        auto stEntry = new SymbolTableEntry("println", "$func" , 0 , 0 , 0 , 0);
+                        currSymTable->insert(stEntry);
+                        stEntry = new SymbolTableEntry("System", "$package" , 0 , 0 , 0 , 0);
+                        currSymTable->insert(stEntry);
+                        stEntry = new SymbolTableEntry("out", "$package" , 0 , 0 , 0 , 0);
+                        currSymTable->insert(stEntry);
                         createST(root);
                         // globalSymTable = $$->symTable;
                         globalSymTable->__printAll();
@@ -3094,7 +3193,8 @@ ArrayType:  UnannArrayType
 
 Dims:   LeftSquareBracket RightSquareBracket 
         {
-            $$ = createNode("[ ]");
+            $$ = createNode("Dims");
+            $$->add_child(createNode("[ ]"));
 
             $$->numDims = 1;
         }
@@ -3230,7 +3330,7 @@ ExpressionName: Identifier
 TypeName:   TypeIdentifier
             ;
 
-Literal:    IntegerLiteral
+Literal:    IntegerLiteral 
             | FloatingPointLiteral
             | BooleanLiteral
             | CharacterLiteral

@@ -65,6 +65,12 @@ void SymbolTableEntry::setDimension(int32 dimension)
     this->dimension = dimension;
 }
 
+int SymbolTableEntry::getDimension()
+{
+    return this->dimension;
+}
+
+
 /*
 Print a particular symbol table entry (lexeme: attributes)
 PARAM: None

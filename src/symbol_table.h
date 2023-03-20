@@ -60,6 +60,7 @@ public:
     int getDeclLine();
     funcproto getFuncProto();
     void setDimension(int32 dimension);
+    int getDimension();
     void print(void);
 };
 
