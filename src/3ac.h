@@ -19,7 +19,7 @@ public:
 void generate(qid, qid, qid, qid, int);
 void backpatch(std::vector<int>&, int);
 qid newtemp(std::string , SymbolTable* );
-
+void print3AC();
 
 #endif
 

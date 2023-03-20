@@ -1,6 +1,7 @@
 #include "3ac.h"
 #include <vector>
 #include <string>
+#include<fstream>
 
 std::vector<quad> code;
 
@@ -21,10 +22,18 @@ void backpatch(std::vector<int>& list, int target)
 
 qid newtemp(std::string type, SymbolTable* currSymTable)
 {
-    std::string tmp = "#V" + std::to_string(counter);
+    std::string tmp = "$t" + std::to_string(counter);
     int address = 0, dimension = 0, decLine = 0, size = 0;
     SymbolTableEntry* stEntry = new SymbolTableEntry(tmp, type, size, dimension, decLine, address);
     currSymTable->insert(tmp, stEntry);
     counter+=1;
     return qid(tmp, currSymTable->lookup(tmp));
+}
+
+void print3AC(){
+    std::ofstream tac_file;
+    tac_file.open("intermediate_3ac.csv");
+    for(int i=0;i<code.size(); i++){
+        tac_file<<code[i].oper.first<<","<<code[i].argument1.first<<","<<code[i].argument2.first<<","<<code[i].result.first<<","<<code[i].index<<","<<i<<endl;
+    }
 }

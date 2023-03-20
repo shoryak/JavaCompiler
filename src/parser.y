@@ -701,6 +701,7 @@ void createST(Node* node)
 
                     //3 AC
                     y->position = qid(y->children[0]->children[0]->namelexeme, stEntry);
+                    //y->tmp_node = newtemp( y->children[0]->children[0]->namelexeme, y->nearSymbolTable);
                     y->nextList.clear();
                 }
             }
@@ -877,19 +878,33 @@ void createST(Node* node)
 
 void three_AC(Node *node){
     std::string nodeName = node->namelexeme;
+
+
+    // if(nodeName == "-"){
+    //     node->node_tmp = newtemp(node->children[0]->typeForExpr, node->nearSymbolTable);
+    //     generate(qid("-",NULL),   node->children[1]->node_tmp , qid("", NULL), node->children[0]->node_tmp, -1);
+    // } 
+
+    for(auto child : node->children){
+        three_AC(child);
+    }
+
     if(nodeName == "="){
         generate(qid("=",NULL),   node->children[1]->node_tmp , qid("", NULL), node->children[0]->node_tmp, -1);
     } 
 
     if(nodeName == "+"){
-        node->node_tmp = newtemp(node->children[0]->typeForExpr, node->nearSymbolTable);
-        generate(qid("+",NULL) , node->children[1]->node_tmp , node->children[2]->node_tmp , node->children[0]->node_tmp,-1);
-    }
+         node->node_tmp = newtemp(node->children[0]->typeForExpr, node->nearSymbolTable);
+         generate(qid("+",NULL) , node->children[0]->node_tmp , node->children[1]->node_tmp , node->node_tmp,-1);
+     }
 
-    if(nodeName == "-"){
-        node->node_tmp = newtemp(node->children[0]->typeForExpr, node->nearSymbolTable);
-        generate(qid("-",NULL),   node->children[1]->node_tmp , qid("", NULL), node->children[0]->node_tmp, -1);
-    } 
+     if( node->children.size()==0 && node->value[0]=='I' && node->value[1] == 'd'){
+        node->node_tmp = newtemp(node->namelexeme , node->nearSymbolTable);
+     }
+
+     if(node->children.size()== 1){
+        node->node_tmp = node->children[0]->node_tmp;
+     }
 
     
 
@@ -1085,8 +1100,10 @@ CompilationUnit:    OrdinaryCompilationUnit
                         stEntry = new SymbolTableEntry("out", "$package" , 0 , 0 , 0 , 0);
                         currSymTable->insert(stEntry);
                         createST(root);
+                        three_AC(root);
                         // globalSymTable = $$->symTable;
                         globalSymTable->__printAll();
+                        print3AC();
                         
                     }
                     ;
