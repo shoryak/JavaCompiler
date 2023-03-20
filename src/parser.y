@@ -6,6 +6,7 @@
 #include <cstring>
 #include <cassert>
 #include "symbol_table.h"
+#include "3ac.h"
 
 int lines = 0;
 int yyparse();
@@ -78,6 +79,12 @@ struct Node
 /*  This will store the line number of the token found during the lexer phase.
     Applicable only for tokens/non-terminals    */
     int lineNumber = -1;
+
+/*  For 3AC generation  */
+    qid position;
+
+/*  List of next instructions which can be jumped to    */
+    std::vector<int> nextList;
 
 /*  Constructors    */
     Node(char* value, std::vector<Node*> children)
@@ -368,6 +375,7 @@ void createST(Node* node)
             useCurlyForNewScope=1;
             curlyScopes.push_back(0);
         }
+        
     }
 
     else if(nodeName == "}")
@@ -401,6 +409,10 @@ void createST(Node* node)
         }
         SymbolTableEntry* stEntry = new SymbolTableEntry( name, "class" , -1 , -1 , node->children[n-2]->lineNumber , 0 );
         currSymTable->insert(stEntry);
+
+        // 3AC 
+        node->position = qid(nodeName, stEntry);
+        node->nextList.clear();
     }
 
     else if(nodeName == "MethodDeclaration")
@@ -488,6 +500,10 @@ void createST(Node* node)
         currSymTable->insert(stEntry);
         newScope = 1;
         useCurlyForNewScope = 0;
+
+        // 3AC
+        node->position = qid(nodeName, stEntry);
+        node->nextList.clear();
     }
 
     else if(nodeName == "FormalParameter" )
@@ -531,6 +547,10 @@ void createST(Node* node)
         }
         SymbolTableEntry* stEntry = new SymbolTableEntry(name , type , -1 , nDims , decLine , 0 );
         currSymTable->insert(stEntry);
+
+        // 3AC
+        node->position = qid(nodeName, stEntry);
+        node->nextList.clear();
     }
 
     else if(nodeName == "FieldDeclaration")
@@ -586,6 +606,10 @@ void createST(Node* node)
                     }
                     SymbolTableEntry* stEntry = new SymbolTableEntry(name + y->children[0]->children[0]->children[0]->namelexeme, type, -1, nDims, y->children[0]->children[0]->children[0]->lineNumber, 0);
                     currSymTable->insert(stEntry);
+
+                    //3 AC
+                    y->position = qid(nodeName, stEntry);
+                    y->nextList.clear();
                 }
                 else
                 {
@@ -603,6 +627,10 @@ void createST(Node* node)
                     }
                     SymbolTableEntry* stEntry = new SymbolTableEntry( name + y->children[0]->children[0]->namelexeme, type, -1, nDims, y->children[0]->children[0]->lineNumber, 0);
                     currSymTable->insert(stEntry);
+                    //3 AC
+                    y->position = qid(nodeName, stEntry);
+                    y->nextList.clear();
+
                 }
             }
         }
@@ -646,6 +674,10 @@ void createST(Node* node)
                     // Problematic to create symbol table entry here for cases like int x = x+1;
                     SymbolTableEntry* stEntry = new SymbolTableEntry(name + y->children[0]->children[0]->children[0]->namelexeme, type, -1, nDims, y->children[0]->children[0]->children[0]->lineNumber, 0);
                     currSymTable->insert(stEntry);
+
+                    //3 AC
+                    y->position = qid(nodeName, stEntry);
+                    y->nextList.clear();
                 }
                 else
                 {   
@@ -663,6 +695,10 @@ void createST(Node* node)
                     }
                     SymbolTableEntry* stEntry = new SymbolTableEntry(name + y->children[0]->children[0]->namelexeme, type, -1, nDims, y->children[0]->children[0]->lineNumber, 0);
                     currSymTable->insert(stEntry);
+
+                    //3 AC
+                    y->position = qid(nodeName, stEntry);
+                    y->nextList.clear();
                 }
             }
         }
@@ -700,6 +736,10 @@ void createST(Node* node)
         }
         SymbolTableEntry* stEntry = new SymbolTableEntry(name , type , -1 , nDims , decLine , 0 );
         currSymTable->insert(stEntry);
+
+        //3 AC
+        node->position = qid(nodeName, stEntry);
+        node->nextList.clear();
 
         newScope=1;
         
