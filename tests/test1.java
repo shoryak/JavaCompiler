@@ -26,8 +26,8 @@ public class EmptyClass {
     int ans__2 = x | (y | x); 
     int ans__3 = x ^ x; 
     int ans__4 = ~x; 
-    int ans__5 = y<< 1; 
-    int ans__6 = (y*x) >> 1; 
+    // int ans__5 = y<< 1; 
+    // int ans__6 = (y*x) >> 1; 
 
     boolean a1 = x && x; 
     boolean a2 = y || y; 
@@ -39,11 +39,10 @@ public class EmptyClass {
     boolean an2 = a || b; 
     boolean an3 = !a; // let see it
      
-    /* We are CS335A 
-    and this is test 1*/
-    float a1=2;
+    /* We are CS335A and this is test 1*/
+    // float a1=2;
     long b1=a1--;
-    double b2=b1;
+    // double b2=b1;
 
-    int[][] arrx = {{1, 2}, {3, 4}}, arry, arrz;
+    // int[][] arrx = {{1, 2}, {3, 4}}, arry, arrz;
 }
