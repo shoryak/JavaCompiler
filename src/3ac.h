@@ -4,7 +4,7 @@
 #include "symbol_table.h"
 using namespace std;
 
-typedef std::pair <std::string , SymbolTableEntry*> qid;
+typedef std::pair <std::string, SymbolTableEntry*> qid;
 
 typedef struct Quadruple
 {

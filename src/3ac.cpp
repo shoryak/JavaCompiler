@@ -27,7 +27,7 @@ qid newtemp(std::string type, SymbolTable* currSymTable)
     int address = 0, dimension = 0, decLine = 0, size = 0;
     SymbolTableEntry* stEntry = new SymbolTableEntry(tmp, type, size, dimension, decLine, address);
     currSymTable->insert(tmp, stEntry);
-    counter+=1;
+    counter++;
     return qid(tmp, currSymTable->lookup(tmp));
 }
 
