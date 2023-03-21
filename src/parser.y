@@ -303,6 +303,25 @@ void methodTypeCheck(Node* node)
         else if(node->children[0]->namelexeme == ".")
         {
             methodName = node->children[0]->children[1]->children[0]->namelexeme;
+            if(node->children[0]->children[0]->namelexeme == "."){
+                return;
+            }
+            else{
+                auto obj = node->children[0]->children[0]->children[0]->namelexeme;
+                auto stEntry = node->nearSymbolTable->lookup(obj);
+                if(!stEntry){
+                    std::string s = "Undeclared Object " + obj+ " in line number " + std::to_string(node->children[0]->children[0]->children[0]->lineNumber);
+                    yyerror(s.c_str());
+                }
+                else{
+                    auto className = node->nearSymbolTable->lookup(obj)->getType();
+                    std::cerr<<methodName<<" "<<className<<"\n";
+                    if(methodsForClass[className].find(methodName) == methodsForClass[className].end()){
+                        std::string s = "Undeclared function for class " + className + " in line number " + std::to_string(node->lineNumber);
+                        yyerror(s.c_str());
+                    }
+                }
+            }
         }
         std::cerr<<methodName<<"\n";
         if(methodName == "println"){
@@ -424,6 +443,7 @@ void createST(Node* node)
         }
         if(name != "") name += " ";
         name += children[n-2]->namelexeme;
+        currentClass = children[n-2]->namelexeme;
         auto alreadDeclared = currSymTable->lookup(children[n-2]->namelexeme);
         if(alreadDeclared)
         {
@@ -432,7 +452,7 @@ void createST(Node* node)
         }
         SymbolTableEntry* stEntry = new SymbolTableEntry( name, "class" , -1 , -1 , node->children[n-2]->lineNumber , 0 );
         currSymTable->insert(stEntry);
-        currentClass = name;
+        
     }
 
     else if(nodeName == "MethodDeclaration")
@@ -459,8 +479,11 @@ void createST(Node* node)
                 
                 std::cerr << name << std::endl;
                 name += std::string(x->children[0]->namelexeme);
+
                 decLine = (x->children[0]->lineNumber);
                 name += " " + std::string(x->children[1]->children[0]->children[0]->namelexeme);
+                std::cerr<< "HURRAY "<<currentClass<<" "<<x->children[1]->children[0]->children[0]->namelexeme <<"\n";
+                methodsForClass[currentClass].insert(x->children[1]->children[0]->children[0]->namelexeme);
                 for(auto y: x->children)
                 {
                     if(y->namelexeme == "MethodDeclarator")
@@ -904,7 +927,12 @@ void createST(Node* node)
                 
             }
         if(leaf->namelexeme == "."){
-            auto curClass = leaf->children[0]->children[0]->nearSymbolTable->lookup(leaf->children[0]->children[0]->namelexeme)->getType();
+            auto stEntry = leaf->children[0]->children[0]->nearSymbolTable->lookup(leaf->children[0]->children[0]->namelexeme);
+            if(!stEntry){
+                 std::string s = "Undeclared Object " +  leaf->children[0]->children[0]->namelexeme + " in line number " + std::to_string(node->lineNumber);
+                yyerror(s.c_str());
+            }
+            auto curClass = stEntry->getType();
             std::cerr<<curClass<<"\n";
             auto fieldName = leaf->children[1]->children[0]->namelexeme;
             std::cerr<<fieldName<<"\n";
@@ -919,17 +947,22 @@ void createST(Node* node)
             node->numDims = fData.numDims - nc;
         }
         else{
-            node->typeForExpr = leaf->nearSymbolTable->lookup(leaf->namelexeme)->getType();
-            node->numDims =  leaf->nearSymbolTable->lookup(leaf->namelexeme)->getDimension() - nc + 1;
+            auto entry = leaf->nearSymbolTable->lookup(leaf->namelexeme);
+            if(!entry){
+                std::string s = "Undeclared Object " +  leaf->namelexeme + " in line number " + std::to_string(node->lineNumber);
+                yyerror(s.c_str());
+            }
+            node->typeForExpr = entry->getType();
+            node->numDims =  entry->getDimension() - nc + 1;
         }
         } 
         
     }
-    else if(nodeName == "." && node->children[0]->namelexeme != "."){
+    // else if(nodeName == "." && node->children[0]->namelexeme != "."){
         
-        auto className = node->nearSymbolTable->lookup(node->children[0]->children[0]->namelexeme)->getType();
-        std::cerr<<"Object of class "<< className<<"\n";
-    }
+    //     auto className = node->nearSymbolTable->lookup(node->children[0]->children[0]->namelexeme)->getType();
+    //     std::cerr<<"Object of class "<< className<<"\n";
+    // }
 
 
 }
