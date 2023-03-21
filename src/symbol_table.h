@@ -71,9 +71,9 @@ class SymbolTable {
     // No need for it in the symbol table entry
     std::unordered_map<std::string, SymbolTableEntry*> tableMap;
     SymbolTable *parentTable;
+    std::vector<SymbolTable*> childTables;
 
 public:
-    std::vector<SymbolTable*> childTables;
     SymbolTable(void): parentTable{nullptr} {}
     SymbolTable(SymbolTable *parentSymbolTable): parentTable{parentSymbolTable}
     {
