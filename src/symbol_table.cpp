@@ -203,3 +203,24 @@ void SymbolTable::__printAll()
     for(auto childTable: childTables) childTable->__printAll();
     std::cerr << "~~~~~ END PRINTING SCOPE ~~~~~\n";
 }
+
+void SymbolTableEntry::_addToCSV(std::ofstream& ofs)
+{
+    ofs << "IDENTIFIER," << name << "," << type << ",";
+    ofs <<  dimension << "," << declLine << '\n';
+}
+
+void SymbolTable::_csvDumpWithoutHeader(std::ofstream& ofs)
+{
+    for(auto [lexeme, stEntry]: this->tableMap)
+        stEntry->_addToCSV(ofs);
+    for(auto symTable: this->childTables)
+        symTable->_csvDumpWithoutHeader(ofs);
+}
+
+void SymbolTable::csvDump(std::ofstream& ofs)
+{
+    std::string csvColumnNames = "Token,Lexeme,Type,Dimensions,Line of Declaration";
+    ofs << csvColumnNames << '\n';
+    this->_csvDumpWithoutHeader(ofs);
+}

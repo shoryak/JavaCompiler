@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <string>
 #include <vector>
+#include <fstream>
 #include <iostream>
 #include <cassert>
 #include "types.h"
@@ -62,6 +63,7 @@ public:
     void setDimension(int32 dimension);
     int getDimension();
     void print(void);
+    void _addToCSV(std::ofstream& ofs);
 };
 
 class SymbolTable {
@@ -86,6 +88,8 @@ public:
     void print(void);
     void __add_child(SymbolTable* symTable);
     void __printAll(void);
+    void _csvDumpWithoutHeader(std::ofstream& ofs);
+    void csvDump(std::ofstream& ofs);
 };
 
 #endif

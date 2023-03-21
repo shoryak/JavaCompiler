@@ -1,7 +1,7 @@
 #ifndef THREE_AC_H
 #define THREE_AC_H
-#include<bits/stdc++.h>
-#include"symbol_table.h"
+#include <bits/stdc++.h>
+#include "symbol_table.h"
 using namespace std;
 
 typedef std::pair <std::string , SymbolTableEntry*> qid;
@@ -16,10 +16,10 @@ public:
 } quad;
 
 
-void generate(qid, qid, qid, qid, int);
+quad generate(qid oper, qid arg1, qid arg2, qid res, int idx);
 void backpatch(std::vector<int>&, int);
 qid newtemp(std::string , SymbolTable* );
 void print3AC();
+void print3AC(std::vector<quad>);
 
 #endif
-

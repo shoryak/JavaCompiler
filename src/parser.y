@@ -5,9 +5,9 @@
 #include <cstdlib>
 #include <cstring>
 #include <cassert>
+#include <algorithm>
 #include "symbol_table.h"
 #include "3ac.h"
-
 int lines = 0;
 int yyparse();
 extern "C"
@@ -30,6 +30,8 @@ SymbolTable *currSymTable = globalSymTable;
 std::vector<SymbolTableEntry*> stEntryContainer;
 int useCurlyForNewScope  = 1;
 std::vector<int> curlyScopes;
+int labelCounter = 0;
+std::string currentClass;
 
 struct Node
 {
@@ -82,6 +84,7 @@ struct Node
 
 /*  For 3AC generation  */
     qid position;
+    vector<quad> code;
 
 /*  List of next instructions which can be jumped to    */
     std::vector<int> nextList;
@@ -361,7 +364,7 @@ void createST(Node* node)
     // std::cerr<<node->namelexeme<<std::endl;
 
     // setting nearest scope symbol table for the node for typechecking 
-    node->nearSymbolTable = currSymTable; 
+    node->nearSymbolTable = currSymTable;
 
     int newScope = 0;
     std::string nodeName = node->namelexeme;
@@ -416,6 +419,7 @@ void createST(Node* node)
         // 3AC 
         node->position = qid(nodeName, stEntry);
         node->nextList.clear();
+        currentClass = children[n-2]->namelexeme;
     }
 
     else if(nodeName == "MethodDeclaration")
@@ -424,6 +428,7 @@ void createST(Node* node)
         std::vector<Node*> children = node->children;
         std::string name = "";        //modifiers_returntype_functionname
         struct funcproto fproto;
+        std::string funcNameId;
         for(auto x: children)
         {
             if(x->namelexeme == "ModifierList")
@@ -448,6 +453,7 @@ void createST(Node* node)
                     if(y->namelexeme == "MethodDeclarator")
                     {
                         Node* temp = nullptr;
+                        funcNameId = y->children[0]->namelexeme;
                         for(auto k : y->children)
                         {
                             if(k->namelexeme == "FormalParameterList")
@@ -495,6 +501,14 @@ void createST(Node* node)
                         }
                     }
                 }
+            }
+            else
+            {
+                // Symbol Table CSV dump
+                std::ofstream ofs;
+                ofs.open(currentClass + "." + funcNameId + ".csv");
+                currSymTable->csvDump(ofs);
+                ofs.close();
             }
             std::cerr << x->namelexeme << std::endl;
         }
@@ -876,37 +890,152 @@ void createST(Node* node)
 
 }
 
+qid emptyQid("", NULL);
+
+void binary3AC(Node* node, std::string op)
+{
+    node->node_tmp = newtemp(node->children[0]->typeForExpr, node->nearSymbolTable);
+    generate(qid(op, NULL), node->children[0]->node_tmp, node->children[1]->node_tmp, node->node_tmp, -1);
+}
+
+void unary3AC(Node* node, std::string op)
+{
+    node->node_tmp = newtemp(node->children[0]->typeForExpr, node->nearSymbolTable);
+    generate(qid(op, NULL), emptyQid, node->children[0]->node_tmp, node->node_tmp, -1);
+}
+
+void codeInsert(Node* node, std::vector<quad> code ){
+    node->code.insert(node->code.end() , code.begin(), code.end());
+}
+
+void preOperation3AC(Node* node, std::string oper)
+{
+    Node *operandNode = node->children[1];
+    qid tempVar = newtemp(operandNode->typeForExpr, node->nearSymbolTable);
+    generate(qid(oper, NULL), operandNode->node_tmp, qid("1", NULL), tempVar, -1);
+    generate(emptyQid, tempVar, emptyQid, operandNode->node_tmp, -1);
+    node->node_tmp = operandNode->node_tmp;
+}
+
+void postOperation3AC(Node* node, std::string oper)
+{
+    Node *operandNode = node->children[0];
+    qid tempVar0 = newtemp(operandNode->typeForExpr, node->nearSymbolTable);
+    qid tempVar1 = newtemp(operandNode->typeForExpr, node->nearSymbolTable);
+    generate(emptyQid, operandNode->node_tmp, emptyQid, tempVar0, -1);
+    generate(qid(oper, NULL), operandNode->node_tmp, qid("1", NULL), tempVar1, -1);
+    generate(emptyQid, tempVar1, emptyQid, operandNode->node_tmp, -1);
+    node->node_tmp = tempVar0;
+}
+
+bool presentInOpList(const std::vector<std::string>& operators, const std::string& oper)
+{
+    return std::find(operators.begin(), operators.end(), oper) != operators.end();
+}
+
 void three_AC(Node *node){
     std::string nodeName = node->namelexeme;
-
-
-    // if(nodeName == "-"){
-    //     node->node_tmp = newtemp(node->children[0]->typeForExpr, node->nearSymbolTable);
-    //     generate(qid("-",NULL),   node->children[1]->node_tmp , qid("", NULL), node->children[0]->node_tmp, -1);
-    // } 
-
-    for(auto child : node->children){
+    
+    for(auto child : node->children)
         three_AC(child);
+
+    if(node->children.size()== 1)
+        node->node_tmp = node->children[0]->node_tmp;
+
+    if(nodeName == "=")
+        generate(emptyQid, node->children[1]->node_tmp, emptyQid, node->children[0]->node_tmp, -1);
+
+    std::vector<std::string> arithmeticOpsBinary{"+", "-", "*", "/", "%"};
+    std::vector<std::string> arithmeticOpsUnary;
+    std::vector<std::string> bitwiseOpsBinary{"&", "|", "^", "<<", ">>", ">>>"};
+    std::vector<std::string> bitwiseOpsUnary{"~"};
+    std::vector<std::string> logicalOpsBinary{"&&", "||"};
+    std::vector<std::string> logicalOpsUnary{"!"};
+    std::vector<std::string> relationalOpsBinary{"==", "!=", ">", "<", ">=", "<="};
+
+    std::vector<std::string> opsBinary, opsUnary;
+    std::vector<std::vector<std::string>> opsBinaryAll{arithmeticOpsBinary, bitwiseOpsBinary, logicalOpsBinary, relationalOpsBinary};
+    std::vector<std::vector<std::string>> opsUnaryAll{arithmeticOpsUnary, bitwiseOpsUnary, logicalOpsUnary};
+    for(auto opsList: opsBinaryAll)
+        opsBinary.insert(opsBinary.end(), opsList.begin(), opsList.end());
+    for(auto opsList: opsUnaryAll)
+        opsUnary.insert(opsUnary.end(), opsList.begin(), opsList.end());
+    
+    if(presentInOpList(opsBinary, nodeName))
+        binary3AC(node, nodeName);
+    
+    if(presentInOpList(opsUnary, nodeName))
+        unary3AC(node, nodeName);
+
+    std::vector<std::string> operAndAssign{"+=", "-=", "*=", "/=", "&="};
+
+    if(presentInOpList(operAndAssign, nodeName))
+    {
+        std::string oper;
+        oper.push_back(nodeName[0]);
+        node->node_tmp = newtemp(node->children[0]->typeForExpr, node->nearSymbolTable);
+        generate(qid(oper, NULL), node->children[0]->node_tmp, node->children[1]->node_tmp, node->node_tmp, -1);
+        generate(emptyQid, node->node_tmp, emptyQid, node->children[0]->node_tmp, -1);
+    } 
+    
+    if(nodeName == "PreIncrementExpression")
+        preOperation3AC(node, "+");
+    else if(nodeName == "PreDecrementExpression")
+        preOperation3AC(node, "-");
+    else if(nodeName == "PostIncrementExpression")
+        postOperation3AC(node, "+");
+    else if(nodeName == "PostDecrementExpression")
+        postOperation3AC(node, "-");
+    
+    if(node->children.size()==0 && ((node->value[0]=='I' && node->value[1] == 'd' ) || (node->value[0]=='L' && node->value[1] == 'i') ) ){
+        node->node_tmp = qid(node->namelexeme, node->nearSymbolTable->lookup(node->namelexeme));
+    }
+    
+    if(nodeName == "IfThenStatement"){
+        Node* condition = node->children[0]->children[0];
+        Node*  thenNode = node->children[1]->children[0];
+        labelCounter++;
+        std::string label = "$L" + std::to_string(labelCounter);
+        quad ifThenQuad = generate(qid("IfFalse", NULL),  condition->node_tmp , qid(label, NULL), emptyQid  , -1);
+        node->code = condition->code; 
+        node->code.push_back(ifThenQuad);
+        codeInsert(node, thenNode->code);
+        node->code.push_back(generate(qid(label, NULL), emptyQid , emptyQid, emptyQid  , -1));
+        print3AC(node->code);
     }
 
-    if(nodeName == "="){
-        generate(qid("=",NULL),   node->children[1]->node_tmp , qid("", NULL), node->children[0]->node_tmp, -1);
-    } 
+    if(nodeName == "IfThenElseStatement" || nodeName == "IfThenElseStatementNoShortIf"){
+        Node* condition = node->children[0]->children[0];
+        Node*  thenNode = node->children[1]->children[0];
+        Node* elseNode = node->children[2]->children[0];
+        labelCounter++;
+        std::string l1 = "$L" + std::to_string(labelCounter);
+        labelCounter++;
+        std::string l2 = "$L" + std::to_string(labelCounter);
+        labelCounter++;
+        std::string l3 = "$L" + std::to_string(labelCounter);
+        
+        quad ifThenQuad = generate(qid("IfTrue", NULL),  condition->node_tmp , qid(l1, NULL), emptyQid  , -1);
+        quad elseQuad = generate(qid("Else", NULL),  emptyQid, qid(l2, NULL), emptyQid  , -1);
+        quad L1 = generate(qid(l1, NULL), emptyQid, emptyQid, emptyQid, -1);
+        quad L2 = generate(qid(l2, NULL), emptyQid, emptyQid, emptyQid, -1);
+        quad L3 = generate(qid(l3, NULL), emptyQid, emptyQid, emptyQid, -1);
+        quad gotol3 = generate(qid( "$goto" + " "+ l3, NULL), emptyQid, emptyQid, emptyQid, -1);
+        node->code = condition->code;
+        node->code.push_back(ifThenQuad);
+        node->code.push_back(elseQuad);
+        node->code.push_back(L1);
+        codeInsert(node, thenNode->code);
+        node->code.push_back(gotol3);
+        node->code.push_back(L2);
+        codeInsert(node, elseNode->code);
+        node->code.push_back(L3);
+        
+        labelCounter++;
+        std::string elseEndLabel = "$L" + std::to_string(labelCounter);
+        
+    }
 
-    if(nodeName == "+"){
-         node->node_tmp = newtemp(node->children[0]->typeForExpr, node->nearSymbolTable);
-         generate(qid("+",NULL) , node->children[0]->node_tmp , node->children[1]->node_tmp , node->node_tmp,-1);
-     }
-
-     if( node->children.size()==0 && node->value[0]=='I' && node->value[1] == 'd'){
-        node->node_tmp = newtemp(node->namelexeme , node->nearSymbolTable);
-     }
-
-     if(node->children.size()== 1){
-        node->node_tmp = node->children[0]->node_tmp;
-     }
-
-    
 
 }
 
@@ -1103,7 +1232,7 @@ CompilationUnit:    OrdinaryCompilationUnit
                         three_AC(root);
                         // globalSymTable = $$->symTable;
                         globalSymTable->__printAll();
-                        print3AC();
+                        // print3AC();
                         
                     }
                     ;
