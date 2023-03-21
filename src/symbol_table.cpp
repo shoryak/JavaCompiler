@@ -214,6 +214,7 @@ void SymbolTable::_csvDumpWithoutHeader(std::ofstream& ofs)
 {
     for(auto [lexeme, stEntry]: this->tableMap)
         stEntry->_addToCSV(ofs);
+    
     for(auto symTable: this->childTables)
         symTable->_csvDumpWithoutHeader(ofs);
 }

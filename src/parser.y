@@ -40,7 +40,7 @@ std::vector<SymbolTableEntry*> stEntryContainer;
 int useCurlyForNewScope  = 1;
 std::vector<int> curlyScopes;
 int labelCounter = 0;
-std::string currentClass;
+std::string currentClass, currentFuncName;
 std::unordered_map<std::string, SymbolTable*> methodSymbolTable;
 std::map<std::string , std::set<std::string > > methodsForClass;
 std::map<std::string , std::set<std::string>  > fieldsForClass;
@@ -475,7 +475,6 @@ void createST(Node* node)
         std::vector<Node*> children = node->children;
         std::string name = "";        //modifiers_returntype_functionname
         struct funcproto fproto;
-        std::string funcNameId;
         std::string type;
         for(auto x: children)
         {
@@ -500,7 +499,7 @@ void createST(Node* node)
                     if(y->namelexeme == "MethodDeclarator")
                     {
                         Node* temp = nullptr;
-                        funcNameId = y->children[0]->children[0]->namelexeme;
+                        currentFuncName = y->children[0]->children[0]->namelexeme;
                         for(auto k : y->children)
                         {
                             if(k->namelexeme == "FormalParameterList")
@@ -552,7 +551,6 @@ void createST(Node* node)
                             fproto.numArgs++;
                             fproto.argTypes.push_back(typeParam);
                             fproto.argDims.push_back(nDimsParam);
-                            
                         }
                     }
                 }
@@ -572,8 +570,7 @@ void createST(Node* node)
         newScope = 1;
         useCurlyForNewScope = 0;
 
-        // For Symbol Table CSV dump
-        methodSymbolTable[currentClass + "." + funcNameId] = currSymTable;
+        methodSymbolTable[currentClass + "." + currentFuncName] = node->nearSymbolTable;
 
         // 3AC
         node->position = qid(nodeName, stEntry);
@@ -861,14 +858,16 @@ void createST(Node* node)
         node->numDims = node->children[2]->children.size();
     }
 
-
     if(nodeName == "For")
     {
         newScope = 1;
         useCurlyForNewScope= 0;
     }
 
-    if(newScope) startScope();
+    if(newScope) {
+        startScope();
+        methodSymbolTable[currentClass + "." + currentFuncName] = currSymTable;
+    }
 
     int n = node->children.size();
     std::vector<Node*> children = node->children;
