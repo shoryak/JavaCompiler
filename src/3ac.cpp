@@ -6,6 +6,8 @@
 std::vector<quad> code;
 
 int counter = 0;
+int printAC= 0;
+std::ofstream tac_file , tac_file1;
 
 quad generate(qid op, qid arg1, qid arg2, qid res, int idx)
 {
@@ -26,6 +28,7 @@ qid newtemp(std::string type, SymbolTable* currSymTable)
     std::string tmp = "$t" + std::to_string(counter);
     int address = 0, dimension = 0, decLine = 0, size = 0;
     SymbolTableEntry* stEntry = new SymbolTableEntry(tmp, type, size, dimension, decLine, address);
+    assert(currSymTable);
     currSymTable->insert(tmp, stEntry);
     counter+=1;
     return qid(tmp, currSymTable->lookup(tmp));
@@ -51,19 +54,25 @@ void print3AC(){
 
 void print3AC(std::vector<quad> code){
     qid emptyQid = qid("", NULL);
-    std::ofstream tac_file;
-    tac_file.open("intermediate_3ac.csv");
+    if(printAC==0){
+        
+        tac_file.open("intermediate_3ac.csv");
+    }
+
     for(int i=0;i<code.size(); i++){
         tac_file<<code[i].oper.first<<","<<code[i].argument1.first<<","<<code[i].argument2.first<<","<<code[i].result.first<<","<<code[i].index<<","<<i<<endl;
     }
-    tac_file.close();
-    tac_file.open("intermediate_3ac.txt");
+    // tac_file.close();
+    if(printAC==0) tac_file1.open("intermediate_3ac.txt");
     for(auto codeLine: code)
     {
-        tac_file << codeLine.result.first << " = ";
-        tac_file << codeLine.argument1.first << codeLine.oper.first << codeLine.argument2.first;
-        tac_file << '\n';
+        tac_file1 << codeLine.result.first << " = ";
+        tac_file1 << codeLine.argument1.first << codeLine.oper.first << codeLine.argument2.first;
+        tac_file1 << "\n";
+    
     }
-    tac_file.close();
+    tac_file1<< "\n";
+    printAC+=1;
+    // tac_file.close();
 }
 

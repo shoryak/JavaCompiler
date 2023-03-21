@@ -890,22 +890,28 @@ void createST(Node* node)
 
 }
 
+void codeInsert(Node* node, std::vector<quad> code ){
+    node->code.insert(node->code.end() , code.begin(), code.end());
+}
 qid emptyQid("", NULL);
 
 void binary3AC(Node* node, std::string op)
 {
     node->node_tmp = newtemp(node->children[0]->typeForExpr, node->nearSymbolTable);
-    generate(qid(op, NULL), node->children[0]->node_tmp, node->children[1]->node_tmp, node->node_tmp, -1);
+    quad instruction = generate(qid(op, NULL), node->children[0]->node_tmp, node->children[1]->node_tmp, node->node_tmp, -1);
+    codeInsert(node, node->children[0]->code);
+    codeInsert(node, node->children[1]->code);
+    node->code.push_back(instruction);
+    // print3AC(node->code);
 }
 
 void unary3AC(Node* node, std::string op)
 {
     node->node_tmp = newtemp(node->children[0]->typeForExpr, node->nearSymbolTable);
-    generate(qid(op, NULL), emptyQid, node->children[0]->node_tmp, node->node_tmp, -1);
-}
-
-void codeInsert(Node* node, std::vector<quad> code ){
-    node->code.insert(node->code.end() , code.begin(), code.end());
+    quad instruction = generate(qid(op, NULL), emptyQid, node->children[0]->node_tmp, node->node_tmp, -1);
+    codeInsert(node,node->code);
+    node->code.push_back(instruction);
+    // print3AC(node->code);
 }
 
 void preOperation3AC(Node* node, std::string oper)
@@ -935,15 +941,7 @@ bool presentInOpList(const std::vector<std::string>& operators, const std::strin
 
 void three_AC(Node *node){
     std::string nodeName = node->namelexeme;
-    
-    for(auto child : node->children)
-        three_AC(child);
 
-    if(node->children.size()== 1)
-        node->node_tmp = node->children[0]->node_tmp;
-
-    if(nodeName == "=")
-        generate(emptyQid, node->children[1]->node_tmp, emptyQid, node->children[0]->node_tmp, -1);
 
     std::vector<std::string> arithmeticOpsBinary{"+", "-", "*", "/", "%"};
     std::vector<std::string> arithmeticOpsUnary;
@@ -956,29 +954,62 @@ void three_AC(Node *node){
     std::vector<std::string> opsBinary, opsUnary;
     std::vector<std::vector<std::string>> opsBinaryAll{arithmeticOpsBinary, bitwiseOpsBinary, logicalOpsBinary, relationalOpsBinary};
     std::vector<std::vector<std::string>> opsUnaryAll{arithmeticOpsUnary, bitwiseOpsUnary, logicalOpsUnary};
+    std::vector<std::string> operAndAssign{"+=", "-=", "*=", "/=", "&="};
+
     for(auto opsList: opsBinaryAll)
         opsBinary.insert(opsBinary.end(), opsList.begin(), opsList.end());
     for(auto opsList: opsUnaryAll)
         opsUnary.insert(opsUnary.end(), opsList.begin(), opsList.end());
+
+    for(auto child : node->children)
+        three_AC(child);
+
+    if(node->children.size()== 1){
+
+        node->node_tmp = node->children[0]->node_tmp;
+        node->code = node->children[0]->code;
+    }
+
+    if(nodeName == "Block" && node->children.size()>1){
+        
+        node->node_tmp = node->children[1]->node_tmp;
+        node->code = node->children[1]->code; 
+        
+    }
     
-    if(presentInOpList(opsBinary, nodeName))
+    
+        
+    if(nodeName == "="){
+        assert(node->nearSymbolTable);
+        node->node_tmp = newtemp(node->children[0]->typeForExpr, node->nearSymbolTable);
+        quad tempassign = generate(emptyQid, node->children[1]->node_tmp, emptyQid, node->children[0]->node_tmp, -1);
+        quad exp = generate(emptyQid, node->children[1]->node_tmp, emptyQid, node->node_tmp, -1);
+        codeInsert(node, node->children[1]->code);
+        codeInsert(node, node->children[0]->code);
+        node->code.push_back(tempassign);
+        node->code.push_back(exp);
+        // print3AC(node->code);
+    }
+    
+    else if(presentInOpList(opsBinary, nodeName))
         binary3AC(node, nodeName);
     
-    if(presentInOpList(opsUnary, nodeName))
+    else if(presentInOpList(opsUnary, nodeName))
         unary3AC(node, nodeName);
 
-    std::vector<std::string> operAndAssign{"+=", "-=", "*=", "/=", "&="};
+    
 
-    if(presentInOpList(operAndAssign, nodeName))
+    else if(presentInOpList(operAndAssign, nodeName))
     {
         std::string oper;
         oper.push_back(nodeName[0]);
         node->node_tmp = newtemp(node->children[0]->typeForExpr, node->nearSymbolTable);
         generate(qid(oper, NULL), node->children[0]->node_tmp, node->children[1]->node_tmp, node->node_tmp, -1);
+        //node->children[0]->node_tmp = newtemp(node->children[0]->children[0]->typeForExpr, node->nearSymbolTable);
         generate(emptyQid, node->node_tmp, emptyQid, node->children[0]->node_tmp, -1);
     } 
     
-    if(nodeName == "PreIncrementExpression")
+    else if(nodeName == "PreIncrementExpression")
         preOperation3AC(node, "+");
     else if(nodeName == "PreDecrementExpression")
         preOperation3AC(node, "-");
@@ -987,11 +1018,11 @@ void three_AC(Node *node){
     else if(nodeName == "PostDecrementExpression")
         postOperation3AC(node, "-");
     
-    if(node->children.size()==0 && ((node->value[0]=='I' && node->value[1] == 'd' ) || (node->value[0]=='L' && node->value[1] == 'i') ) ){
-        node->node_tmp = qid(node->namelexeme, node->nearSymbolTable->lookup(node->namelexeme));
+    else if(node->children.size()==0 && ((node->value[0]=='I' && node->value[1] == 'd' ) || (node->value[0]=='L' && node->value[1] == 'i') ) ){
+        node->node_tmp = qid(node->namelexeme, node->nearSymbolTable->lookup(node->namelexeme));        
     }
     
-    if(nodeName == "IfThenStatement"){
+    else if(nodeName == "IfThenStatement"){
         Node* condition = node->children[0]->children[0];
         Node*  thenNode = node->children[1]->children[0];
         labelCounter++;
@@ -1001,10 +1032,10 @@ void three_AC(Node *node){
         node->code.push_back(ifThenQuad);
         codeInsert(node, thenNode->code);
         node->code.push_back(generate(qid(label, NULL), emptyQid , emptyQid, emptyQid  , -1));
-        print3AC(node->code);
+        // print3AC(node->code);
     }
 
-    if(nodeName == "IfThenElseStatement" || nodeName == "IfThenElseStatementNoShortIf"){
+    else if(nodeName == "IfThenElseStatement" || nodeName == "IfThenElseStatementNoShortIf"){
         Node* condition = node->children[0]->children[0];
         Node*  thenNode = node->children[1]->children[0];
         Node* elseNode = node->children[2]->children[0];
@@ -1020,7 +1051,7 @@ void three_AC(Node *node){
         quad L1 = generate(qid(l1, NULL), emptyQid, emptyQid, emptyQid, -1);
         quad L2 = generate(qid(l2, NULL), emptyQid, emptyQid, emptyQid, -1);
         quad L3 = generate(qid(l3, NULL), emptyQid, emptyQid, emptyQid, -1);
-        quad gotol3 = generate(qid( "$goto" + " "+ l3, NULL), emptyQid, emptyQid, emptyQid, -1);
+        quad gotol3 = generate(qid( "$goto " + l3, NULL), emptyQid, emptyQid, emptyQid, -1);
         node->code = condition->code;
         node->code.push_back(ifThenQuad);
         node->code.push_back(elseQuad);
@@ -1031,10 +1062,67 @@ void three_AC(Node *node){
         codeInsert(node, elseNode->code);
         node->code.push_back(L3);
         
+    }
+
+    else if(nodeName == "For"){
+        Node* ForInit, *ForExpression , *ForUpdate , *ForBody;
+        for(auto child : node->children){
+                if(child->namelexeme == "ForInit"){
+                    ForInit = child;
+                } 
+                if(child->namelexeme == "ForExpression"){
+                    ForExpression = child;
+                } 
+                if(child->namelexeme == "ForUpdate"){
+                    ForUpdate = child;
+                } 
+                if(child->namelexeme == "Block"){
+                    ForBody = child;
+                } 
+               
+        }
+        if(ForInit){
+            codeInsert(node, ForInit->code);
+        }
         labelCounter++;
-        std::string elseEndLabel = "$L" + std::to_string(labelCounter);
+        std::string beginFor = "$L" + std::to_string(labelCounter);
+        labelCounter++;
+        // forinit ...
+        // beginFor 
+        // 
+        std::string endFor = "$L" + std::to_string(labelCounter);
+        quad beginFOR = generate(qid(beginFor, NULL), emptyQid, emptyQid, emptyQid, -1);
+        quad endFOR = generate(qid(endFor, NULL), emptyQid, emptyQid, emptyQid, -1);
+        node->code.push_back(beginFOR);
+        if(ForExpression){
+            codeInsert(node, ForExpression->code);
+            quad ifThenQuad = generate(qid("IfFalse", NULL),  ForExpression->node_tmp , qid(endFor, NULL), emptyQid  , -1);
+            node->code.push_back(ifThenQuad);
+        }
+        if(ForBody){
+             codeInsert(node, ForBody->code);
+        }
+        if(ForUpdate){
+             codeInsert(node, ForUpdate->code);
+        }
+        quad gotoBeginFor = generate(qid( "$goto " + beginFor, NULL), emptyQid, emptyQid, emptyQid, -1);
+        node->code.push_back(gotoBeginFor);
+        node->code.push_back(endFOR);
+        print3AC(node->code);
+
         
     }
+    else{
+        for(auto child : node->children){
+            codeInsert(node, child->code);
+        }
+    }
+
+
+    
+    
+
+    
 
 
 }
@@ -1061,6 +1149,9 @@ void typecheck(Node *node)
         assert((int)(node->children.size()) >= 2);
         Node *leftHandSide = node->children[0];
         Node *rightHandSide = node->children[1];
+        if(nodeName == "="){
+            node->typeForExpr = leftHandSide->typeForExpr;
+        }
 
         if(leftHandSide->numDims !=  rightHandSide->numDims){
             std::cerr<<leftHandSide->numDims <<" " <<rightHandSide->numDims<<"\n";
@@ -1078,9 +1169,11 @@ void typecheck(Node *node)
         else if(setTypeCheckType1( leftHandSide->typeForExpr)!=8 && setTypeCheckType1( rightHandSide->typeForExpr)!=8){
             if(setTypeCheckType1( leftHandSide->typeForExpr)< setTypeCheckType1( rightHandSide->typeForExpr)){
                 leftHandSide->typeForExpr = rightHandSide->typeForExpr;
+                if(nodeName != "=" ) node->typeForExpr = rightHandSide->typeForExpr;
             }
             else if(setTypeCheckType1( leftHandSide->typeForExpr) > setTypeCheckType1( rightHandSide->typeForExpr)){
                 rightHandSide->typeForExpr = leftHandSide->typeForExpr;
+                if(nodeName != "=" ) node->typeForExpr = leftHandSide->typeForExpr;
             }
             else {
                 // if both are at same level , then no change in conversion 
@@ -2240,6 +2333,9 @@ BasicForStatement:  FOR LeftParenthesis  Semicolon  Semicolon  RightParenthesis 
                     | FOR LeftParenthesis ForInit Semicolon  Semicolon  RightParenthesis Statement
                     {
                         $$ = createNode("For");
+                        Node* temp = createNode("ForInit");
+                        temp->add_child($3);
+                        $$->add_child(temp);
                         $$->add_child($4);
                         $$->add_child($5);
                         $$->add_child($7);
@@ -2252,7 +2348,10 @@ BasicForStatement:  FOR LeftParenthesis  Semicolon  Semicolon  RightParenthesis 
                         $$ = createNode("For");
                         $$->add_child($3);
                         $$->add_child($4);
-                        $$->add_child($5);
+                        Node* temp = createNode("ForUpdate");
+                        temp->add_child($5);
+                        $$->add_child(temp);
+                        
                         $$->add_child($7);
 
                         $$->symTable = $7->symTable; 
@@ -2260,10 +2359,18 @@ BasicForStatement:  FOR LeftParenthesis  Semicolon  Semicolon  RightParenthesis 
                     | FOR LeftParenthesis ForInit Semicolon  Semicolon ForUpdate RightParenthesis Statement
                     {
                         $$ = createNode("For");
-                        $$->add_child($3);
+                
+                        Node* temp = createNode("ForInit");
+                        temp->add_child($3);
+                        $$->add_child(temp);
+                        
+                       
                         $$->add_child($4);
                         $$->add_child($5);
-                        $$->add_child($6);
+                        temp = createNode("ForUpdate");
+                        temp->add_child($6);
+                        $$->add_child(temp);
+                        
                         $$->add_child($8);
 
                         $$->symTable = $8->symTable; 
@@ -2273,7 +2380,9 @@ BasicForStatement:  FOR LeftParenthesis  Semicolon  Semicolon  RightParenthesis 
                     {
                         $$ = createNode("For");
                         $$->add_child($3);
-                        $$->add_child($4);
+                        Node* temp = createNode("ForExpression");
+                        temp->add_child($4);
+                        $$->add_child(temp);
                         $$->add_child($5);
                         $$->add_child($7);
 
@@ -2282,9 +2391,16 @@ BasicForStatement:  FOR LeftParenthesis  Semicolon  Semicolon  RightParenthesis 
                     | FOR LeftParenthesis ForInit Semicolon Expression Semicolon  RightParenthesis Statement
                     {
                         $$ = createNode("For");
-                        $$->add_child($3);
+                        Node* temp = createNode("ForInit");
+                        temp->add_child($3);
+                        $$->add_child(temp);
+
                         $$->add_child($4);
-                        $$->add_child($5);
+                        
+                        temp = createNode("ForExpression");
+                        temp->add_child($3);
+                        $$->add_child(temp);
+
                         $$->add_child($6);
                         $$->add_child($8);
 
@@ -2295,9 +2411,13 @@ BasicForStatement:  FOR LeftParenthesis  Semicolon  Semicolon  RightParenthesis 
                     {
                         $$ = createNode("For");
                         $$->add_child($3);
-                        $$->add_child($4);
+                        Node* temp = createNode("ForExpression");
+                        temp->add_child($4);
+                        $$->add_child(temp);
                         $$->add_child($5);
-                        $$->add_child($6);
+                        temp = createNode("ForUpdate");
+                        temp->add_child($6);
+                        $$->add_child(temp);
                         $$->add_child($8);
 
                         $$->symTable = $8->symTable; 
@@ -2305,11 +2425,21 @@ BasicForStatement:  FOR LeftParenthesis  Semicolon  Semicolon  RightParenthesis 
                     | FOR LeftParenthesis ForInit Semicolon Expression Semicolon ForUpdate RightParenthesis Statement
                     {
                         $$ = createNode("For");
-                        $$->add_child($3);
+                        Node* temp = createNode("ForInit");
+                        temp->add_child($3);
+                        $$->add_child(temp);
+
                         $$->add_child($4);
-                        $$->add_child($5);
+                        temp = createNode("ForExpression");
+                        temp->add_child($5);
+                        $$->add_child(temp);
+                        
                         $$->add_child($6);
-                        $$->add_child($7);
+                        
+                        temp = createNode("ForUpdate");
+                        temp->add_child($7);
+                        $$->add_child(temp);
+
                         $$->add_child($9);
                         
                         $$->symTable = $9->symTable;
@@ -2329,6 +2459,9 @@ BasicForStatementNoShortIf: FOR LeftParenthesis  Semicolon  Semicolon RightParen
                             | FOR LeftParenthesis ForInit Semicolon  Semicolon RightParenthesis StatementNoShortIf
                             {
                                 $$ = createNode("For");
+                                Node* temp = createNode("ForInit");
+                                temp->add_child($3);
+                                $$->add_child(temp);
                                 $$->add_child($4);
                                 $$->add_child($5);
                                 $$->add_child($7);
@@ -2339,7 +2472,12 @@ BasicForStatementNoShortIf: FOR LeftParenthesis  Semicolon  Semicolon RightParen
                             {
                                 $$ = createNode("For");
                                 $$->add_child($3);
-                                $$->add_child($4);
+                                
+                                Node* temp = createNode("ForExpression");
+                                temp->add_child($4);
+                                $$->add_child(temp);
+                                
+                              
                                 $$->add_child($5);
                                 $$->add_child($7);
 
@@ -2349,10 +2487,15 @@ BasicForStatementNoShortIf: FOR LeftParenthesis  Semicolon  Semicolon RightParen
                             | FOR LeftParenthesis ForInit Semicolon Expression Semicolon RightParenthesis StatementNoShortIf
                             {
                                 $$ = createNode("For");
+                                Node* temp = createNode("ForInit");
+                                temp->add_child($3);
+                                $$->add_child(temp);
                                 $$->add_child($3);
-                                $$->add_child($5);
+                                temp = createNode("ForExpression");
+                                temp->add_child($5);
+                                $$->add_child(temp);
+                            
                                 $$->add_child($8);
-
                                 $$->symTable = $8->symTable;
                                 $$->add_entries($3->stEntries);
                             }
@@ -2361,7 +2504,10 @@ BasicForStatementNoShortIf: FOR LeftParenthesis  Semicolon  Semicolon RightParen
                                 $$ = createNode("For");
                                 $$->add_child($3);
                                 $$->add_child($4);
-                                $$->add_child($5);
+                                Node* temp = createNode("ForUpdate");
+                                temp->add_child($5);
+                                $$->add_child(temp);
+                           
                                 $$->add_child($7);
 
                                 $$->symTable = $7->symTable;
@@ -2369,10 +2515,17 @@ BasicForStatementNoShortIf: FOR LeftParenthesis  Semicolon  Semicolon RightParen
                             | FOR LeftParenthesis ForInit Semicolon  Semicolon ForUpdate RightParenthesis StatementNoShortIf
                             {
                                 $$ = createNode("For");
-                                $$->add_child($3);
+                                Node* temp = createNode("ForInit");
+                                temp->add_child($3);
+                                $$->add_child(temp);
+                                
                                 $$->add_child($4);
                                 $$->add_child($5);
-                                $$->add_child($6);
+
+                                temp = createNode("ForUpdate");
+                                temp->add_child($6);
+                                $$->add_child(temp);
+                                
                                 $$->add_child($8);
 
                                 $$->symTable = $8->symTable;
@@ -2382,9 +2535,15 @@ BasicForStatementNoShortIf: FOR LeftParenthesis  Semicolon  Semicolon RightParen
                             {
                                 $$ = createNode("For");
                                 $$->add_child($3);
-                                $$->add_child($4);
+                                 Node* temp = createNode("ForExpression");
+                                temp->add_child($4);
+                                $$->add_child(temp);
                                 $$->add_child($5);
-                                $$->add_child($6);
+
+                                temp = createNode("ForUpdate");
+                                temp->add_child($6);
+                                $$->add_child(temp);
+                               
                                 $$->add_child($8);
 
                                 $$->symTable = $8->symTable;
@@ -2392,11 +2551,21 @@ BasicForStatementNoShortIf: FOR LeftParenthesis  Semicolon  Semicolon RightParen
                             | FOR LeftParenthesis ForInit Semicolon Expression Semicolon ForUpdate RightParenthesis StatementNoShortIf
                             {
                                 $$ = createNode("For");
-                                $$->add_child($3);
+                                Node* temp = createNode("ForInit");
+                                temp->add_child($3);
+                                $$->add_child(temp);
+                                
                                 $$->add_child($4);
-                                $$->add_child($5);
+
+                                temp = createNode("ForExpression");
+                                temp->add_child($5);
+                                $$->add_child(temp);
+                                
                                 $$->add_child($6);
-                                $$->add_child($7);
+                                temp = createNode("ForUpdate");
+                                temp->add_child($7);
+                                $$->add_child(temp);
+                                
                                 $$->add_child($9);
 
                                 $$->symTable = $9->symTable;

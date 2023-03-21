@@ -17,6 +17,9 @@ struct funcproto{
     std::vector<std::string> argTypes;
     std::vector<int> argSizes;
     std::vector<int> argDims;
+    
+    std::string returnType;
+    int returnSize, returnDim;
 
     funcproto(){
         numArgs=0;
