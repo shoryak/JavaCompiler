@@ -25,13 +25,26 @@ extern FILE *yyin;
 extern FILE *yyout;
 extern int linenum;
 
+
+struct field
+{
+    std::string name;
+    std::string type;
+    int numDims;
+    std::string modifier;
+};
+
 SymbolTable *globalSymTable = new SymbolTable;
 SymbolTable *currSymTable = globalSymTable;
 std::vector<SymbolTableEntry*> stEntryContainer;
 int useCurlyForNewScope  = 1;
 std::vector<int> curlyScopes;
 int labelCounter = 0;
-std::string currentClass;
+std::string currentClass, currentFuncName;
+std::unordered_map<std::string, SymbolTable*> methodSymbolTable;
+std::map<std::string , std::set<std::string > > methodsForClass;
+std::map<std::string , std::set<std::string>  > fieldsForClass;
+std::map<std::string , field > classFieldData;
 
 struct Node
 {
@@ -177,6 +190,17 @@ int buildTree(Node* node, int parentno, int co)
     return co;
 }
 
+void SymTableCSVDump()
+{
+    for(auto [file, symTable]: methodSymbolTable)
+    {
+        std::ofstream ofs;
+        ofs.open(file + ".csv");
+        symTable->csvDump(ofs);
+        ofs.close();
+    }
+}
+
 void setSymTables(Node* node){
     if(node == NULL) return;
     if(node->symTable == NULL){
@@ -264,14 +288,17 @@ int setTypeCheckType1(std::string type)
 }
 
 void declarationTypeCheck(Node* node){
-    if(node->children.size()==0 && node->value[0] == 'I' && node->value[1]=='d'){
+    if(node->children.size()==0 && node->value[0] == 'I' && node->value[1]=='d' && node->parent->parent->namelexeme != "." &&  node->parent->parent->namelexeme != "VariableDeclaratorId" && node->parent->parent->namelexeme!= "UnqualifiedClassInstanceCreationExpression" && node->parent->parent->namelexeme != "MethodInvocation" && node->parent->parent->namelexeme != "MethodDeclarator" ){
         auto stEntry = currSymTable->lookup(node->namelexeme);
         if(!stEntry){
              std::string err = "Undeclared Variable " + node->namelexeme +" on line " + std::to_string(node->lineNumber);
-            yyerror(err.c_str());
+            yyerror(err.c_str()); 
         }
     }
-    for(auto child : node->children) declarationTypeCheck(child);
+    for(auto child : node->children) {
+        if(node->namelexeme == "." && child->namelexeme == "." ) continue;
+        declarationTypeCheck(child);
+    }
 
 }
 
@@ -296,6 +323,27 @@ void methodTypeCheck(Node* node)
         else if(node->children[0]->namelexeme == ".")
         {
             methodName = node->children[0]->children[1]->children[0]->namelexeme;
+            if(node->children[0]->children[0]->namelexeme == "."){
+                return;
+            }
+            else{
+                auto obj = node->children[0]->children[0]->children[0]->namelexeme;
+                auto stEntry = node->nearSymbolTable->lookup(obj);
+                if(!stEntry){
+                    std::string s = "Undeclared Object " + obj+ " in line number " + std::to_string(node->children[0]->children[0]->children[0]->lineNumber);
+                    yyerror(s.c_str());
+                }
+                else{
+                    auto className = node->nearSymbolTable->lookup(obj)->getType();
+                    if(methodsForClass[className].find(methodName) == methodsForClass[className].end()){
+                        std::string s = "Undeclared function for class " + className + " in line number " + std::to_string(node->lineNumber);
+                        yyerror(s.c_str());
+                    }
+                }
+            }
+        }
+        if(methodName == "println"){
+            return;
         }
         for(auto child : node->children)
         {
@@ -307,14 +355,15 @@ void methodTypeCheck(Node* node)
                     Node* leaf = arg;
                     while(leaf->children.size())
                         leaf = leaf->children[0];
-                    args.push_back(leaf->namelexeme);
+                    if(leaf->value[0] = 'I' && leaf->value[1] == 'd' ){
+                        auto entry  = node->nearSymbolTable->lookup(leaf->namelexeme);
+                        args.push_back(entry->getType());
+                        methodName += "_" + entry->getType() + "_" + std::to_string(entry->getDimension());
+                    }
+                    else if(leaf->value[0] == 'L' && leaf->value[1] == 'i'){
+                        methodName += "_" + leaf->type + "_" + std::to_string(leaf->numDims);
+                    }
                 }
-            }
-        }
-        std::cerr<< methodName <<" "<< nArgs<<" "<<std::endl;
-        if(args.size()){
-            for(auto arg : args){
-                std::cerr<< arg << std::endl;
             }
         }
         SymbolTableEntry* stEntry = node->nearSymbolTable->lookup(methodName);
@@ -361,8 +410,6 @@ void methodTypeCheck(Node* node)
 
 void createST(Node* node)
 {
-    // std::cerr<<node->namelexeme<<std::endl;
-
     // setting nearest scope symbol table for the node for typechecking 
     node->nearSymbolTable = currSymTable;
 
@@ -393,7 +440,6 @@ void createST(Node* node)
     else if(nodeName == "class")
     {
         int n = node->children.size();
-        std::cerr << nodeName << std::endl;
         std::vector<Node*> children = node->children;
         std::string name;
         assert(n >= 2);
@@ -407,6 +453,7 @@ void createST(Node* node)
         }
         if(name != "") name += " ";
         name += children[n-2]->namelexeme;
+        currentClass = children[n-2]->namelexeme;
         auto alreadDeclared = currSymTable->lookup(children[n-2]->namelexeme);
         if(alreadDeclared)
         {
@@ -428,32 +475,31 @@ void createST(Node* node)
         std::vector<Node*> children = node->children;
         std::string name = "";        //modifiers_returntype_functionname
         struct funcproto fproto;
-        std::string funcNameId;
+        std::string type;
         for(auto x: children)
         {
             if(x->namelexeme == "ModifierList")
             {
                 for(auto y: x->children)
                 {
-                    std::cerr<<name<<std::endl;
                     if(name!="")name+=" "+ std::string(y->namelexeme);
                     else  name+=std::string(y->namelexeme);
                 }
             }
             else if(x->namelexeme == "MethodHeader")
             {
-                if(name != "") name += " ";
-                
-                std::cerr << name << std::endl;
+                if(name != "") name += " ";                
                 name += std::string(x->children[0]->namelexeme);
+
                 decLine = (x->children[0]->lineNumber);
                 name += " " + std::string(x->children[1]->children[0]->children[0]->namelexeme);
+                methodsForClass[currentClass].insert(x->children[1]->children[0]->children[0]->namelexeme);
                 for(auto y: x->children)
                 {
                     if(y->namelexeme == "MethodDeclarator")
                     {
                         Node* temp = nullptr;
-                        funcNameId = y->children[0]->namelexeme;
+                        currentFuncName = y->children[0]->children[0]->namelexeme;
                         for(auto k : y->children)
                         {
                             if(k->namelexeme == "FormalParameterList")
@@ -467,7 +513,7 @@ void createST(Node* node)
                         {
                             std::string nameParam;
                             std::string typeParam;
-                            int nDimsParam;
+                            int nDimsParam = 0;
                             for(auto x: z->children)
                             {
                                 if(x->namelexeme == "final")
@@ -490,9 +536,16 @@ void createST(Node* node)
                                     if(x->namelexeme == "UnannArrayType")
                                     {
                                         typeParam  = x->children[0]->namelexeme;
+                                        type += "_" + x->children[0]->namelexeme;
                                         nDimsParam += x->children.size()-1;
+                                        type += "_" + std::to_string(nDimsParam);
                                     }
-                                    else typeParam += x->namelexeme;
+                                    else {
+                                        
+                                        typeParam +=  x->namelexeme;
+                                        type += "_" + x->namelexeme;
+                                        type += "_" + std::to_string(nDimsParam);
+                                    }
                                 }
                             }
                             fproto.numArgs++;
@@ -502,21 +555,22 @@ void createST(Node* node)
                     }
                 }
             }
-            else
-            {
-                // Symbol Table CSV dump
-                std::ofstream ofs;
-                ofs.open(currentClass + "." + funcNameId + ".csv");
-                currSymTable->csvDump(ofs);
-                ofs.close();
-            }
-            std::cerr << x->namelexeme << std::endl;
         }
-        SymbolTableEntry* stEntry = new SymbolTableEntry(name, "$func", -1, -1, decLine, 0, fproto);
+        while(name.size() && name.back()==' '){
+            name.pop_back();
+        }
+        if(currSymTable->lookup(name+type)){
+            yyerror("Redeclaration of function");
+            // error;
+        }
+        SymbolTableEntry* stEntry = new SymbolTableEntry(name+type, "$func", -1, -1, decLine, 0, fproto);
         node->lineNumber = decLine;
         currSymTable->insert(stEntry);
+        methodsForClass[currentClass].insert(name+type);
         newScope = 1;
         useCurlyForNewScope = 0;
+
+        methodSymbolTable[currentClass + "." + currentFuncName] = node->nearSymbolTable;
 
         // 3AC
         node->position = qid(nodeName, stEntry);
@@ -575,6 +629,7 @@ void createST(Node* node)
         std::vector<Node*> children = node->children;
         std::string name = "";
         std::string type = "";
+        std::string modifier = "private";
         int nDims = 0;
         int decLine =- 1;
         Node* list = nullptr;
@@ -582,6 +637,7 @@ void createST(Node* node)
         {
             if(x->namelexeme == "ModifierList")
             {
+                modifier = x->children[0]->namelexeme;
                 for(auto y: x->children)
                 {
                     if(name != "") name += " " + std::string(y->namelexeme);
@@ -615,6 +671,7 @@ void createST(Node* node)
                             nDims += child->children.size();
                         }
                     }
+
                     auto alreadDeclared = currSymTable->currentScopeLookup(y->children[0]->children[0]->children[0]->namelexeme);
                     if(alreadDeclared)
                     {
@@ -622,6 +679,15 @@ void createST(Node* node)
                         yyerror(s.c_str());
                     }
                     SymbolTableEntry* stEntry = new SymbolTableEntry(name + y->children[0]->children[0]->children[0]->namelexeme, type, -1, nDims, y->children[0]->children[0]->children[0]->lineNumber, 0);
+                    std::string fieldData;
+                    field fieldStructData; 
+                    fieldData += y->children[0]->children[0]->children[0]->namelexeme;
+                    fieldStructData.name = y->children[0]->children[0]->children[0]->namelexeme;
+                    fieldStructData.type = type;
+                    fieldStructData.numDims = nDims;
+                    fieldStructData.modifier = modifier;
+                    fieldsForClass[currentClass].insert(fieldData);
+                    classFieldData[currentClass +"_" + fieldData] = fieldStructData;
                     currSymTable->insert(stEntry);
 
                     //3 AC
@@ -631,7 +697,6 @@ void createST(Node* node)
                 else
                 {
                     for(auto child : y->children){
-                        // std::cerr<<child->namelexeme<<"\n";
                         if(child->namelexeme == "Dims"){
                             nDims += child->children.size();
                         }
@@ -643,6 +708,15 @@ void createST(Node* node)
                         yyerror(s.c_str());
                     }
                     SymbolTableEntry* stEntry = new SymbolTableEntry( name + y->children[0]->children[0]->namelexeme, type, -1, nDims, y->children[0]->children[0]->lineNumber, 0);
+                    std::string fieldData;
+                    field fieldStructData; 
+                    fieldData += y->children[0]->children[0]->namelexeme;
+                    fieldStructData.name = fieldData;
+                    fieldStructData.type = type;
+                    fieldStructData.numDims = nDims;
+                    fieldStructData.modifier = modifier;
+                    fieldsForClass[currentClass].insert(fieldData);
+                    classFieldData[currentClass +"_" + fieldData] = fieldStructData;
                     currSymTable->insert(stEntry);
                     //3 AC
                     y->position = qid( y->children[0]->children[0]->namelexeme, stEntry);
@@ -699,7 +773,6 @@ void createST(Node* node)
                 else
                 {   
                     for(auto child : y->children){
-                        // std::cerr<<child->namelexeme<<"\n";
                         if(child->namelexeme == "Dims"){
                             nDims += child->children.size();
                         }
@@ -741,7 +814,6 @@ void createST(Node* node)
             }
             else if(x->namelexeme == "ConstructorDeclarator"){
                 if(name!="") name+=" ";
-                std::cerr<<name<<std::endl;
                 name+=  std::string(x->children[0]->namelexeme);
                 decLine = (x->children[0]->lineNumber);
                 //name+=" " + std::string(x->children[1]->children[0]->children[0]->namelexeme);
@@ -763,8 +835,7 @@ void createST(Node* node)
         
 
     }
-    else if(nodeName == "Identifier" && node->parent->namelexeme != "VariableDeclaratorId" && node->parent->namelexeme!= "UnqualifiedClassInstanceCreationExpression" && node->parent->namelexeme != "MethodInvocation"){
-        std::cerr<<"Identifier "<<node->children[0]->namelexeme<<"\n";
+    else if(nodeName == "Identifier" && node->parent->namelexeme != "VariableDeclaratorId" && node->parent->namelexeme!= "UnqualifiedClassInstanceCreationExpression" && node->parent->namelexeme != "MethodInvocation" && node->parent->namelexeme != "MethodDeclarator" && node->parent->namelexeme!= "."){
         auto stEntry = currSymTable->lookup(node->children[0]->namelexeme);
         if(!stEntry){
              std::string err = "Undeclared Variable " + node->children[0]->namelexeme +" on line " + std::to_string(node->children[0]->lineNumber);
@@ -777,7 +848,6 @@ void createST(Node* node)
     }
     else if(nodeName == "VariableDeclaratorId"){
         for(auto child : node->children){
-                        // std::cerr<<child->namelexeme<<"\n";
                         if(child->namelexeme == "Dims"){
                             node->numDims = child->children.size();
             }
@@ -794,12 +864,18 @@ void createST(Node* node)
         useCurlyForNewScope= 0;
     }
 
-    if(newScope) startScope();
+    if(newScope) {
+        startScope();
+        methodSymbolTable[currentClass + "." + currentFuncName] = currSymTable;
+    }
 
     int n = node->children.size();
     std::vector<Node*> children = node->children;
 
-    for(int i = 0; i < n; i++) createST(children[i]);
+    for(int i = 0; i < n; i++) {
+        if(node->namelexeme == "." && children[i]->namelexeme == "." ) continue;
+        createST(children[i]);
+    }
 
     if(newScope)
     {
@@ -810,20 +886,13 @@ void createST(Node* node)
     if(n == 0)
     {
         if(node->value[0] == 'I' && node->value[1] == 'd'){
-            std::cerr << node->lexeme << " " << node->typeForExpr << std::endl;
             auto stEntry = currSymTable->lookup(node->namelexeme);
             // assert(stEntry);
             if(stEntry)
             {
                 node->typeForExpr = stEntry->getType();
-                std::cerr << node->lexeme << " " << node->typeForExpr << std::endl;
             }
         }
-        if(node->value[0] == 'L' && node->value[1] == 'i')
-        {
-            std::cerr << node->lexeme << " " << node->typeForExpr << std::endl;
-        }
-        
     }
     else if(n == 1)
     {
@@ -878,16 +947,49 @@ void createST(Node* node)
         Node* leaf = node;
         if(node->parent->namelexeme != "Dims"){
             while(leaf->children.size()){
+                
+                if(leaf->namelexeme == "."){
+                    break;
+                }
                 nc++;
+                   
+                
                 leaf = leaf->children[0];
+                
             }
-            node->typeForExpr = leaf->nearSymbolTable->lookup(leaf->namelexeme)->getType();
-        node->numDims =  leaf->nearSymbolTable->lookup(leaf->namelexeme)->getDimension() - nc + 1;
+        if(leaf->namelexeme == "."){
+            auto stEntry = leaf->children[0]->children[0]->nearSymbolTable->lookup(leaf->children[0]->children[0]->namelexeme);
+            if(!stEntry){
+                 std::string s = "Undeclared Object " +  leaf->children[0]->children[0]->namelexeme + " in line number " + std::to_string(node->lineNumber);
+                yyerror(s.c_str());
+            }
+            auto curClass = stEntry->getType();
+            auto fieldName = leaf->children[1]->children[0]->namelexeme;
+            if(fieldsForClass[curClass].find(fieldName) == fieldsForClass[curClass].end()){
+                std::string s = "Undeclared field for class " + curClass + " in line number " + std::to_string(node->lineNumber);
+                yyerror(s.c_str());
+            }
+            std::string cfield = curClass + "_" +fieldName;
+            auto fData = classFieldData[cfield];
+            node->typeForExpr = fData.type;
+            node->numDims = fData.numDims - nc;
+        }
+        else{
+            auto entry = leaf->nearSymbolTable->lookup(leaf->namelexeme);
+            if(!entry){
+                std::string s = "Undeclared Object " +  leaf->namelexeme + " in line number " + std::to_string(node->lineNumber);
+                yyerror(s.c_str());
+            }
+            node->typeForExpr = entry->getType();
+            node->numDims =  entry->getDimension() - nc + 1;
+        }
         } 
         
     }
-
-
+    // else if(nodeName == "." && node->children[0]->namelexeme != "."){
+        
+    //     auto className = node->nearSymbolTable->lookup(node->children[0]->children[0]->namelexeme)->getType();
+    // }
 }
 
 void codeInsert(Node* node, std::vector<quad> code ){
@@ -1154,7 +1256,6 @@ void typecheck(Node *node)
         }
 
         if(leftHandSide->numDims !=  rightHandSide->numDims){
-            std::cerr<<leftHandSide->numDims <<" " <<rightHandSide->numDims<<"\n";
             std::string s = "Number of dimensions does not match on leftHandSide  and rightHandSide "  + nodeName +  " in line number " + std::to_string(node->lineNumber);
             yyerror(s.c_str());
         }
@@ -1322,6 +1423,7 @@ CompilationUnit:    OrdinaryCompilationUnit
                         stEntry = new SymbolTableEntry("out", "$package" , 0 , 0 , 0 , 0);
                         currSymTable->insert(stEntry);
                         createST(root);
+                        SymTableCSVDump();
                         three_AC(root);
                         // globalSymTable = $$->symTable;
                         globalSymTable->__printAll();

@@ -9,13 +9,13 @@ class CSEIITK
 		    int a = 3;
             int b= a/3;
 		    int diff =a+b;
-		    int digit[]={2,4};
+		    // int digit[]={2,4};
 		    float sum=0;
 		    while(sum<0){
 		        sum/=100;
 		        sum/=102;
 		    }
-		    System.out.println(t);
+		    // System.out.println(t);
 		}
 		
 	}
