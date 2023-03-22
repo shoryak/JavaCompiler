@@ -284,7 +284,9 @@ int setTypeCheckType1(std::string type)
     else if(type=="float") return 5;
     else if(type=="double") return 6;
     else if(type=="boolean") return 7;
-    else return 8;
+    else {
+        return 8;
+    }
 }
 
 void declarationTypeCheck(Node* node){
@@ -1277,6 +1279,17 @@ void typecheck(Node *node)
                 if(nodeName != "=" ) node->typeForExpr = leftHandSide->typeForExpr;
             }
             else {
+
+                if(rightHandSide->typeForExpr == "boolean" || leftHandSide->typeForExpr =="boolean"){
+                    // std::cerr<<" abc "<<nodeName<<"\n";
+                    
+                    
+                    if((nodeName!= "||") && (nodeName!="&&") && (nodeName!= "!") && (nodeName != "<") && (nodeName != ">") && (nodeName != "<=") && (nodeName != ">=") && (nodeName!= "!=")  && (nodeName!= "=")){
+                        std::string s = "Type Mismatch "+leftHandSide->typeForExpr + " and " + rightHandSide->typeForExpr + " does not match under " + nodeName +  " in line number " + std::to_string(node->lineNumber);
+                        yyerror(s.c_str());
+                    }
+                }
+                
                 // if both are at same level , then no change in conversion 
                 // short or char are taken at same level so no interchange
             }
