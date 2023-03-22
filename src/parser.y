@@ -912,13 +912,11 @@ void createST(Node* node)
     else if(nodeName == "+")
     {
         typecheck(node);
-        node->typeForExpr = node->children[0]->typeForExpr;
     }
 
     else if(nodeName == "*" || nodeName == "/" || nodeName == "%" || nodeName=="%=" || nodeName == "-"  || nodeName=="&" ||nodeName=="=" || nodeName=="^" || nodeName=="^="  || nodeName=="|" ||  nodeName=="|=" || nodeName==":" || nodeName=="+=" || nodeName=="-=" || nodeName=="*=" || nodeName=="/=" || nodeName=="&=" )
     {
         typecheck(node);
-        node->typeForExpr = node->children[0]->typeForExpr;
     }
     else if(nodeName == "<" || nodeName == ">" || nodeName == "<=" || nodeName == ">=" || nodeName== "==" || nodeName=="!=" || nodeName=="||" || nodeName=="&&" ){
         typecheck(node);
@@ -986,12 +984,13 @@ void createST(Node* node)
             node->numDims =  entry->getDimension() - nc + 1;
         }
         } 
+    
         
     }
-    // else if(nodeName == "." && node->children[0]->namelexeme != "."){
-        
-    //     auto className = node->nearSymbolTable->lookup(node->children[0]->children[0]->namelexeme)->getType();
-    // }
+    else if(node->children.size() == 0 && node->namelexeme[0] == 'L' && node->namelexeme[1] == 'i'){
+        node->typeForExpr = node->type;
+    }
+    
 }
 
 void codeInsert(Node* node, std::vector<quad> code ){
@@ -1001,8 +1000,24 @@ qid emptyQid("", NULL);
 
 void binary3AC(Node* node, std::string op)
 {
-    node->node_tmp = newtemp(node->children[0]->typeForExpr, node->nearSymbolTable);
-    quad instruction = generate(qid(op, NULL), node->children[0]->node_tmp, node->children[1]->node_tmp, node->node_tmp, -1);
+
+    std::cerr<< node->namelexeme <<" "<< node->typeForExpr <<" "<< node->children[0]->typeForExpr << " "<< node->children[1]->typeForExpr << "\n";
+    node->node_tmp = newtemp(node->typeForExpr, node->nearSymbolTable);
+    qid left = node->children[0]->node_tmp;
+    qid right  = node->children[1]->node_tmp;
+    if(node->children[0]->typeForExpr != node->typeForExpr){
+        auto tempcastleft = newtemp(node->typeForExpr, node->nearSymbolTable);
+        quad castInstruction = generate(qid("CAST_"+ node->typeForExpr, NULL), node->children[0]->node_tmp, emptyQid, tempcastleft, -1);
+        node->code.push_back(castInstruction);
+        left = tempcastleft;
+    }
+    if(node->children[1]->typeForExpr != node->typeForExpr){
+        auto tempcastright = newtemp(node->typeForExpr, node->nearSymbolTable);
+        quad castInstruction = generate(qid("CAST" + node->typeForExpr, NULL), node->children[1]->node_tmp, emptyQid, tempcastright, -1);
+        node->code.push_back(castInstruction);
+        right = tempcastright;
+    }
+    quad instruction = generate(qid(op, NULL), left, right, node->node_tmp, -1);
     codeInsert(node, node->children[0]->code);
     codeInsert(node, node->children[1]->code);
     node->code.push_back(instruction);
@@ -1011,7 +1026,7 @@ void binary3AC(Node* node, std::string op)
 
 void unary3AC(Node* node, std::string op)
 {
-    node->node_tmp = newtemp(node->children[0]->typeForExpr, node->nearSymbolTable);
+    node->node_tmp = newtemp(node->typeForExpr, node->nearSymbolTable);
     quad instruction = generate(qid(op, NULL), emptyQid, node->children[0]->node_tmp, node->node_tmp, -1);
     codeInsert(node,node->code);
     node->code.push_back(instruction);
@@ -1022,9 +1037,11 @@ void preOperation3AC(Node* node, std::string oper)
 {
     Node *operandNode = node->children[1];
     qid tempVar = newtemp(operandNode->typeForExpr, node->nearSymbolTable);
-    generate(qid(oper, NULL), operandNode->node_tmp, qid("1", NULL), tempVar, -1);
-    generate(emptyQid, tempVar, emptyQid, operandNode->node_tmp, -1);
+    quad I1 = generate(qid(oper, NULL), operandNode->node_tmp, qid("1", NULL), tempVar, -1);
+    quad I2 = generate(emptyQid, tempVar, emptyQid, operandNode->node_tmp, -1);
     node->node_tmp = operandNode->node_tmp;
+    node->code.push_back(I1);
+    node->code.push_back(I2);
 }
 
 void postOperation3AC(Node* node, std::string oper)
@@ -1032,10 +1049,13 @@ void postOperation3AC(Node* node, std::string oper)
     Node *operandNode = node->children[0];
     qid tempVar0 = newtemp(operandNode->typeForExpr, node->nearSymbolTable);
     qid tempVar1 = newtemp(operandNode->typeForExpr, node->nearSymbolTable);
-    generate(emptyQid, operandNode->node_tmp, emptyQid, tempVar0, -1);
-    generate(qid(oper, NULL), operandNode->node_tmp, qid("1", NULL), tempVar1, -1);
-    generate(emptyQid, tempVar1, emptyQid, operandNode->node_tmp, -1);
+    quad I1 = generate(emptyQid, operandNode->node_tmp, emptyQid, tempVar0, -1);
+    quad I2 = generate(qid(oper, NULL), operandNode->node_tmp, qid("1", NULL), tempVar1, -1);
+    quad I3 = generate(emptyQid, tempVar1, emptyQid, operandNode->node_tmp, -1);
     node->node_tmp = tempVar0;
+    node->code.push_back(I1);
+    node->code.push_back(I2);
+    node->code.push_back(I3);
 }
 
 bool presentInOpList(const std::vector<std::string>& operators, const std::string& oper)
@@ -1045,7 +1065,7 @@ bool presentInOpList(const std::vector<std::string>& operators, const std::strin
 
 void three_AC(Node *node){
     std::string nodeName = node->namelexeme;
-
+    std::cerr<<nodeName<<"__START__ \n\n";
 
     std::vector<std::string> arithmeticOpsBinary{"+", "-", "*", "/", "%"};
     std::vector<std::string> arithmeticOpsUnary;
@@ -1071,13 +1091,13 @@ void three_AC(Node *node){
     if(node->children.size()== 1){
 
         node->node_tmp = node->children[0]->node_tmp;
-        node->code = node->children[0]->code;
+        // node->code = node->children[0]->code;
     }
 
     if(nodeName == "Block" && node->children.size()>1){
         
         node->node_tmp = node->children[1]->node_tmp;
-        node->code = node->children[1]->code; 
+        // node->code = node->children[1]->code; 
         
     }
     
@@ -1191,9 +1211,6 @@ void three_AC(Node *node){
         labelCounter++;
         std::string beginFor = "$L" + std::to_string(labelCounter);
         labelCounter++;
-        // forinit ...
-        // beginFor 
-        // 
         std::string endFor = "$L" + std::to_string(labelCounter);
         quad beginFOR = generate(qid(beginFor, NULL), emptyQid, emptyQid, emptyQid, -1);
         quad endFOR = generate(qid(endFor, NULL), emptyQid, emptyQid, emptyQid, -1);
@@ -1216,15 +1233,46 @@ void three_AC(Node *node){
 
         
     }
-    else{
+    else if(nodeName == "While"){
+        Node* WhileExpression ,* WhileBody;
         for(auto child : node->children){
+            if(child->namelexeme == "WhileExpression"){
+                WhileExpression  = child;
+            }
+            if(child->namelexeme == "WhileBody"){
+                WhileBody  = child;
+            }
+        } 
+        labelCounter++;
+        std::string beginWhile = "$L" + std::to_string(labelCounter);
+        labelCounter++;
+        std::string endWhile = "$L" + std::to_string(labelCounter);
+        quad whileBegin = generate(qid(beginWhile, NULL), emptyQid, emptyQid, emptyQid, -1);
+        quad whileEnd = generate(qid(endWhile, NULL), emptyQid, emptyQid, emptyQid, -1);
+        node->code.push_back(whileBegin);
+        if(WhileExpression){
+            codeInsert(node, WhileExpression->code);
+            quad ifThenQuad = generate(qid("IfFalse", NULL),  WhileExpression->node_tmp , qid(endWhile, NULL), emptyQid  , -1);
+            node->code.push_back(ifThenQuad);
+        }
+        if(WhileBody){
+            codeInsert(node, WhileBody->code);
+        }
+        node->code.push_back(whileEnd);
+        print3AC(node->code);
+    }
+    else{
+        std::cerr<<nodeName<<"__nodename__\n";
+        for(auto child : node->children){
+            std::cerr<<child->namelexeme<<" child " <<child->code.size()<<"\n";
+
             codeInsert(node, child->code);
         }
     }
 
 
     
-    
+    std::cerr<<nodeName<<"__END__ \n\n";
 
     
 
@@ -1253,6 +1301,7 @@ void typecheck(Node *node)
         assert((int)(node->children.size()) >= 2);
         Node *leftHandSide = node->children[0];
         Node *rightHandSide = node->children[1];
+        std::cerr<<nodeName <<" "<<leftHandSide->typeForExpr <<" "<<rightHandSide->typeForExpr<< "\n";
         if(nodeName == "="){
             node->typeForExpr = leftHandSide->typeForExpr;
         }
@@ -1262,20 +1311,20 @@ void typecheck(Node *node)
             yyerror(s.c_str());
         }
         if(setTypeCheckType1( rightHandSide->typeForExpr)==8 && setTypeCheckType1( leftHandSide->typeForExpr)!=8){
-           std::string s = "Type Mismatch "+leftHandSide->typeForExpr + " and " + rightHandSide->typeForExpr + " does not match under " + nodeName +  " in line number " + std::to_string(node->lineNumber);
+           std::string s = "1 Type Mismatch "+leftHandSide->typeForExpr + " and " + rightHandSide->typeForExpr + " does not match under " + nodeName +  " in line number " + std::to_string(node->lineNumber);
             yyerror(s.c_str());
         }
         else if(setTypeCheckType1( leftHandSide->typeForExpr)==8 && setTypeCheckType1( rightHandSide->typeForExpr)!=8){
-            std::string s = "Type Mismatch "+leftHandSide->typeForExpr + " and " + rightHandSide->typeForExpr + " does not match under " + nodeName +  " in line number " + std::to_string(node->lineNumber);
+            std::string s = "2 Type Mismatch "+leftHandSide->typeForExpr + " and " + rightHandSide->typeForExpr + " does not match under " + nodeName +  " in line number " + std::to_string(node->lineNumber);
             yyerror(s.c_str());
         }
         else if(setTypeCheckType1( leftHandSide->typeForExpr)!=8 && setTypeCheckType1( rightHandSide->typeForExpr)!=8){
             if(setTypeCheckType1( leftHandSide->typeForExpr)< setTypeCheckType1( rightHandSide->typeForExpr)){
-                leftHandSide->typeForExpr = rightHandSide->typeForExpr;
+                // leftHandSide->typeForExpr = rightHandSide->typeForExpr;
                 if(nodeName != "=" ) node->typeForExpr = rightHandSide->typeForExpr;
             }
             else if(setTypeCheckType1( leftHandSide->typeForExpr) > setTypeCheckType1( rightHandSide->typeForExpr)){
-                rightHandSide->typeForExpr = leftHandSide->typeForExpr;
+                // rightHandSide->typeForExpr = leftHandSide->typeForExpr;
                 if(nodeName != "=" ) node->typeForExpr = leftHandSide->typeForExpr;
             }
             else {
@@ -1285,14 +1334,19 @@ void typecheck(Node *node)
                     
                     
                     if((nodeName!= "||") && (nodeName!="&&") && (nodeName!= "!") && (nodeName != "<") && (nodeName != ">") && (nodeName != "<=") && (nodeName != ">=") && (nodeName!= "!=")  && (nodeName!= "=")){
-                        std::string s = "Type Mismatch "+leftHandSide->typeForExpr + " and " + rightHandSide->typeForExpr + " does not match under " + nodeName +  " in line number " + std::to_string(node->lineNumber);
+                        std::string s = "3 Type Mismatch "+leftHandSide->typeForExpr + " and " + rightHandSide->typeForExpr + " does not match under " + nodeName +  " in line number " + std::to_string(node->lineNumber);
                         yyerror(s.c_str());
                     }
+                }
+                else if(setTypeCheckType1(leftHandSide->typeForExpr)!=8){
+                    node->typeForExpr = leftHandSide->typeForExpr;
                 }
                 
                 // if both are at same level , then no change in conversion 
                 // short or char are taken at same level so no interchange
             }
+            
+            // std::cerr<<" abc "<<nodeName<<  " "<< node->typeForExpr<< "\n";
         }
         else{
             // for other data types
@@ -1439,7 +1493,7 @@ CompilationUnit:    OrdinaryCompilationUnit
                         SymTableCSVDump();
                         three_AC(root);
                         // globalSymTable = $$->symTable;
-                        globalSymTable->__printAll();
+                        // globalSymTable->__printAll();
                         // print3AC();
                         
                     }
@@ -2412,8 +2466,12 @@ AssertStatement:    ASSERT Expression Semicolon
 WhileStatement: WHILE LeftParenthesis Expression RightParenthesis Statement
                 {
                     $$ = createNode("While");
-                    $$->add_child($3);
-                    $$->add_child($5);
+                    Node* temp = createNode("WhileExpression");
+                    temp->add_child($3);
+                    $$->add_child(temp);
+                    temp = createNode("WhileBody");
+                    temp->add_child($5);
+                    $$->add_child(temp);
 
                     $$->symTable = $5->symTable; 
                 }
@@ -2421,8 +2479,12 @@ WhileStatement: WHILE LeftParenthesis Expression RightParenthesis Statement
 WhileStatementNoShortIf:    WHILE LeftParenthesis Expression RightParenthesis StatementNoShortIf
                             {
                                 $$ = createNode("While");
-                                $$->add_child($3);
-                                $$->add_child($5);
+                                Node* temp = createNode("WhileExpression");
+                                temp->add_child($3);
+                                $$->add_child(temp);
+                                temp = createNode("WhileBody");
+                                temp->add_child($5);
+                                $$->add_child(temp);
 
                                 $$->symTable = $5->symTable; 
                             }
