@@ -40,7 +40,7 @@ std::vector<SymbolTableEntry*> stEntryContainer;
 int useCurlyForNewScope  = 1;
 std::vector<int> curlyScopes;
 int labelCounter = 0;
-std::string currentClass, currentFuncName;
+std::string currentClass, currentFuncName ;
 std::unordered_map<std::string, SymbolTable*> methodSymbolTable;
 std::map<std::string , std::set<std::string > > methodsForClass;
 std::map<std::string , std::set<std::string>  > fieldsForClass;
@@ -369,7 +369,7 @@ void methodTypeCheck(Node* node)
             }
         }
         SymbolTableEntry* stEntry = node->nearSymbolTable->lookup(methodName);
-        node->nearSymbolTable->print();
+        // node->nearSymbolTable->print();
         // stEntry->print();
         if(stEntry)
         {
@@ -572,7 +572,7 @@ void createST(Node* node)
         newScope = 1;
         useCurlyForNewScope = 0;
 
-        methodSymbolTable[currentClass + "." + currentFuncName] = node->nearSymbolTable;
+        // methodSymbolTable[currentClass + "." + currentFuncName] = node->nearSymbolTable;
 
         // 3AC
         node->position = qid(nodeName, stEntry);
@@ -736,6 +736,7 @@ void createST(Node* node)
         int decLine = node->children[0]->lineNumber;
         int nDims = 0;
         Node* list = nullptr;
+        std::vector<std::string> axisWidths;
         for(auto child: node->children)
         {
             if(child->namelexeme == "VariableModifier")
@@ -764,8 +765,27 @@ void createST(Node* node)
                         std::string s = "Redeclaration of " + y->children[0]->children[0]->children[0]->namelexeme + " in line number " + std::to_string(y->children[0]->children[0]->children[0]->lineNumber);
                         yyerror(s.c_str());
                     }
+                    if(y->children[1]->namelexeme == "ArrayCreationExpression"){
+                        Node* dimEx ;
+                        for(auto child : y->children[1]->children){
+                            if(child->namelexeme == "DimExprs"){
+                                dimEx = child;
+                            }
+                        }
+                        if(dimEx){
+                            for(auto child : dimEx->children){
+                                Node* leaf = child;
+                                while(leaf->children.size()){
+                                    leaf = leaf->children[0];
+                                }
+                                axisWidths.push_back(leaf->namelexeme);
+                            }
+                            
+
+                        }
+                    }
                     // Problematic to create symbol table entry here for cases like int x = x+1;
-                    SymbolTableEntry* stEntry = new SymbolTableEntry(name + y->children[0]->children[0]->children[0]->namelexeme, type, -1, nDims, y->children[0]->children[0]->children[0]->lineNumber, 0);
+                    SymbolTableEntry* stEntry = new SymbolTableEntry(name + y->children[0]->children[0]->children[0]->namelexeme, type, -1, nDims, y->children[0]->children[0]->children[0]->lineNumber, 0, axisWidths);
                     currSymTable->insert(stEntry);
 
                     //3 AC
@@ -817,6 +837,7 @@ void createST(Node* node)
             else if(x->namelexeme == "ConstructorDeclarator"){
                 if(name!="") name+=" ";
                 name+=  std::string(x->children[0]->namelexeme);
+                currentFuncName = x->children[0]->namelexeme;
                 decLine = (x->children[0]->lineNumber);
                 //name+=" " + std::string(x->children[1]->children[0]->children[0]->namelexeme);
                 // for(auto y:x->children[1]->children){
@@ -832,7 +853,7 @@ void createST(Node* node)
         //3 AC
         node->position = qid(nodeName, stEntry);
         node->nextList.clear();
-
+        useCurlyForNewScope = 0;
         newScope=1;
         
 
@@ -868,7 +889,9 @@ void createST(Node* node)
 
     if(newScope) {
         startScope();
+        if(nodeName == "MethodDeclaration"){
         methodSymbolTable[currentClass + "." + currentFuncName] = currSymTable;
+        }
     }
 
     int n = node->children.size();
@@ -883,7 +906,6 @@ void createST(Node* node)
     {
         endScope();
         newScope=0;
-        useCurlyForNewScope = 1;
     }
     if(n == 0)
     {
@@ -993,8 +1015,9 @@ void createST(Node* node)
     
 }
 
-void codeInsert(Node* node, std::vector<quad> code ){
+void codeInsert(Node* node, std::vector<quad> & code ){
     node->code.insert(node->code.end() , code.begin(), code.end());
+    code.clear();
 }
 qid emptyQid("", NULL);
 
@@ -1063,9 +1086,23 @@ bool presentInOpList(const std::vector<std::string>& operators, const std::strin
     return std::find(operators.begin(), operators.end(), oper) != operators.end();
 }
 
+int setOffset(std::string type){
+    if(type=="int") return 4;
+    else if(type=="short") return 2;
+    else if(type=="char"){
+        return 2;
+    }
+    else if(type=="long") return 8;
+    else if(type=="float") return 4;
+    else if(type=="double") return 8;
+    else if(type=="boolean") return 1; // specialcase
+    
+    
+}
+
 void three_AC(Node *node){
     std::string nodeName = node->namelexeme;
-    std::cerr<<nodeName<<"__START__ \n\n";
+    // std::cerr<<nodeName<<"__START__ \n\n";
 
     std::vector<std::string> arithmeticOpsBinary{"+", "-", "*", "/", "%"};
     std::vector<std::string> arithmeticOpsUnary;
@@ -1106,8 +1143,8 @@ void three_AC(Node *node){
     if(nodeName == "="){
         assert(node->nearSymbolTable);
         node->node_tmp = newtemp(node->children[0]->typeForExpr, node->nearSymbolTable);
-        quad tempassign = generate(emptyQid, node->children[1]->node_tmp, emptyQid, node->children[0]->node_tmp, -1);
-        quad exp = generate(emptyQid, node->children[1]->node_tmp, emptyQid, node->node_tmp, -1);
+        quad tempassign = generate(emptyQid, node->children[1]->node_tmp, emptyQid, node->node_tmp, -1);
+        quad exp = generate(emptyQid, node->node_tmp, emptyQid, node->children[0]->node_tmp, -1);
         codeInsert(node, node->children[1]->code);
         codeInsert(node, node->children[0]->code);
         node->code.push_back(tempassign);
@@ -1229,7 +1266,7 @@ void three_AC(Node *node){
         quad gotoBeginFor = generate(qid( "$goto " + beginFor, NULL), emptyQid, emptyQid, emptyQid, -1);
         node->code.push_back(gotoBeginFor);
         node->code.push_back(endFOR);
-        print3AC(node->code);
+        // print3AC(node->code);
 
         
     }
@@ -1259,12 +1296,67 @@ void three_AC(Node *node){
             codeInsert(node, WhileBody->code);
         }
         node->code.push_back(whileEnd);
-        print3AC(node->code);
+        // print3AC(node->code);
+    }
+    else if(nodeName == "[ ]" && node->children.size() >0){
+        Node* leaf = node;
+        int disleaf= 0;
+        while(leaf->children.size()){
+            leaf= leaf->children[0];
+            disleaf++;
+        }
+        std::cerr<<leaf->namelexeme<<"\n";
+        auto stEntry = leaf->nearSymbolTable->lookup(leaf->namelexeme);
+        if(stEntry){
+            int offset;
+            std::string type = stEntry->getType();
+            auto axisWidths = stEntry->getAxisWidths();
+            int axisNo = disleaf - 2;
+            if(axisNo < axisWidths.size() - 1){
+                offset = setOffset(type);
+                std::string width = "dim";
+                if(axisWidths.size()>axisNo){
+                    width = axisWidths[axisNo];
+                }
+                auto t1 = newtemp("Dim_" + std::to_string(axisNo) , node->nearSymbolTable );
+                auto t2 = newtemp("Offset" , node->nearSymbolTable );
+                auto final = newtemp("dereference" , node->nearSymbolTable );
+                node->node_tmp = final;
+                quad I1 = generate(qid("*",NULL) , qid(std::to_string(offset),NULL), qid(width,NULL), t1 , -1);
+                quad I2 = generate(qid("*",NULL) , t1 , node->children[1]->node_tmp, t2, -1);
+                quad I3 = generate(qid("[ ]" , NULL) , qid(leaf->namelexeme , NULL) ,  t2, final, -1);
+                codeInsert(node, node->children[0]->code);
+                node->code.push_back(I1);
+                node->code.push_back(I2);
+                node->code.push_back(I3);
+                print3AC(node->code);
+                std::cerr<<"HURRAY\n";
+            }
+            else{
+                offset = setOffset(type);
+        
+              
+                auto t1 = newtemp("Offset" , node->nearSymbolTable );
+                auto final = newtemp("dereference" , node->nearSymbolTable );
+                node->node_tmp = final;
+                quad I1 = generate(qid("*",NULL) , qid(std::to_string(offset),NULL), node->children[1]->node_tmp, t1 , -1);
+                quad I2 = generate(qid("[ ]" , NULL) , node->children[0]->node_tmp ,  t1, final, -1);
+                codeInsert(node, node->children[0]->code);
+                node->code.push_back(I1);
+                node->code.push_back(I2);
+                // print3AC(node->code);
+              
+            }
+            
+        }
+    }
+    else if(nodeName == "."){
+
     }
     else{
-        std::cerr<<nodeName<<"__nodename__\n";
+        // std::cerr<<nodeName<<"__nodename__\n";
         for(auto child : node->children){
-            std::cerr<<child->namelexeme<<" child " <<child->code.size()<<"\n";
+            // std::cerr<<child->namelexeme<<" child " <<child->code.size()<<"\n";
 
             codeInsert(node, child->code);
         }
@@ -1272,7 +1364,7 @@ void three_AC(Node *node){
 
 
     
-    std::cerr<<nodeName<<"__END__ \n\n";
+    // std::cerr<<nodeName<<"__END__ \n\n";
 
     
 
@@ -1491,9 +1583,10 @@ CompilationUnit:    OrdinaryCompilationUnit
                         currSymTable->insert(stEntry);
                         createST(root);
                         SymTableCSVDump();
+                        //  globalSymTable->__printAll();
                         three_AC(root);
                         // globalSymTable = $$->symTable;
-                        // globalSymTable->__printAll();
+                       
                         // print3AC();
                         
                     }

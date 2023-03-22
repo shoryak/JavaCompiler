@@ -69,7 +69,6 @@ void print3AC(std::vector<quad> code){
         tac_file1 << codeLine.result.first << " = ";
         tac_file1 << codeLine.argument1.first << codeLine.oper.first << codeLine.argument2.first;
         tac_file1 << "\n";
-    
     }
     tac_file1<< "\n";
     printAC+=1;
