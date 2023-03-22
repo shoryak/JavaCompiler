@@ -1,20 +1,10 @@
-$t22 = 4*r1
-$t23 = $t22*i
-$t24 = mat1[ ]$t23 
-
-$t22 = 4*r1
-$t23 = $t22*i
-$t24 = mat1[ ]$t23
-$t25 = 4*j
-$t26 = $t24[ ]$t25
-
-$t41 = 4*r2
-$t42 = $t41*i
-$t43 = mat2[ ]$t42
-
-$t41 = 4*r2
-$t42 = $t41*i
-$t43 = mat2[ ]$t42
-$t44 = 4*j
-$t45 = $t43[ ]$t44
+$t6 = n_1CAST_boolean
+$t7 = num2CASTboolean
+$t5 = $t6<$t7
+ = $t5IfTrue$L1
+ = Else$L2
+ = $L1
+ = $goto $L3
+ = $L2
+ = $L3
 

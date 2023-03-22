@@ -32,6 +32,7 @@ struct field
     std::string type;
     int numDims;
     std::string modifier;
+    int offset;
 };
 
 SymbolTable *globalSymTable = new SymbolTable;
@@ -40,7 +41,7 @@ std::vector<SymbolTableEntry*> stEntryContainer;
 int useCurlyForNewScope  = 1;
 std::vector<int> curlyScopes;
 int labelCounter = 0;
-std::string currentClass, currentFuncName ;
+std::string currentClass, currentFuncName ; int classOffset;
 std::unordered_map<std::string, SymbolTable*> methodSymbolTable;
 std::map<std::string , std::set<std::string > > methodsForClass;
 std::map<std::string , std::set<std::string>  > fieldsForClass;
@@ -239,6 +240,19 @@ void setSymTables2(Node* node , SymbolTable* currSymbolTable){
     }
 }
 
+int setOffset(std::string type){
+    if(type=="int") return 4;
+    else if(type=="short") return 2;
+    else if(type=="char"){
+        return 2;
+    }
+    else if(type=="long") return 8;
+    else if(type=="float") return 4;
+    else if(type=="double") return 8;
+    else if(type=="boolean") return 1; // specialcase
+    
+    
+}
 
 
 
@@ -456,6 +470,7 @@ void createST(Node* node)
         if(name != "") name += " ";
         name += children[n-2]->namelexeme;
         currentClass = children[n-2]->namelexeme;
+        classOffset = 0;
         auto alreadDeclared = currSymTable->lookup(children[n-2]->namelexeme);
         if(alreadDeclared)
         {
@@ -635,6 +650,7 @@ void createST(Node* node)
         int nDims = 0;
         int decLine =- 1;
         Node* list = nullptr;
+        int fieldOffset = classOffset;
         for(auto x: children)
         {
             if(x->namelexeme == "ModifierList")
@@ -658,6 +674,8 @@ void createST(Node* node)
                     nDims += x->children[1]->children.size();
                 }
                 else type += x->namelexeme;
+                classOffset += setOffset(type);
+
             }
         }
         if(list)
@@ -928,7 +946,9 @@ void createST(Node* node)
     if(nodeName == "class") methodTypeCheck(node);
     
     else if(nodeName == "=") {
+        if(node->children[1]->namelexeme != "Ternary"){
         typecheck(node);
+        }
     }
     
     else if(nodeName == "+")
@@ -936,7 +956,7 @@ void createST(Node* node)
         typecheck(node);
     }
 
-    else if(nodeName == "*" || nodeName == "/" || nodeName == "%" || nodeName=="%=" || nodeName == "-"  || nodeName=="&" ||nodeName=="=" || nodeName=="^" || nodeName=="^="  || nodeName=="|" ||  nodeName=="|=" || nodeName==":" || nodeName=="+=" || nodeName=="-=" || nodeName=="*=" || nodeName=="/=" || nodeName=="&=" )
+    else if(nodeName == "*" || nodeName == "/" || nodeName == "%" || nodeName=="%=" || nodeName == "-"  || nodeName=="&" ||nodeName=="=" || nodeName=="^" || nodeName=="^="  || nodeName=="|" ||  nodeName=="|=" || nodeName=="+=" || nodeName=="-=" || nodeName=="*=" || nodeName=="/=" || nodeName=="&=" )
     {
         typecheck(node);
     }
@@ -1086,19 +1106,7 @@ bool presentInOpList(const std::vector<std::string>& operators, const std::strin
     return std::find(operators.begin(), operators.end(), oper) != operators.end();
 }
 
-int setOffset(std::string type){
-    if(type=="int") return 4;
-    else if(type=="short") return 2;
-    else if(type=="char"){
-        return 2;
-    }
-    else if(type=="long") return 8;
-    else if(type=="float") return 4;
-    else if(type=="double") return 8;
-    else if(type=="boolean") return 1; // specialcase
-    
-    
-}
+
 
 void three_AC(Node *node){
     std::string nodeName = node->namelexeme;
@@ -1224,6 +1232,39 @@ void three_AC(Node *node){
         node->code.push_back(L3);
         
     }
+
+    else if(nodeName == "Ternary"){
+        Node* condition = node->children[0];
+        Node*  thenNode = node->children[1];
+        Node* elseNode = node->children[2];
+        labelCounter++;
+        std::string l1 = "$L" + std::to_string(labelCounter);
+        labelCounter++;
+        std::string l2 = "$L" + std::to_string(labelCounter);
+        labelCounter++;
+        std::string l3 = "$L" + std::to_string(labelCounter);
+        
+        quad ifThenQuad = generate(qid("IfTrue", NULL),  condition->node_tmp , qid(l1, NULL), emptyQid  , -1);
+        quad elseQuad = generate(qid("Else", NULL),  emptyQid, qid(l2, NULL), emptyQid  , -1);
+        quad L1 = generate(qid(l1, NULL), emptyQid, emptyQid, emptyQid, -1);
+        quad L2 = generate(qid(l2, NULL), emptyQid, emptyQid, emptyQid, -1);
+        quad L3 = generate(qid(l3, NULL), emptyQid, emptyQid, emptyQid, -1);
+        quad gotol3 = generate(qid( "$goto " + l3, NULL), emptyQid, emptyQid, emptyQid, -1);
+        node->code = condition->code;
+        node->code.push_back(ifThenQuad);
+        node->code.push_back(elseQuad);
+        node->code.push_back(L1);
+        codeInsert(node, thenNode->code);
+        node->code.push_back(gotol3);
+        node->code.push_back(L2);
+        codeInsert(node, elseNode->code);
+        node->code.push_back(L3);
+        print3AC(node->code);
+    }
+
+
+
+    
 
     else if(nodeName == "For"){
         Node* ForInit, *ForExpression , *ForUpdate , *ForBody;
