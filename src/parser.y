@@ -878,7 +878,9 @@ void createST(Node* node)
         int n = node->children.size();
         std::vector<Node*> children = node->children;
         std::string name = "";
+        std::string constructorEntry = "";
         std::string type = "";
+        funcproto fproto;
         int nDims = 0;
         int decLine = -1;
         Node* list = nullptr;
@@ -893,17 +895,67 @@ void createST(Node* node)
             else if(x->namelexeme == "ConstructorDeclarator"){
                 if(name!="") name+=" ";
                 name+=  std::string(x->children[0]->namelexeme);
+                constructorEntry += std::string(x->children[0]->namelexeme);
                 currentFuncName = x->children[0]->namelexeme;
                 decLine = (x->children[0]->lineNumber);
-                //name+=" " + std::string(x->children[1]->children[0]->children[0]->namelexeme);
-                // for(auto y:x->children[1]->children){
-                //     if(name!="") name+=" "+std::string(y->children[0]->namelexeme);
-                //     name+=" " + std::string(y->children[1]->children[0]->children[0]->namelexeme);
-                // }
+                if(x->children.size() > 1 && x->children[1]->namelexeme == "FormalParameterList"){
+                    auto temp = x->children[1];
+                    for(auto z: temp->children)
+                        {
+                            std::string nameParam;
+                            std::string typeParam;
+                            int nDimsParam = 0;
+                            for(auto x: z->children)
+                            {
+                                if(x->namelexeme == "final")
+                                    nameParam += x->namelexeme;
+                                else if(x->namelexeme == "VariableDeclaratorId")
+                                {
+                                    for(auto child: x->children)
+                                    {
+                                        if(child->namelexeme == "Identifier")
+                                        {
+                                            if(name != "") name += " ";
+                                            nameParam += child->children[0]->namelexeme;
+                                        }
+                                        if(child->namelexeme == "[ ]")
+                                            nDimsParam++;
+                                    }
+                                }
+                                else
+                                {
+                                    if(x->namelexeme == "UnannArrayType")
+                                    {
+                                        typeParam  = x->children[0]->namelexeme;
+                                        type += "_" + x->children[0]->namelexeme;
+                                        nDimsParam += x->children.size()-1;
+                                        type += "_" + std::to_string(nDimsParam);
+                                    }
+                                    else {
+                                        
+                                        typeParam +=  x->namelexeme;
+                                        type += "_" + x->namelexeme;
+                                        type += "_" + std::to_string(nDimsParam);
+                                    }
+                                }
+                            }
+                            fproto.numArgs++;
+                            fproto.argTypes.push_back(typeParam);
+                            fproto.argDims.push_back(nDimsParam);
+                        
+                }
+                
             }
 
         }
-        SymbolTableEntry* stEntry = new SymbolTableEntry(name , type , -1 , nDims , decLine , 0 );
+      while(name.size() && name.back()==' '){
+            name.pop_back();
+        }
+        if(currSymTable->lookup(name+type)){
+            yyerror("Redeclaration of function");
+            // error;
+        }
+        SymbolTableEntry* stEntry = new SymbolTableEntry(name+type, "$func", -1, -1, decLine, 0, fproto);
         currSymTable->insert(stEntry);
 
         //3 AC
@@ -911,6 +963,7 @@ void createST(Node* node)
         node->nextList.clear();
         useCurlyForNewScope = 0;
         newScope=1;
+    }
     }
 
     else if(nodeName == "Identifier" && node->parent->namelexeme != "VariableDeclaratorId" && node->parent->namelexeme!= "UnqualifiedClassInstanceCreationExpression" && node->parent->namelexeme != "MethodInvocation" && node->parent->namelexeme != "MethodDeclarator" && node->parent->namelexeme!= "."){
@@ -1220,19 +1273,36 @@ void three_AC(Node *node){
         // node->code = node->children[1]->code; 
         
     }
+    if(nodeName == "UnqualifiedClassInstanceCreationExpression"){
+        Node* mi;
+        for(auto child : node->children){
+            if(child->namelexeme == "MethodInvocation"){
+                mi = child;
+            }
+        }
+        if(mi){
+            node->node_tmp = mi->node_tmp;
+        }
+    }
     
-    
+
         
     if(nodeName == "="){
         assert(node->nearSymbolTable);
-        if(node->children[1]->namelexeme  == "UnqualifiedClassInstanceCreationExpression" ){
-            return;
-        }
-        node->node_tmp = newtemp(node->children[0]->typeForExpr, node->nearSymbolTable);
-        quad tempassign = generate(emptyQid, node->children[1]->node_tmp, emptyQid, node->node_tmp, -1);
-        quad exp = generate(emptyQid, node->node_tmp, emptyQid, node->children[0]->node_tmp, -1);
+        // if(node->children[1]->namelexeme  == "UnqualifiedClassInstanceCreationExpression" ){
+        //     return;
+        // }
         codeInsert(node, node->children[1]->code);
-        codeInsert(node, node->children[0]->code);
+        node->node_tmp = newtemp(node->children[0]->typeForExpr, node->nearSymbolTable);
+
+        if(node->children[0]->typeForExpr !=node->children[1]->typeForExpr){
+            auto tempcastright = newtemp(node->children[0]->typeForExpr, node->nearSymbolTable);
+            quad castInstruction = generate(qid("CAST_" + node->children[0]->typeForExpr, NULL), node->children[1]->node_tmp, emptyQid, tempcastright, -1);
+            node->code.push_back(castInstruction);
+            node->children[1]->node_tmp= tempcastright;
+        }
+        quad tempassign = generate(emptyQid, node->children[1]->node_tmp, emptyQid, node->node_tmp, -1);
+        quad exp = generate(emptyQid, node->node_tmp, emptyQid, node->children[0]->node_tmp, -1);        
         node->code.push_back(tempassign);
         node->code.push_back(exp);
         print3AC(node->code);
@@ -1445,7 +1515,6 @@ void three_AC(Node *node){
                 node->code.push_back(I2);
                 node->code.push_back(I3);
                 print3AC(node->code);
-                std::cerr<<"HURRAY\n";
             }
             else{
                 offset = setOffset(type);
@@ -1501,26 +1570,46 @@ void three_AC(Node *node){
                 }
             }
             else{
+                for(auto codechild : node->children){
+                    codeInsert(node, codechild->code);
+                }
+                if(Arguments){
+                    for(auto child : Arguments->children){
+                        quad I1 = generate(qid("PushParam",NULL) , child->node_tmp , emptyQid, emptyQid , -1);
+                        node->code.push_back(I1);
+                    }
+                }
+                quad I1 = generate(qid("PushParam",NULL) , dot->children[0]->node_tmp , emptyQid, emptyQid , -1);
+                node->node_tmp = newtemp(node->children[0]->typeForExpr, node->nearSymbolTable);
+                quad I2 = generate(qid("CALL",NULL) , dot->children[1]->node_tmp , emptyQid, node->node_tmp , -1);
+                quad I3 = generate(qid("PopParams",NULL) , emptyQid , emptyQid, emptyQid , -1);
+                for(auto codechild : node->children){
+                    codeInsert(node, codechild->code);
+                }
                 
+                node->code.push_back(I1);
+                node->code.push_back(I2);
+                node->code.push_back(I3);
+                print3AC(node->code);
             }
         }
         else{
-            std::cerr<<node->namelexeme<<" \n";
+            
             node->node_tmp = newtemp("returnValue" , node->nearSymbolTable);
             for(auto codechild : node->children){
                 codeInsert(node, codechild->code);
             }
             if(Arguments){
-            for(auto child : Arguments->children){
-                quad I1 = generate(qid("PushParam",NULL) , child->node_tmp , emptyQid, emptyQid , -1);
-                node->code.push_back(I1);
-            }
+                for(auto child : Arguments->children){
+                    quad I1 = generate(qid("PushParam",NULL) , child->node_tmp , emptyQid, emptyQid , -1);
+                    node->code.push_back(I1);
+                }
             }
             quad I2 = generate(qid("CALL",NULL) , qid(node->children[0]->children[0]->namelexeme,NULL) , emptyQid, node->node_tmp , -1);
             quad I3 = generate(qid("PopParams",NULL) , emptyQid , emptyQid, emptyQid , -1);
             node->code.push_back(I2);
             node->code.push_back(I3);
-            print3AC(node->code);
+            // print3AC(node->code);
             
         }
 
@@ -1772,7 +1861,7 @@ CompilationUnit:    OrdinaryCompilationUnit
                         currSymTable->insert(stEntry);
                         createST(root);
                         SymTableCSVDump();
-                        //  globalSymTable->__printAll();
+                         globalSymTable->__printAll();
                         three_AC(root);
                         // globalSymTable = $$->symTable;
                        
@@ -4144,7 +4233,7 @@ Identifier: IdentifierChars {
             }
             ;
 
-TypeIdentifier: IdentifierChars 
+TypeIdentifier: IdentifierChars  
                 | TypeIdentifierKeywords
                 ;
 

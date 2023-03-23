@@ -1,23 +1,13 @@
-$t0 = a
-str = $t0
+$t1 = 9.8CAST_int
+$t0 = $t1
+x = $t0
 
- = Public is better or notPushParam
-$t1 = myStatMethodCALL
- = PopParams
+$t2 = 90.8
+z = $t2
 
- = ancPushParam
-$t2 = MainCALL
- = PopParams
-
-$t3 = 1
-a = $t3
-
-$t4 = 2
-b = $t4
-
-$t5 = 
- = $t5
-
-$t6 = Hello World!
- = $t6
+$t4 = xCASTfloat
+$t3 = z+$t4
+$t6 = $t3CAST_int
+$t5 = $t6
+y = $t5
 

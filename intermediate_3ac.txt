@@ -4,28 +4,39 @@ str = $t0
 $t1 = 
  = $t1
 
- = Public is better or notPushParam
-$t2 = myStatMethodCALL
- = PopParams
-
 $t3 = MainCALL
  = PopParams
+$t5 = $t3CAST_Main
+$t4 = $t5
+myObject = $t4
 
-$t4 = 1
-a = $t4
+$t6 = 1
+a = $t6
 
-$t5 = 2
-b = $t5
+$t7 = 2
+b = $t7
 
-$t6 = Hello World!
- = $t6
-
-$t7 = AdderCALL
+ = aPushParam
+ = bPushParam
+ = myObjectPushParam
+$t8 = Public__MethodCALL
  = PopParams
 
-$t8 = BCALL
- = PopParams
-
-$t9 = 2
+$t9 = Hello World!
  = $t9
+
+$t10 = AdderCALL
+ = PopParams
+$t12 = $t10CAST_Adder
+$t11 = $t12
+add = $t11
+
+$t13 = BCALL
+ = PopParams
+$t15 = $t13CAST_B
+$t14 = $t15
+bobj = $t14
+
+$t16 = 2
+ = $t16
 
