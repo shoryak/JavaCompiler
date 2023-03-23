@@ -1,10 +1,23 @@
-$t6 = n_1CAST_boolean
-$t7 = num2CASTboolean
-$t5 = $t6<$t7
- = $t5IfTrue$L1
- = Else$L2
- = $L1
- = $goto $L3
- = $L2
- = $L3
+$t0 = a
+str = $t0
+
+ = Public is better or notPushParam
+$t1 = myStatMethodCALL
+ = PopParams
+
+ = ancPushParam
+$t2 = MainCALL
+ = PopParams
+
+$t3 = 1
+a = $t3
+
+$t4 = 2
+b = $t4
+
+$t5 = 
+ = $t5
+
+$t6 = Hello World!
+ = $t6
 
