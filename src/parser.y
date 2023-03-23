@@ -292,8 +292,7 @@ int setTypeCheckType1(std::string type)
     // if(type=="byte" || type=="short" || type=="char" || type=="int" || type=="long" || type == "float" || type == "double"){
     //     return 0;
     // }
-    if(type=="int") return 1;
-    else if(type=="short" || type=="char") return 2;
+    if(type=="short" || type=="char") return 2;
     // else if(type=="char"){
     //     return 3;
     // }
@@ -1137,8 +1136,7 @@ void createST(Node* node)
         assert(((int)node->children.size()) >= 1);
         node->typeForExpr = node->children[0]->typeForExpr;
     }
-        node->typeForExpr = node->children[1]->typeForExpr;
-    }
+        // node->typeForExpr = node->children[1]->typeForExpr;
     else if(nodeName == "VariableInitializerList")
     {
         // incomplete
@@ -1720,10 +1718,13 @@ void three_AC(Node *node){
             }
             }
             codeInsert(node, block->code);
-            print3AC1(node->code);
 
-
-
+            // Dump 3AC code into file
+            Node *classNode = node->parent->parent->parent;
+            std::string className = classNode->children[(int)classNode->children.size()-2]->namelexeme;
+            std::string fileName = className + "." + funcName + ".3ac";
+            std::cerr << fileName << ' ' << node->code.size() << ' ' << '\n';
+            print3AC1(node->code, fileName);
         }
     else if(nodeName == "ConstructorDeclaration"){
          Node* block = NULL ,  *declarator =NULL, *FormalParameterList =NULL;
@@ -1766,7 +1767,12 @@ void three_AC(Node *node){
             }
             }
             codeInsert(node, block->code);
-            // print3AC1(node->code);
+
+            // Dump 3AC code into file
+            Node *classNode = node->parent->parent->parent;
+            std::string className = classNode->children[classNode->children.size() - 2]->namelexeme;
+            std::string fileName = className + "." + funcName + ".3ac";
+            print3AC1(node->code, fileName);
     }
     else if(nodeName == "ArrayCreationExpression"){
         int offset = setOffset(node->typeForExpr);

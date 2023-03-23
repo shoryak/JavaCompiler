@@ -46,11 +46,10 @@ qid newtempstar(std::string type, SymbolTable* currSymTable)
 }
 
 
-void print3AC1(std::vector<quad> code){
+void print3AC1(std::vector<quad> code, std::string fileName){
     qid emptyQid = qid("", NULL);
 
-    // tac_file.close();
-    if(printAC==0) tac_file1.open("intermediate_3ac.txt");
+    tac_file1.open(fileName);
     for(auto codeLine: code)
     {   
         
@@ -88,7 +87,7 @@ void print3AC1(std::vector<quad> code){
                 }
                 else cnt++;
             }
-            tac_file<<"     "<<" ";
+            // tac_file<<"     "<<" ";
             tac_file1 << ""<<str<< codeLine.argument1.first;
             tac_file1 << "\n";
         }
@@ -154,8 +153,6 @@ void print3AC1(std::vector<quad> code){
 
     }
     tac_file1<< "\n";
-
-    printAC+=1;
-    // tac_file.close();
+    tac_file1.close();
 }
 

@@ -14,10 +14,12 @@ public class Main {
   
     static void myStatMethod() {
       System.out.println("Static is better or not");
+      int x = 2;
     }
   
     public void Public__Method(int x, int y) {
       System.out.println("Public is better or not");
+      int yy = 3;
     }
   
     public static void main(String[] args) {
@@ -31,9 +33,11 @@ public class Main {
       Adder add = new Adder();
       B bobj = new B();
       bobj.bint = 'a' << 1;
-      String strr = "Hello World" + bobj;
+      // String strr = "Hello World" + bobj;
       // int y[] = {4, 3, 5};
     }
 
     public static void somefunc(String arg1, int arg2) {}
+
+    public Main(int hurray, int goodbye) { hurray++; goodbye--; }
   }

@@ -22,6 +22,6 @@ qid newtemp(std::string , SymbolTable* );
 qid newtempstar(std::string , SymbolTable* );
 void print3AC();
 void print3AC(std::vector<quad>);
-void print3AC1(std::vector<quad>);
+void print3AC1(std::vector<quad> code, std::string fileName);
 
 #endif
