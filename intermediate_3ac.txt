@@ -1,11 +1,10 @@
-$t0 = a
-str = $t0
+$t0 = 
+ = $t0
 
  = Public is better or notPushParam
 $t1 = myStatMethodCALL
  = PopParams
 
- = ancPushParam
 $t2 = MainCALL
  = PopParams
 
@@ -15,9 +14,6 @@ a = $t3
 $t4 = 2
 b = $t4
 
-$t5 = 
+$t5 = Hello World!
  = $t5
-
-$t6 = Hello World!
- = $t6
 

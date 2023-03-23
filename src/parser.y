@@ -16,6 +16,8 @@ extern "C"
     int yylex(void);
     int yyerror(const char* s)
     {
+        
+       
         fprintf(stderr, "ERROR: %s \n\n", s);
         exit(1);
         return 1;
@@ -32,6 +34,7 @@ struct field
     std::string type;
     int numDims;
     std::string modifier;
+    int offset;
 };
 
 SymbolTable *globalSymTable = new SymbolTable;
@@ -40,7 +43,7 @@ std::vector<SymbolTableEntry*> stEntryContainer;
 int useCurlyForNewScope  = 1;
 std::vector<int> curlyScopes;
 int labelCounter = 0;
-std::string currentClass, currentFuncName;
+std::string currentClass, currentFuncName ; int classOffset;
 std::unordered_map<std::string, SymbolTable*> methodSymbolTable;
 std::map<std::string , std::set<std::string > > methodsForClass;
 std::map<std::string , std::set<std::string>  > fieldsForClass;
@@ -239,6 +242,19 @@ void setSymTables2(Node* node , SymbolTable* currSymbolTable){
     }
 }
 
+int setOffset(std::string type){
+    if(type=="int") return 4;
+    else if(type=="short") return 2;
+    else if(type=="char"){
+        return 2;
+    }
+    else if(type=="long") return 8;
+    else if(type=="float") return 4;
+    else if(type=="double") return 8;
+    else if(type=="boolean") return 1; // specialcase
+    
+    
+}
 
 
 
@@ -325,9 +341,18 @@ void methodTypeCheck(Node* node)
         }
         else if(node->children[0]->namelexeme == ".")
         {
+            Node* dot = node->children[0];
             methodName = node->children[0]->children[1]->children[0]->namelexeme;
             if(node->children[0]->children[0]->namelexeme == "."){
-                return;
+                if(dot->children[1]->children[0]->namelexeme == "println" && dot->children[0]->children[1]->children[0]->namelexeme == "out" && dot->children[0]->children[0]->children[0]->namelexeme == "System"){
+                    
+                }
+                else{
+                    // error chain of invocations 
+                    std::string s = "Chain of calls in line number " + std::to_string(node->children[0]->children[1]->children[0]->lineNumber);
+                    yyerror(s.c_str());
+                }
+               
             }
             else{
                 auto obj = node->children[0]->children[0]->children[0]->namelexeme;
@@ -358,19 +383,23 @@ void methodTypeCheck(Node* node)
                     Node* leaf = arg;
                     while(leaf->children.size())
                         leaf = leaf->children[0];
-                    if(leaf->value[0] = 'I' && leaf->value[1] == 'd' ){
+                    
+                   
+                    if(leaf->value[0] == 'I' && leaf->value[1] == 'd' ){
                         auto entry  = node->nearSymbolTable->lookup(leaf->namelexeme);
                         args.push_back(entry->getType());
                         methodName += "_" + entry->getType() + "_" + std::to_string(entry->getDimension());
                     }
-                    else if(leaf->value[0] == 'L' && leaf->value[1] == 'i'){
+        
+                    else if(leaf->value[0] == 'L' && leaf->value[1] == 'i' ){
                         methodName += "_" + leaf->type + "_" + std::to_string(leaf->numDims);
+                        std::cerr<<leaf->value[0]<<" "<< leaf->value[1]<<" "<<leaf->namelexeme <<"\n";
                     }
                 }
             }
         }
         SymbolTableEntry* stEntry = node->nearSymbolTable->lookup(methodName);
-        node->nearSymbolTable->print();
+        // node->nearSymbolTable->print();
         // stEntry->print();
         if(stEntry)
         {
@@ -457,6 +486,7 @@ void createST(Node* node)
         if(name != "") name += " ";
         name += children[n-2]->namelexeme;
         currentClass = children[n-2]->namelexeme;
+        classOffset = 0;
         auto alreadDeclared = currSymTable->lookup(children[n-2]->namelexeme);
         if(alreadDeclared)
         {
@@ -573,7 +603,7 @@ void createST(Node* node)
         newScope = 1;
         useCurlyForNewScope = 0;
 
-        methodSymbolTable[currentClass + "." + currentFuncName] = node->nearSymbolTable;
+        // methodSymbolTable[currentClass + "." + currentFuncName] = node->nearSymbolTable;
 
         // 3AC
         node->position = qid(nodeName, stEntry);
@@ -636,6 +666,7 @@ void createST(Node* node)
         int nDims = 0;
         int decLine =- 1;
         Node* list = nullptr;
+        int fieldOffset = classOffset;
         for(auto x: children)
         {
             if(x->namelexeme == "ModifierList")
@@ -659,6 +690,8 @@ void createST(Node* node)
                     nDims += x->children[1]->children.size();
                 }
                 else type += x->namelexeme;
+                classOffset += setOffset(type);
+
             }
         }
         if(list)
@@ -723,7 +756,7 @@ void createST(Node* node)
                     currSymTable->insert(stEntry);
                     //3 AC
                     y->position = qid( y->children[0]->children[0]->namelexeme, stEntry);
-                    y->nextList.clear();
+                    
 
                 }
             }
@@ -737,6 +770,7 @@ void createST(Node* node)
         int decLine = node->children[0]->lineNumber;
         int nDims = 0;
         Node* list = nullptr;
+        std::vector<std::string> axisWidths;
         for(auto child: node->children)
         {
             if(child->namelexeme == "VariableModifier")
@@ -765,8 +799,27 @@ void createST(Node* node)
                         std::string s = "Redeclaration of " + y->children[0]->children[0]->children[0]->namelexeme + " in line number " + std::to_string(y->children[0]->children[0]->children[0]->lineNumber);
                         yyerror(s.c_str());
                     }
+                    if(y->children[1]->namelexeme == "ArrayCreationExpression"){
+                        Node* dimEx ;
+                        for(auto child : y->children[1]->children){
+                            if(child->namelexeme == "DimExprs"){
+                                dimEx = child;
+                            }
+                        }
+                        if(dimEx){
+                            for(auto child : dimEx->children){
+                                Node* leaf = child;
+                                while(leaf->children.size()){
+                                    leaf = leaf->children[0];
+                                }
+                                axisWidths.push_back(leaf->namelexeme);
+                            }
+                            
+
+                        }
+                    }
                     // Problematic to create symbol table entry here for cases like int x = x+1;
-                    SymbolTableEntry* stEntry = new SymbolTableEntry(name + y->children[0]->children[0]->children[0]->namelexeme, type, -1, nDims, y->children[0]->children[0]->children[0]->lineNumber, 0);
+                    SymbolTableEntry* stEntry = new SymbolTableEntry(name + y->children[0]->children[0]->children[0]->namelexeme, type, -1, nDims, y->children[0]->children[0]->children[0]->lineNumber, 0, axisWidths);
                     currSymTable->insert(stEntry);
 
                     //3 AC
@@ -818,6 +871,7 @@ void createST(Node* node)
             else if(x->namelexeme == "ConstructorDeclarator"){
                 if(name!="") name+=" ";
                 name+=  std::string(x->children[0]->namelexeme);
+                currentFuncName = x->children[0]->namelexeme;
                 decLine = (x->children[0]->lineNumber);
                 //name+=" " + std::string(x->children[1]->children[0]->children[0]->namelexeme);
                 // for(auto y:x->children[1]->children){
@@ -833,7 +887,7 @@ void createST(Node* node)
         //3 AC
         node->position = qid(nodeName, stEntry);
         node->nextList.clear();
-
+        useCurlyForNewScope = 0;
         newScope=1;
     }
 
@@ -870,14 +924,16 @@ void createST(Node* node)
 
     if(newScope) {
         startScope();
+        if(nodeName == "MethodDeclaration"){
         methodSymbolTable[currentClass + "." + currentFuncName] = currSymTable;
+        }
     }
 
     int n = node->children.size();
     std::vector<Node*> children = node->children;
 
     for(int i = 0; i < n; i++) {
-        if(node->namelexeme == "." && children[i]->namelexeme == "." ) continue;
+        // if(node->namelexeme == "." && children[i]->namelexeme == "." ) continue;
         createST(children[i]);
     }
 
@@ -885,7 +941,6 @@ void createST(Node* node)
     {
         endScope();
         newScope=0;
-        useCurlyForNewScope = 1;
     }
     if(n == 0)
     {
@@ -908,7 +963,9 @@ void createST(Node* node)
     if(nodeName == "class") methodTypeCheck(node);
     
     else if(nodeName == "=") {
+        if(node->children[1]->namelexeme != "Ternary"){
         typecheck(node);
+        }
     }
     
     else if(nodeName == "+")
@@ -916,7 +973,7 @@ void createST(Node* node)
         typecheck(node);
     }
 
-    else if(nodeName == "*" || nodeName == "/" || nodeName == "%" || nodeName=="%=" || nodeName == "-"  || nodeName=="&" ||nodeName=="=" || nodeName=="^" || nodeName=="^="  || nodeName=="|" ||  nodeName=="|=" || nodeName==":" || nodeName=="+=" || nodeName=="-=" || nodeName=="*=" || nodeName=="/=" || nodeName=="&=" )
+    else if(nodeName == "*" || nodeName == "/" || nodeName == "%" || nodeName=="%=" || nodeName == "-"  || nodeName=="&" ||nodeName=="=" || nodeName=="^" || nodeName=="^="  || nodeName=="|" ||  nodeName=="|=" || nodeName=="+=" || nodeName=="-=" || nodeName=="*=" || nodeName=="/=" || nodeName=="&=" )
     {
         typecheck(node);
     }
@@ -997,8 +1054,8 @@ void createST(Node* node)
     
     else if(nodeName == "VariableInitializerList")
     {
-        node->numDims = node->children.size();
         typecheck(node);
+        node->numDims = node->children[0]->numDims + 1;
         node->typeForExpr = node->children[0]->typeForExpr;
     }
 
@@ -1008,8 +1065,9 @@ void createST(Node* node)
     
 }
 
-void codeInsert(Node* node, std::vector<quad> code ){
+void codeInsert(Node* node, std::vector<quad> & code ){
     node->code.insert(node->code.end() , code.begin(), code.end());
+    code.clear();
 }
 
 qid emptyQid("", NULL);
@@ -1079,9 +1137,11 @@ bool presentInOpList(const std::vector<std::string>& operators, const std::strin
     return std::find(operators.begin(), operators.end(), oper) != operators.end();
 }
 
+
+
 void three_AC(Node *node){
     std::string nodeName = node->namelexeme;
-    std::cerr<<nodeName<<"__START__ \n\n";
+    // std::cerr<<nodeName<<"__START__ \n\n";
 
     std::vector<std::string> arithmeticOpsBinary{"+", "-", "*", "/", "%"};
     std::vector<std::string> arithmeticOpsUnary;
@@ -1121,14 +1181,17 @@ void three_AC(Node *node){
         
     if(nodeName == "="){
         assert(node->nearSymbolTable);
+        if(node->children[1]->namelexeme  == "UnqualifiedClassInstanceCreationExpression" ){
+            return;
+        }
         node->node_tmp = newtemp(node->children[0]->typeForExpr, node->nearSymbolTable);
-        quad tempassign = generate(emptyQid, node->children[1]->node_tmp, emptyQid, node->children[0]->node_tmp, -1);
-        quad exp = generate(emptyQid, node->children[1]->node_tmp, emptyQid, node->node_tmp, -1);
+        quad tempassign = generate(emptyQid, node->children[1]->node_tmp, emptyQid, node->node_tmp, -1);
+        quad exp = generate(emptyQid, node->node_tmp, emptyQid, node->children[0]->node_tmp, -1);
         codeInsert(node, node->children[1]->code);
         codeInsert(node, node->children[0]->code);
         node->code.push_back(tempassign);
         node->code.push_back(exp);
-        // print3AC(node->code);
+        print3AC(node->code);
     }
     
     else if(presentInOpList(opsBinary, nodeName))
@@ -1157,10 +1220,6 @@ void three_AC(Node *node){
         postOperation3AC(node, "+");
     else if(nodeName == "PostDecrementExpression")
         postOperation3AC(node, "-");
-    
-    else if(node->children.size()==0 && ((node->value[0]=='I' && node->value[1] == 'd' ) || (node->value[0]=='L' && node->value[1] == 'i') ) ){
-        node->node_tmp = qid(node->namelexeme, node->nearSymbolTable->lookup(node->namelexeme));        
-    }
     
     else if(nodeName == "IfThenStatement"){
         Node* condition = node->children[0]->children[0];
@@ -1204,6 +1263,39 @@ void three_AC(Node *node){
         
     }
 
+    else if(nodeName == "Ternary"){
+        Node* condition = node->children[0];
+        Node*  thenNode = node->children[1];
+        Node* elseNode = node->children[2];
+        labelCounter++;
+        std::string l1 = "$L" + std::to_string(labelCounter);
+        labelCounter++;
+        std::string l2 = "$L" + std::to_string(labelCounter);
+        labelCounter++;
+        std::string l3 = "$L" + std::to_string(labelCounter);
+        
+        quad ifThenQuad = generate(qid("IfTrue", NULL),  condition->node_tmp , qid(l1, NULL), emptyQid  , -1);
+        quad elseQuad = generate(qid("Else", NULL),  emptyQid, qid(l2, NULL), emptyQid  , -1);
+        quad L1 = generate(qid(l1, NULL), emptyQid, emptyQid, emptyQid, -1);
+        quad L2 = generate(qid(l2, NULL), emptyQid, emptyQid, emptyQid, -1);
+        quad L3 = generate(qid(l3, NULL), emptyQid, emptyQid, emptyQid, -1);
+        quad gotol3 = generate(qid( "$goto " + l3, NULL), emptyQid, emptyQid, emptyQid, -1);
+        node->code = condition->code;
+        node->code.push_back(ifThenQuad);
+        node->code.push_back(elseQuad);
+        node->code.push_back(L1);
+        codeInsert(node, thenNode->code);
+        node->code.push_back(gotol3);
+        node->code.push_back(L2);
+        codeInsert(node, elseNode->code);
+        node->code.push_back(L3);
+        print3AC(node->code);
+    }
+
+
+
+    
+
     else if(nodeName == "For"){
         Node* ForInit, *ForExpression , *ForUpdate , *ForBody;
         for(auto child : node->children){
@@ -1245,7 +1337,7 @@ void three_AC(Node *node){
         quad gotoBeginFor = generate(qid( "$goto " + beginFor, NULL), emptyQid, emptyQid, emptyQid, -1);
         node->code.push_back(gotoBeginFor);
         node->code.push_back(endFOR);
-        print3AC(node->code);
+        // print3AC(node->code);
 
         
     }
@@ -1275,12 +1367,145 @@ void three_AC(Node *node){
             codeInsert(node, WhileBody->code);
         }
         node->code.push_back(whileEnd);
-        print3AC(node->code);
+        // print3AC(node->code);
     }
-    else{
-        std::cerr<<nodeName<<"__nodename__\n";
+    else if(nodeName == "[ ]" && node->children.size() >0){
+        Node* leaf = node;
+        int disleaf= 0;
+        while(leaf->children.size()){
+            leaf= leaf->children[0];
+            disleaf++;
+        }
+        std::cerr<<leaf->namelexeme<<"\n";
+        auto stEntry = leaf->nearSymbolTable->lookup(leaf->namelexeme);
+        if(stEntry){
+            int offset;
+            std::string type = stEntry->getType();
+            auto axisWidths = stEntry->getAxisWidths();
+            int axisNo = disleaf - 2;
+            if(axisNo < axisWidths.size() - 1){
+                offset = setOffset(type);
+                std::string width = "dim";
+                if(axisWidths.size()>axisNo){
+                    width = axisWidths[axisNo];
+                }
+                auto t1 = newtemp("Dim_" + std::to_string(axisNo) , node->nearSymbolTable );
+                auto t2 = newtemp("Offset" , node->nearSymbolTable );
+                auto final = newtemp("dereference" , node->nearSymbolTable );
+                node->node_tmp = final;
+                quad I1 = generate(qid("*",NULL) , qid(std::to_string(offset),NULL), qid(width,NULL), t1 , -1);
+                quad I2 = generate(qid("*",NULL) , t1 , node->children[1]->node_tmp, t2, -1);
+                quad I3 = generate(qid("[ ]" , NULL) , qid(leaf->namelexeme , NULL) ,  t2, final, -1);
+                codeInsert(node, node->children[0]->code);
+                node->code.push_back(I1);
+                node->code.push_back(I2);
+                node->code.push_back(I3);
+                print3AC(node->code);
+                std::cerr<<"HURRAY\n";
+            }
+            else{
+                offset = setOffset(type);
+        
+              
+                auto t1 = newtemp("Offset" , node->nearSymbolTable );
+                auto final = newtemp("dereference" , node->nearSymbolTable );
+                node->node_tmp = final;
+                quad I1 = generate(qid("*",NULL) , qid(std::to_string(offset),NULL), node->children[1]->node_tmp, t1 , -1);
+                quad I2 = generate(qid("[ ]" , NULL) , node->children[0]->node_tmp ,  t1, final, -1);
+                codeInsert(node, node->children[0]->code);
+                node->code.push_back(I1);
+                node->code.push_back(I2);
+                // print3AC(node->code);
+              
+            }
+            
+        }
+    }
+    else if(nodeName == "MethodInvocation"){
+        Node* Arguments;
         for(auto child : node->children){
-            std::cerr<<child->namelexeme<<" child " <<child->code.size()<<"\n";
+            if(child->namelexeme == "Arguments"){
+                Arguments = child;
+            }
+        }
+        if(node->children[0]->namelexeme == "."){
+            Node* dot = node->children[0];
+            if(dot->children[0]->namelexeme == "."){
+                if(dot->children[1]->children[0]->namelexeme == "println" && dot->children[0]->children[1]->children[0]->namelexeme == "out" && dot->children[0]->children[0]->children[0]->namelexeme == "System"){
+                    if(Arguments->children.size()!=1){
+                        //error incorrect number of arguments in println
+                        std::string s = "Incorrect number of arguments in println " + std::to_string(node->children[0]->children[1]->children[0]->lineNumber);
+                        yyerror(s.c_str());
+                    }
+                    else{
+                        quad I1 = generate(qid("PushParam",NULL) , Arguments->children[0]->node_tmp , emptyQid, emptyQid , -1);
+                        quad I2 = generate(qid("CALL",NULL) , qid("println", NULL) , emptyQid, emptyQid , -1);
+                        quad I3 = generate(qid("PopParams",NULL) , emptyQid , emptyQid, emptyQid , -1);
+                        for(auto codechild : node->children){
+                            codeInsert(node, codechild->code);
+                        }
+                        node->code.push_back(I1);
+                        node->code.push_back(I2);
+                        node->code.push_back(I3);
+                        // print3AC(node->code);
+                    }
+                }
+                else{
+                    // error chain of invocations 
+                    std::string s = "Chain of calls in line number " + std::to_string(node->children[0]->children[1]->children[0]->lineNumber);
+                    yyerror(s.c_str());
+                }
+            }
+            else{
+                
+            }
+        }
+        else{
+            std::cerr<<node->namelexeme<<" \n";
+            node->node_tmp = newtemp("returnValue" , node->nearSymbolTable);
+            for(auto codechild : node->children){
+                codeInsert(node, codechild->code);
+            }
+            if(Arguments){
+            for(auto child : Arguments->children){
+                quad I1 = generate(qid("PushParam",NULL) , child->node_tmp , emptyQid, emptyQid , -1);
+                node->code.push_back(I1);
+            }
+            }
+            quad I2 = generate(qid("CALL",NULL) , qid(node->children[0]->children[0]->namelexeme,NULL) , emptyQid, node->node_tmp , -1);
+            quad I3 = generate(qid("PopParams",NULL) , emptyQid , emptyQid, emptyQid , -1);
+            node->code.push_back(I2);
+            node->code.push_back(I3);
+            print3AC(node->code);
+            
+        }
+
+    }
+    // else if(node->children.size() == 0 && node->parent->namelexeme == "Identifier"   && node->parent->parent->namelexeme != "MethodInvocation" && node->parent->parent->namelexeme != "UnqualifiedClassInstanceCreationExpression" && node->parent->parent->namelexeme != "LocalVariableDeclaration" && node->parent->parent->namelexeme != "MethodDeclarator" && node->parent->parent->namelexeme!= "." && node->parent->parent->namelexeme != "class"){
+        
+    //     auto t1 = newtemp(node->typeForExpr , node->nearSymbolTable );
+    //     node->node_tmp = t1;
+    //     quad I1 = generate(emptyQid , qid(node->namelexeme, NULL), emptyQid , t1, -1);
+    //     node->code.push_back(I1);
+    //     // print3AC(node->code);
+    // }
+    // else if(node->children.size()==0 && node->value[0]=='L'){
+      
+    //     auto t1 = newtemp(node->typeForExpr , node->nearSymbolTable );
+    //     node->node_tmp = t1;
+    //     quad I1 = generate(emptyQid , qid(node->namelexeme, NULL), emptyQid , t1, -1);
+    //     node->code.push_back(I1);
+    //     // print3AC(node->code);
+    // }
+    else if(node->children.size() ==0 && (node->value[0] == 'I' || node->value[0] =='L')){
+        node->node_tmp = qid(node->namelexeme , NULL);
+    }
+    
+    
+    else{
+        // std::cerr<<nodeName<<"__nodename__\n";
+        for(auto child : node->children){
+            // std::cerr<<child->namelexeme<<" child " <<child->code.size()<<"\n";
 
             codeInsert(node, child->code);
         }
@@ -1288,7 +1513,8 @@ void three_AC(Node *node){
 
 
     
-    std::cerr<<nodeName<<"__END__ \n\n";
+    
+    // std::cerr<<nodeName<<"__END__ \n\n";
 
     
 
@@ -1503,9 +1729,10 @@ CompilationUnit:    OrdinaryCompilationUnit
                         currSymTable->insert(stEntry);
                         createST(root);
                         SymTableCSVDump();
+                        //  globalSymTable->__printAll();
                         three_AC(root);
                         // globalSymTable = $$->symTable;
-                        // globalSymTable->__printAll();
+                       
                         // print3AC();
                         
                     }
@@ -2959,32 +3186,39 @@ ClassInstanceCreationExpression:    UnqualifiedClassInstanceCreationExpression
 UnqualifiedClassInstanceCreationExpression: NEW ClassOrInterfaceTypeToInstantiate LeftParenthesis RightParenthesis
                                             {
                                                 $$ = createNode("UnqualifiedClassInstanceCreationExpression");
+                                                Node* temp = createNode("MethodInvocation");
                                                 $$->add_child($1);
-                                                $$->add_child($2);
-
+                                                temp->add_child($2);
+                                                $$->add_child(temp);
 
                                             }
                                             | NEW TypeArguments ClassOrInterfaceTypeToInstantiate LeftParenthesis RightParenthesis
                                             {
                                                 $$ = createNode("UnqualifiedClassInstanceCreationExpression");
+                                                Node* temp = createNode("MethodInvocation");
                                                 $$->add_child($1);
                                                 $$->add_child($2);
-                                                $$->add_child($3);
+                                                temp->add_child($3);
+                                                $$->add_child(temp);
                                             }
                                             | NEW ClassOrInterfaceTypeToInstantiate LeftParenthesis ArgumentList RightParenthesis
                                             {
                                                 $$ = createNode("UnqualifiedClassInstanceCreationExpression");
+                                                Node* temp = createNode("MethodInvocation");
                                                 $$->add_child($1);
-                                                $$->add_child($2);
-                                                $$->add_child($4);
+                                                temp->add_child($2);
+                                                temp->add_child($4);
+                                                $$->add_child(temp);
                                             }
                                             | NEW TypeArguments ClassOrInterfaceTypeToInstantiate LeftParenthesis ArgumentList RightParenthesis
                                             {
                                                 $$ = createNode("UnqualifiedClassInstanceCreationExpression");
+                                                Node* temp = createNode("MethodInvocation");
                                                 $$->add_child($1);
                                                 $$->add_child($2);
-                                                $$->add_child($3);
-                                                $$->add_child($5);
+                                                temp->add_child($3);
+                                                temp->add_child($5);
+                                                $$->add_child(temp);
                                             }
                                             | NEW ClassOrInterfaceTypeToInstantiate LeftParenthesis RightParenthesis ClassBody
                                             {

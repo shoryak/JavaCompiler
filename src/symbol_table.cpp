@@ -70,6 +70,9 @@ int SymbolTableEntry::getDimension()
     return this->dimension;
 }
 
+std::vector<std::string> SymbolTableEntry::getAxisWidths(){
+    return this->axisWidths;
+}
 
 /*
 Print a particular symbol table entry (lexeme: attributes)
@@ -92,6 +95,12 @@ void SymbolTableEntry::print()
             std::cerr<< "Type "<<pos <<"   "<< tp<< '\n';
             pos++;
         }
+    }
+    if(dimension > 0){
+        for(auto dim : axisWidths){
+            std::cerr<< dim<<" ";
+        }
+        std::cerr<<"\n";
     }
      std::cerr << '\n';
 
