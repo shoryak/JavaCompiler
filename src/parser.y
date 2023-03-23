@@ -254,7 +254,11 @@ int setOffset(std::string type){
     
 }
 
-
+template<typename T>
+bool presentInList(const std::vector<T> list, T element)
+{
+    return std::find(list.begin(), list.end(), element) != list.end();
+}
 
 void startScope()
 {
@@ -304,18 +308,19 @@ int setTypeCheckType1(std::string type)
 }
 
 void declarationTypeCheck(Node* node){
-    if(node->children.size()==0 && node->value[0] == 'I' && node->value[1]=='d' && node->parent->parent->namelexeme != "." &&  node->parent->parent->namelexeme != "VariableDeclaratorId" && node->parent->parent->namelexeme!= "UnqualifiedClassInstanceCreationExpression" && node->parent->parent->namelexeme != "MethodInvocation" && node->parent->parent->namelexeme != "MethodDeclarator" ){
+    if(node->children.size()==0 && node->value[0] == 'I' && node->value[1]=='d' && node->parent->parent->namelexeme != "." &&  node->parent->parent->namelexeme != "VariableDeclaratorId" && node->parent->parent->namelexeme!= "UnqualifiedClassInstanceCreationExpression" && node->parent->parent->namelexeme != "MethodInvocation" && node->parent->parent->namelexeme != "MethodDeclarator" )
+    {
         auto stEntry = currSymTable->lookup(node->namelexeme);
         if(!stEntry){
              std::string err = "Undeclared Variable " + node->namelexeme +" on line " + std::to_string(node->lineNumber);
             yyerror(err.c_str()); 
         }
     }
-    for(auto child : node->children) {
+    for(auto child : node->children)
+    {
         if(node->namelexeme == "." && child->namelexeme == "." ) continue;
         declarationTypeCheck(child);
     }
-
 }
 
 
@@ -619,7 +624,7 @@ void createST(Node* node)
         std::vector<Node*> children = node->children;
         std::string name = "";
         std::string type = "";
-        int nDims = 0;
+        int nDims = -0;
         int decLine = -1;
         for(auto x: children)
         {
@@ -667,7 +672,7 @@ void createST(Node* node)
         std::string name = "";
         std::string type = "";
         std::string modifier = "private";
-        int nDims = 0;
+        int nDimsType = 0;
         int decLine =- 1;
         Node* list = nullptr;
         int fieldOffset = classOffset;
@@ -675,7 +680,23 @@ void createST(Node* node)
         {
             if(x->namelexeme == "ModifierList")
             {
-                modifier = x->children[0]->namelexeme;
+                std::vector<std::string> modifierList;
+                for(auto modifierNode: x->children)
+                {
+                    std::string modifier = modifierNode->namelexeme;
+                    if(std::find(modifierList.begin(), modifierList.end(), modifier) != modifierList.end())
+                        yyerror((std::string("Repeated modifier: ") + modifier + std::string(" on line ") + std::to_string(modifierNode->lineNumber)).c_str());
+                    modifierList.push_back(modifier);
+                }
+                if(presentInList<std::string>(modifierList, "public") && presentInList<std::string>(modifierList, "private"))
+                {
+                    std::string errorMessage = "Illegal combination of modifiers: public and private on line ";
+                    errorMessage += std::to_string(x->children[0]->lineNumber);
+                    yyerror(errorMessage.c_str());
+                }
+                if(presentInList<std::string>(modifierList, "public"))
+                    modifier = "public";
+
                 for(auto y: x->children)
                 {
                     if(name != "") name += " " + std::string(y->namelexeme);
@@ -691,78 +712,80 @@ void createST(Node* node)
                 if(x->namelexeme == "UnannArrayType")
                 {
                     type += x->children[0]->namelexeme;
-                    nDims += x->children[1]->children.size();
+                    nDimsType = x->children[1]->children.size();
                 }
                 else type += x->namelexeme;
                 classOffset += setOffset(type);
-
             }
         }
-        if(list)
+        assert(list);
+        for(auto y: list->children)
         {
-            for(auto y: list->children)
+            if(name != "") name += " ";
+            if(y->namelexeme == "=")
             {
-                if(name != "") name += " ";
-                if(y->namelexeme == "=")
-                {
-                    declarationTypeCheck(y->children[1]);
-                    for(auto child : y->children[0]->children){
-                        if(child->namelexeme == "Dims"){
-                            nDims += child->children.size();
-                        }
+                declarationTypeCheck(y->children[1]);
+                int nDims = nDimsType;
+                for(auto child : y->children[0]->children){
+                    if(child->namelexeme == "Dims"){
+                        nDims += child->children.size();
+                        break;
                     }
-
-                    auto alreadDeclared = currSymTable->currentScopeLookup(y->children[0]->children[0]->children[0]->namelexeme);
-                    if(alreadDeclared)
-                    {
-                        std::string s = "Redeclaration of " + y->children[0]->children[0]->children[0]->namelexeme + " in line number " + std::to_string(y->children[0]->children[0]->children[0]->lineNumber);
-                        yyerror(s.c_str());
-                    }
-                    SymbolTableEntry* stEntry = new SymbolTableEntry(name + y->children[0]->children[0]->children[0]->namelexeme, type, -1, nDims, y->children[0]->children[0]->children[0]->lineNumber, 0);
-                    std::string fieldData;
-                    field fieldStructData; 
-                    fieldData += y->children[0]->children[0]->children[0]->namelexeme;
-                    fieldStructData.name = y->children[0]->children[0]->children[0]->namelexeme;
-                    fieldStructData.type = type;
-                    fieldStructData.numDims = nDims;
-                    fieldStructData.modifier = modifier;
-                    fieldsForClass[currentClass].insert(fieldData);
-                    classFieldData[currentClass +"_" + fieldData] = fieldStructData;
-                    currSymTable->insert(stEntry);
-
-                    //3 AC
-                    y->position = qid(y->children[0]->children[0]->children[0]->namelexeme , stEntry);
-                    y->nextList.clear();
                 }
-                else
+                auto alreadDeclared = currSymTable->currentScopeLookup(y->children[0]->children[0]->children[0]->namelexeme);
+                if(alreadDeclared)
                 {
-                    for(auto child : y->children){
-                        if(child->namelexeme == "Dims"){
-                            nDims += child->children.size();
-                        }
-                    }
-                    auto alreadDeclared = currSymTable->currentScopeLookup(y->children[0]->children[0]->namelexeme);
-                    if(alreadDeclared)
-                    {
-                        std::string s = "Redeclaration of " + y->children[0]->children[0]->namelexeme + " in line number " + std::to_string(y->children[0]->children[0]->lineNumber);
-                        yyerror(s.c_str());
-                    }
-                    SymbolTableEntry* stEntry = new SymbolTableEntry( name + y->children[0]->children[0]->namelexeme, type, -1, nDims, y->children[0]->children[0]->lineNumber, 0);
-                    std::string fieldData;
-                    field fieldStructData; 
-                    fieldData += y->children[0]->children[0]->namelexeme;
-                    fieldStructData.name = fieldData;
-                    fieldStructData.type = type;
-                    fieldStructData.numDims = nDims;
-                    fieldStructData.modifier = modifier;
-                    fieldsForClass[currentClass].insert(fieldData);
-                    classFieldData[currentClass +"_" + fieldData] = fieldStructData;
-                    currSymTable->insert(stEntry);
-                    //3 AC
-                    y->position = qid( y->children[0]->children[0]->namelexeme, stEntry);
-                    
-
+                    std::string s = "Redeclaration of " + y->children[0]->children[0]->children[0]->namelexeme + " in line number " + std::to_string(y->children[0]->children[0]->children[0]->lineNumber);
+                    yyerror(s.c_str());
                 }
+                std::vector<std::string> axisWidths(nDims);
+                SymbolTableEntry* stEntry = new SymbolTableEntry(name + y->children[0]->children[0]->children[0]->namelexeme, type, -1, nDims, y->children[0]->children[0]->children[0]->lineNumber, 0, axisWidths);
+                std::string fieldData;
+                field fieldStructData; 
+                fieldData += y->children[0]->children[0]->children[0]->namelexeme;
+                fieldStructData.name = y->children[0]->children[0]->children[0]->namelexeme;
+                fieldStructData.type = type;
+                fieldStructData.numDims = nDims;
+                fieldStructData.modifier = modifier;
+                fieldsForClass[currentClass].insert(fieldData);
+                classFieldData[currentClass +"_" + fieldData] = fieldStructData;
+                std::cerr << "Inserting: " << currentClass + "_" + fieldData << '\n';
+                currSymTable->insert(stEntry);
+
+                //3 AC
+                y->position = qid(y->children[0]->children[0]->children[0]->namelexeme, stEntry);
+                y->nextList.clear();
+            }
+            else
+            {
+                int nDims = nDimsType;
+                for(auto child : y->children){
+                    if(child->namelexeme == "Dims"){
+                        nDims += child->children.size();
+                        break;
+                    }
+                }
+                auto alreadDeclared = currSymTable->currentScopeLookup(y->children[0]->children[0]->namelexeme);
+                if(alreadDeclared)
+                {
+                    std::string s = "Redeclaration of " + y->children[0]->children[0]->namelexeme + " in line number " + std::to_string(y->children[0]->children[0]->lineNumber);
+                    yyerror(s.c_str());
+                }
+                std::vector<std::string> axisWidths(nDims);
+                SymbolTableEntry* stEntry = new SymbolTableEntry( name + y->children[0]->children[0]->namelexeme, type, -1, nDims, y->children[0]->children[0]->lineNumber, 0, axisWidths);
+                std::string fieldData;
+                field fieldStructData; 
+                fieldData += y->children[0]->children[0]->namelexeme;
+                fieldStructData.name = fieldData;
+                fieldStructData.type = type;
+                fieldStructData.numDims = nDims;
+                fieldStructData.modifier = modifier;
+                fieldsForClass[currentClass].insert(fieldData);
+                classFieldData[currentClass +"_" + fieldData] = fieldStructData;
+                std::cerr << "Inserting: " << currentClass + "_" + fieldData << '\n';
+                currSymTable->insert(stEntry);
+                //3 AC
+                y->position = qid( y->children[0]->children[0]->namelexeme, stEntry);
             }
         }
     }
@@ -945,9 +968,9 @@ void createST(Node* node)
         node->nextList.clear();
         useCurlyForNewScope = 0;
         newScope=1;
-        
-        }
     }
+    }
+
     else if(nodeName == "Identifier" && node->parent->namelexeme != "VariableDeclaratorId" && node->parent->namelexeme!= "UnqualifiedClassInstanceCreationExpression" && node->parent->namelexeme != "MethodInvocation" && node->parent->namelexeme != "MethodDeclarator" && node->parent->namelexeme!= "."){
         auto stEntry = currSymTable->lookup(node->children[0]->namelexeme);
         if(!stEntry){
@@ -959,6 +982,7 @@ void createST(Node* node)
             node->numDims = stEntry->getDimension();
         }
     }
+    
     else if(nodeName == "VariableDeclaratorId"){
         for(auto child : node->children){
                         if(child->namelexeme == "Dims"){
@@ -966,6 +990,7 @@ void createST(Node* node)
             }
         }
     }
+    
     else if(nodeName == "ArrayCreationExpression"){
         node->typeForExpr = node->children[1]->lexeme;
         node->numDims = node->children[2]->children.size();
@@ -1037,6 +1062,11 @@ void createST(Node* node)
         typecheck(node);
         node->typeForExpr = "boolean";
     }
+    else if(nodeName == "<<" || nodeName == ">>" || nodeName == ">>>")
+    {
+        typecheck(node);
+        node->typeForExpr = node->children[0]->typeForExpr;
+    }
 
     else if(nodeName == "CastExpression")
     {
@@ -1072,37 +1102,74 @@ void createST(Node* node)
                 leaf = leaf->children[0];
                 
             }
-        if(leaf->namelexeme == "."){
-            auto stEntry = leaf->children[0]->children[0]->nearSymbolTable->lookup(leaf->children[0]->children[0]->namelexeme);
-            if(!stEntry){
-                 std::string s = "Undeclared Object " +  leaf->children[0]->children[0]->namelexeme + " in line number " + std::to_string(node->lineNumber);
-                yyerror(s.c_str());
+            if(leaf->namelexeme == "."){
+                auto stEntry = leaf->children[0]->children[0]->nearSymbolTable->lookup(leaf->children[0]->children[0]->namelexeme);
+                if(!stEntry){
+                    std::string s = "Undeclared Object " +  leaf->children[0]->children[0]->namelexeme + " in line number " + std::to_string(node->lineNumber);
+                    yyerror(s.c_str());
+                }
+                auto curClass = stEntry->getType();
+                auto fieldName = leaf->children[1]->children[0]->namelexeme;
+                if(fieldsForClass[curClass].find(fieldName) == fieldsForClass[curClass].end()){
+                    std::string s = "Undeclared field for class " + curClass + " in line number " + std::to_string(node->lineNumber);
+                    yyerror(s.c_str());
+                }
+                std::string cfield = curClass + "_" +fieldName;
+                auto fData = classFieldData[cfield];
+                node->typeForExpr = fData.type;
+                node->numDims = fData.numDims - nc;
             }
-            auto curClass = stEntry->getType();
-            auto fieldName = leaf->children[1]->children[0]->namelexeme;
-            if(fieldsForClass[curClass].find(fieldName) == fieldsForClass[curClass].end()){
-                std::string s = "Undeclared field for class " + curClass + " in line number " + std::to_string(node->lineNumber);
-                yyerror(s.c_str());
+            else{
+                auto entry = leaf->nearSymbolTable->lookup(leaf->namelexeme);
+                if(!entry){
+                    std::string s = "Undeclared Object " +  leaf->namelexeme + " in line number " + std::to_string(node->lineNumber);
+                    yyerror(s.c_str());
+                }
+                node->typeForExpr = entry->getType();
+                node->numDims =  entry->getDimension() - nc + 1;
             }
-            std::string cfield = curClass + "_" +fieldName;
-            auto fData = classFieldData[cfield];
-            node->typeForExpr = fData.type;
-            node->numDims = fData.numDims - nc;
         }
-        else{
-            auto entry = leaf->nearSymbolTable->lookup(leaf->namelexeme);
-            if(!entry){
-                std::string s = "Undeclared Object " +  leaf->namelexeme + " in line number " + std::to_string(node->lineNumber);
-                yyerror(s.c_str());
-            }
-            node->typeForExpr = entry->getType();
-            node->numDims =  entry->getDimension() - nc + 1;
-        }
-        } 
-    
-        
     }
-    else if(node->children.size() == 0 && node->value[0] == 'L' && node->value[1] == 'i'){
+
+    else if(nodeName == "ArrayInitializer")
+    {
+        node->numDims = node->children[0]->numDims;
+        assert(((int)node->children.size()) >= 1);
+        node->typeForExpr = node->children[0]->typeForExpr;
+    }
+        node->typeForExpr = node->children[1]->typeForExpr;
+    }
+    else if(nodeName == "VariableInitializerList")
+    {
+        // incomplete
+        typecheck(node);
+        node->numDims = node->children[0]->numDims + 1;
+        node->typeForExpr = node->children[0]->typeForExpr;
+    }
+
+    else if(nodeName == "." && node->parent->namelexeme != "MethodInvocation")
+    {
+        auto leftFieldPrefixNode = node->children[0], rightFieldNode = node->children[1];
+        std::string rightField = rightFieldNode->children[0]->namelexeme;
+        std::string fieldClass = leftFieldPrefixNode->typeForExpr;
+        std::string key = fieldClass + "_" + rightField;
+        std::cerr << key << '\n';
+        if(classFieldData.find(key) == classFieldData.end() && fieldClass != "$package")
+        {
+            std::string errorMessage = std::string("Member ") + rightField + " of class " + fieldClass + " not found on line " + std::to_string(rightFieldNode->children[0]->lineNumber);
+            yyerror(errorMessage.c_str());
+        }
+        field fieldStructData = classFieldData[key];
+        std::cerr << "Modifier: " << fieldStructData.modifier << '\n';
+        if(fieldStructData.modifier == "private" && currentClass != fieldClass)
+        {
+            std::string errorMessage = rightField + " has private access in " + fieldClass + " in line " + std::to_string(rightFieldNode->lineNumber);
+        }
+        if(fieldClass == "$package") node->typeForExpr = "$package";
+        else node->typeForExpr = fieldStructData.type;
+    }
+
+    else if(node->children.size() == 0 && node->namelexeme[0] == 'L' && node->namelexeme[1] == 'i'){
         node->typeForExpr = node->type;
     }
     else if(nodeName == "."){
@@ -1116,6 +1183,7 @@ void codeInsert(Node* node, std::vector<quad> & code ){
     node->code.insert(node->code.end() , code.begin(), code.end());
     code.clear();
 }
+
 qid emptyQid("", NULL);
 
 void binary3AC(Node* node, std::string op)
@@ -1758,7 +1826,6 @@ void three_AC(Node *node){
         node->node_tmp = qid(node->namelexeme , NULL);
     }
     
-    
     else{
         // std::cerr<<nodeName<<"__nodename__\n";
         
@@ -1799,6 +1866,7 @@ void three_AC(Node *node){
 void typecheck(Node *node)
 {
     std::string nodeName = node->namelexeme;
+    std::set<std::string> primitiveTypes{"int", "char", "short", "long", "float", "double", "boolean", "String"};
     // if(nodeName == "=")
     // {
     //     assert((int)(node->children.size()) >= 2);
@@ -1830,12 +1898,23 @@ void typecheck(Node *node)
             std::string s = "Number of dimensions does not match on leftHandSide  and rightHandSide "  + nodeName +  " in line number " + std::to_string(node->lineNumber);
             yyerror(s.c_str());
         }
-        if(setTypeCheckType1( rightHandSide->typeForExpr)==8 && setTypeCheckType1( leftHandSide->typeForExpr)!=8){
-           std::string s = "1 Type Mismatch "+leftHandSide->typeForExpr + " and " + rightHandSide->typeForExpr + " does not match under " + nodeName +  " in line number " + std::to_string(node->lineNumber);
+
+        if(nodeName == "+" && (leftHandSide->typeForExpr == "String" || rightHandSide->typeForExpr == "String") && leftHandSide->numDims == 0)
+        {
+            std::string otherType = (leftHandSide->typeForExpr == "String") ? rightHandSide->typeForExpr: leftHandSide->typeForExpr;
+            if(primitiveTypes.find(otherType) == primitiveTypes.end())
+            {
+                std::string errorMessage = "Type mismatch: " + leftHandSide->typeForExpr + " and " + rightHandSide->typeForExpr + " does not match under " + nodeName + " in line number " + std::to_string(node->lineNumber);
+                yyerror(errorMessage.c_str());
+            }
+        }
+
+        else if(setTypeCheckType1( rightHandSide->typeForExpr)==8 && setTypeCheckType1( leftHandSide->typeForExpr)!=8){
+           std::string s = "1 Type Mismatch: "+leftHandSide->typeForExpr + " and " + rightHandSide->typeForExpr + " does not match under " + nodeName +  " in line number " + std::to_string(node->lineNumber);
             yyerror(s.c_str());
         }
         else if(setTypeCheckType1( leftHandSide->typeForExpr)==8 && setTypeCheckType1( rightHandSide->typeForExpr)!=8){
-            std::string s = "2 Type Mismatch "+leftHandSide->typeForExpr + " and " + rightHandSide->typeForExpr + " does not match under " + nodeName +  " in line number " + std::to_string(node->lineNumber);
+            std::string s = "2 Type Mismatch: "+leftHandSide->typeForExpr + " and " + rightHandSide->typeForExpr + " does not match under " + nodeName +  " in line number " + std::to_string(node->lineNumber);
             yyerror(s.c_str());
         }
         else if(setTypeCheckType1( leftHandSide->typeForExpr)!=8 && setTypeCheckType1( rightHandSide->typeForExpr)!=8){
@@ -1877,6 +1956,16 @@ void typecheck(Node *node)
         }
     }
 
+    else if(nodeName == ">>" || nodeName == "<<" || nodeName == ">>>")
+    {
+        auto leftHandSide = node->children[0], rightHandSide = node->children[1];
+        if(setTypeCheckType1(leftHandSide->typeForExpr) > 4 || setTypeCheckType1(rightHandSide->typeForExpr) > 4)
+        {
+            std::string errorMessage = "Type mismatch: both operands must be of integral types";
+            yyerror(errorMessage.c_str());
+        }
+    }
+
     else if(nodeName == "PreDecrementExpression" || nodeName=="PreIncrementExpression"){
 
         assert((int)(node->children.size()) >= 2);
@@ -1902,8 +1991,6 @@ void typecheck(Node *node)
         }
     }
 
-
-
     // else if(nodeName == "+"  || nodeName == "*" || nodeName == "/" || nodeName == "%" || nodeName == "-")
     // {
     //     assert((int)(node->children.size()) >= 2);
@@ -1918,15 +2005,13 @@ void typecheck(Node *node)
     //     }
     // }
 
-
-    
-
-
-        
-
-    
-
-    
+    else if(nodeName == "VariableInitializerList")
+    {
+        for(auto listMem: node->children)
+        {
+            
+        }
+    }
 }
 
 %}
@@ -2188,25 +2273,11 @@ VariableDeclaratorList: VariableDeclarator
                         }
                         | VariableDeclaratorList Comma VariableDeclarator
                         {
-                            if(strcmp($1->value, "Variables") == 0)
-                            {
-                                $$ = $1;
-                                $$->add_child($3);
+                            $$ = $1;
+                            $$->add_child($3);
 
-                                assert((int)($3->stEntries.size()) == 1);
-                                $$->stEntries.push_back($3->stEntries[0]);
-                            }
-                            else
-                            {
-                                $$ = createNode("Variables");
-                                $$->add_child($1);
-                                $$->add_child($3);
-
-                                assert((int)($1->stEntries.size()) == 1);
-                                assert((int)($3->stEntries.size()) == 1);
-                                $$->stEntries.push_back($1->stEntries[0]);
-                                $$->stEntries.push_back($3->stEntries[0]);
-                            }
+                            assert((int)($3->stEntries.size()) == 1);
+                            $$->stEntries.push_back($3->stEntries[0]);
                         }
                         ;
 
@@ -3560,26 +3631,25 @@ TypeArgumentsOrDiamond: TypeArguments
 
 FieldAccess:    Primary Dot Identifier
                 {
+                    $$ = createNode("FieldAccess");
                     $2->add_child($1);
                     $2->add_child($3);
-                    $$ = $2;
                 }
                 | SUPER Dot Identifier
                 {
+                    $$ = createNode("FieldAccess");
                     $2->add_child($1);
                     $2->add_child($3);
-                    $$ = $2;
                 }
                 | TypeName Dot SUPER Dot Identifier
                 {
+                    $$ = createNode("FieldAccess");
                     $2->add_child($1);
                     $2->add_child($3);
                     $4->add_child($2);
                     $4->add_child($5);
-                    $$ = $4;
 
                     $$->stEntries = $1->stEntries;
-
                 }
                 ;
 
