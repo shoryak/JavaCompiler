@@ -13,7 +13,7 @@ quad generate(qid op, qid arg1, qid arg2, qid res, int idx)
 {
     quad qd(op, arg1, arg2, res, idx);
     if(idx == -1) qd.index = code.size();
-    code.push_back(qd);
+    // code.push_back(qd);
     return qd;
 }
 
@@ -34,43 +34,127 @@ qid newtemp(std::string type, SymbolTable* currSymTable)
     return qid(tmp, currSymTable->lookup(tmp));
 }
 
-void print3AC(){
-    qid emptyQid = qid("", NULL);
-    std::ofstream tac_file;
-    tac_file.open("intermediate_3ac.csv");
-    for(int i=0;i<code.size(); i++){
-        tac_file<<code[i].oper.first<<","<<code[i].argument1.first<<","<<code[i].argument2.first<<","<<code[i].result.first<<","<<code[i].index<<","<<i<<endl;
-    }
-    tac_file.close();
-    tac_file.open("intermediate_3ac.txt");
-    for(auto codeLine: code)
-    {
-        tac_file << codeLine.result.first << " = ";
-        tac_file << codeLine.argument1.first << codeLine.oper.first << codeLine.argument2.first;
-        tac_file << '\n';
-    }
-    tac_file.close();
+qid newtempstar(std::string type, SymbolTable* currSymTable)
+{
+    std::string tmp = "*$t" + std::to_string(counter);
+    int address = 0, dimension = 0, decLine = 0, size = 0;
+    SymbolTableEntry* stEntry = new SymbolTableEntry(tmp, type, size, dimension, decLine, address);
+    assert(currSymTable);
+    currSymTable->insert(tmp, stEntry);
+    counter++;
+    return qid(tmp, currSymTable->lookup(tmp));
 }
 
-void print3AC(std::vector<quad> code){
-    qid emptyQid = qid("", NULL);
-    if(printAC==0){
-        
-        tac_file.open("intermediate_3ac.csv");
-    }
 
-    for(int i=0;i<code.size(); i++){
-        tac_file<<code[i].oper.first<<","<<code[i].argument1.first<<","<<code[i].argument2.first<<","<<code[i].result.first<<","<<code[i].index<<","<<i<<endl;
-    }
+void print3AC1(std::vector<quad> code){
+    qid emptyQid = qid("", NULL);
+
     // tac_file.close();
     if(printAC==0) tac_file1.open("intermediate_3ac.txt");
     for(auto codeLine: code)
-    {
-        tac_file1 << codeLine.result.first << " = ";
-        tac_file1 << codeLine.argument1.first << codeLine.oper.first << codeLine.argument2.first;
-        tac_file1 << "\n";
+    {   
+        
+        
+        if(codeLine.oper.first == "IfFalse"){
+            tac_file1<<"    "<<" ";
+            tac_file1 << codeLine.oper.first<<" " << codeLine.argument1.first << " goto " << codeLine.argument2.first;
+            tac_file1 << "\n";
+        }
+        else if(codeLine.oper.first == "IfTrue"){
+            tac_file1<<"    "<<" ";
+            tac_file1 << codeLine.oper.first << " "<<codeLine.argument1.first << " goto " << codeLine.argument2.first;
+            tac_file1 << "\n";
+        }
+        else if(codeLine.oper.first == "Else"){
+            tac_file1<<"    "<<" ";
+            tac_file1 << codeLine.oper.first << " "<<codeLine.argument1.first << " goto " << codeLine.argument2.first;
+            tac_file1 << "\n";
+        }
+        else if(codeLine.oper.first == "Ternary"){
+            tac_file1<<"    "<<" ";
+            tac_file1 << codeLine.oper.first << " "<<codeLine.argument1.first << " goto " << codeLine.argument2.first;
+            tac_file1 << "\n";
+        }
+        else if(codeLine.oper.first[0] == '$' && codeLine.oper.first[1] == 'L'){
+            tac_file1  <<codeLine.oper.first << codeLine.argument2.first <<":";
+            tac_file1 << "\n";
+        }
+        else if(codeLine.oper.first[0] == '$' && codeLine.oper.first[1] == 'g' && codeLine.oper.first[2] == 'o' && codeLine.oper.first[3] == 't' && codeLine.oper.first[4] == 'o'){
+            std::string str;
+            int cnt=0;
+            for(auto x: codeLine.oper.first){
+                if(cnt!=0 && x!='$'){
+                    str.push_back(x);
+                }
+                else cnt++;
+            }
+            tac_file<<"     "<<" ";
+            tac_file1 << ""<<str<< codeLine.argument1.first;
+            tac_file1 << "\n";
+        }
+        else if(codeLine.oper.first[0] == 'C' && codeLine.oper.first[1] == 'A' && codeLine.oper.first[2] == 'S' && codeLine.oper.first[3] == 'T' && codeLine.oper.first[4] == '_'){
+            tac_file1<<"    "<<" ";
+            tac_file1 << codeLine.result.first << " = ";
+            tac_file1 << codeLine.oper.first<<" "<<codeLine.argument1.first << " " << codeLine.argument2.first;
+            tac_file1 << "\n";
+        }
+        else if(codeLine.oper.first == "CALL" && codeLine.argument1.first != "println"){
+            tac_file1<<"    "<<" ";
+            tac_file1 << codeLine.result.first << " = ";
+            tac_file1 << codeLine.oper.first<<" "<<codeLine.argument1.first <<" "<< codeLine.argument2.first;
+            tac_file1 << "\n";
+        }
+        else if(codeLine.oper.first == "CALL" && codeLine.argument1.first == "println"){
+            tac_file1<<"    "<<" ";
+            tac_file1 << codeLine.oper.first<<" ";
+            tac_file1 << codeLine.argument1.first << " " << codeLine.argument2.first;
+            tac_file1 << "\n";
+        }
+        else if(codeLine.oper.first == "PushParam"){
+            tac_file1<<"    "<<" ";
+            tac_file1 << codeLine.oper.first<<" ";
+            tac_file1 << codeLine.argument1.first << " " << codeLine.argument2.first;
+            tac_file1 << "\n";
+        }
+        else if(codeLine.oper.first == "PopParams"){
+            tac_file1<<"    "<<" ";
+            tac_file1 << codeLine.oper.first;
+            tac_file1 << "\n";
+        }
+        else if(codeLine.oper.first[0] == '#'){
+            std::string str;
+            int cnt=0;
+            for(auto x: codeLine.oper.first){
+                if(cnt!=0 && x!='#'){
+                    str.push_back(x);
+                }
+                else cnt++;
+            }
+           
+            tac_file1 << codeLine.argument1.first << ""<<str<< codeLine.argument2.first<<":";
+            tac_file1 << "\n";
+        }
+        else if(codeLine.oper.first == "[ ]" && codeLine.argument2.first[0]=='$'){
+            tac_file1<<"    "<<" ";
+            tac_file1 << codeLine.result.first << " = ";
+            tac_file1 << codeLine.argument1.first << " [ " <<codeLine.argument2.first <<" ]";
+            tac_file1 << "\n";
+        }
+        else if(codeLine.oper.first == "RETURN"){
+            tac_file1<<"    "<<" ";
+            tac_file1 << codeLine.oper.first << " " <<codeLine.argument1.first;
+            tac_file1 << "\n";
+        }
+        else{
+            tac_file1<<"    "<<" ";
+            tac_file1 << codeLine.result.first << " = ";
+            tac_file1 << codeLine.argument1.first << " "<<codeLine.oper.first << " " <<codeLine.argument2.first;
+            tac_file1 << "\n";
+        }
+
     }
     tac_file1<< "\n";
+
     printAC+=1;
     // tac_file.close();
 }

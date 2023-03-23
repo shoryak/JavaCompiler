@@ -19,7 +19,9 @@ public:
 quad generate(qid oper, qid arg1, qid arg2, qid res, int idx);
 void backpatch(std::vector<int>&, int);
 qid newtemp(std::string , SymbolTable* );
+qid newtempstar(std::string , SymbolTable* );
 void print3AC();
 void print3AC(std::vector<quad>);
+void print3AC1(std::vector<quad>);
 
 #endif

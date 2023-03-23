@@ -15,9 +15,7 @@ extern "C"
     extern int linenum;
     int yylex(void);
     int yyerror(const char* s)
-    {
-        
-       
+    {  
         fprintf(stderr, "ERROR: %s \n\n", s);
         exit(1);
         return 1;
@@ -362,6 +360,7 @@ void methodTypeCheck(Node* node)
                 }
                 else{
                     auto className = node->nearSymbolTable->lookup(obj)->getType();
+                    node->typeForExpr = className;
                     if(methodsForClass[className].find(methodName) == methodsForClass[className].end()){
                         std::string s = "Undeclared function for class " + className + " in line number " + std::to_string(node->lineNumber);
                         yyerror(s.c_str());
@@ -402,7 +401,11 @@ void methodTypeCheck(Node* node)
         // stEntry->print();
         if(stEntry)
         {
+            
             funcproto fp = stEntry->getFuncProto();
+            if(node->children[0]->namelexeme!= "."){
+                node->typeForExpr = fp.returnType;
+            }
             if(nArgs !=  fp.numArgs)
             {
                std::string err = "Incorrect number of Arguments in" + methodName +" Invoked on line " + std::to_string(node->lineNumber);
@@ -433,6 +436,7 @@ void methodTypeCheck(Node* node)
             std::string err = "Undeclared function " + methodName +" Invoked on line " + std::to_string(node->lineNumber);
             yyerror(err.c_str());
         }
+        std::cerr<<methodName<<" "<<node->typeForExpr<<"\n";
     }
     
 
@@ -524,6 +528,7 @@ void createST(Node* node)
                 name += std::string(x->children[0]->namelexeme);
 
                 decLine = (x->children[0]->lineNumber);
+                fproto.returnType = x->children[0]->namelexeme;
                 name += " " + std::string(x->children[1]->children[0]->children[0]->namelexeme);
                 methodsForClass[currentClass].insert(x->children[1]->children[0]->children[0]->namelexeme);
                 for(auto y: x->children)
@@ -1013,7 +1018,8 @@ void createST(Node* node)
     if(nodeName == "class") methodTypeCheck(node);
     
     else if(nodeName == "=") {
-        if(node->children[1]->namelexeme != "Ternary"){
+
+        if(node->children[1]->namelexeme != "Ternary" || node->children[1]->typeForExpr != ""){
         typecheck(node);
         }
     }
@@ -1099,6 +1105,10 @@ void createST(Node* node)
     else if(node->children.size() == 0 && node->value[0] == 'L' && node->value[1] == 'i'){
         node->typeForExpr = node->type;
     }
+    else if(nodeName == "."){
+        node->typeForExpr = node->children[1]->typeForExpr;
+    }
+    
     
 }
 
@@ -1111,19 +1121,22 @@ qid emptyQid("", NULL);
 void binary3AC(Node* node, std::string op)
 {
 
-    std::cerr<< node->namelexeme <<" "<< node->typeForExpr <<" "<< node->children[0]->typeForExpr << " "<< node->children[1]->typeForExpr << "\n";
+    // std::cerr<< node->namelexeme <<" "<< node->typeForExpr <<" "<< node->children[0]->typeForExpr << " "<< node->children[1]->typeForExpr << "\n";
     node->node_tmp = newtemp(node->typeForExpr, node->nearSymbolTable);
     qid left = node->children[0]->node_tmp;
     qid right  = node->children[1]->node_tmp;
-    if(node->children[0]->typeForExpr != node->typeForExpr){
+    bool flag = node->children[0]->typeForExpr != "";
+    flag = flag && (node->children[1]->typeForExpr != "");
+    flag = flag && (node->typeForExpr != "");
+    if(node->children[0]->typeForExpr != node->typeForExpr  && flag){
         auto tempcastleft = newtemp(node->typeForExpr, node->nearSymbolTable);
         quad castInstruction = generate(qid("CAST_"+ node->typeForExpr, NULL), node->children[0]->node_tmp, emptyQid, tempcastleft, -1);
         node->code.push_back(castInstruction);
         left = tempcastleft;
     }
-    if(node->children[1]->typeForExpr != node->typeForExpr){
+    if(node->children[1]->typeForExpr != node->typeForExpr && flag ){
         auto tempcastright = newtemp(node->typeForExpr, node->nearSymbolTable);
-        quad castInstruction = generate(qid("CAST" + node->typeForExpr, NULL), node->children[1]->node_tmp, emptyQid, tempcastright, -1);
+        quad castInstruction = generate(qid("CAST_" + node->typeForExpr, NULL), node->children[1]->node_tmp, emptyQid, tempcastright, -1);
         node->code.push_back(castInstruction);
         right = tempcastright;
     }
@@ -1200,7 +1213,7 @@ void three_AC(Node *node){
     for(auto child : node->children)
         three_AC(child);
 
-    if(node->children.size()== 1){
+    if(node->children.size()== 1 || node->namelexeme == "VariableDeclaratorId"){
 
         node->node_tmp = node->children[0]->node_tmp;
         // node->code = node->children[0]->code;
@@ -1231,10 +1244,11 @@ void three_AC(Node *node){
         // if(node->children[1]->namelexeme  == "UnqualifiedClassInstanceCreationExpression" ){
         //     return;
         // }
+        codeInsert(node, node->children[0]->code);
         codeInsert(node, node->children[1]->code);
         node->node_tmp = newtemp(node->children[0]->typeForExpr, node->nearSymbolTable);
-
-        if(node->children[0]->typeForExpr !=node->children[1]->typeForExpr){
+        
+        if(node->children[0]->typeForExpr !=node->children[1]->typeForExpr && node->children[0]->typeForExpr != "" ){
             auto tempcastright = newtemp(node->children[0]->typeForExpr, node->nearSymbolTable);
             quad castInstruction = generate(qid("CAST_" + node->children[0]->typeForExpr, NULL), node->children[1]->node_tmp, emptyQid, tempcastright, -1);
             node->code.push_back(castInstruction);
@@ -1244,7 +1258,7 @@ void three_AC(Node *node){
         quad exp = generate(emptyQid, node->node_tmp, emptyQid, node->children[0]->node_tmp, -1);        
         node->code.push_back(tempassign);
         node->code.push_back(exp);
-        print3AC(node->code);
+        // print3AC(node->code);
     }
     
     else if(presentInOpList(opsBinary, nodeName))
@@ -1275,22 +1289,27 @@ void three_AC(Node *node){
         postOperation3AC(node, "-");
     
     else if(nodeName == "IfThenStatement"){
-        Node* condition = node->children[0]->children[0];
-        Node*  thenNode = node->children[1]->children[0];
+        Node* condition = node->children[0];
+        Node*  thenNode = node->children[1];
         labelCounter++;
         std::string label = "$L" + std::to_string(labelCounter);
         quad ifThenQuad = generate(qid("IfFalse", NULL),  condition->node_tmp , qid(label, NULL), emptyQid  , -1);
         node->code = condition->code; 
+        
         node->code.push_back(ifThenQuad);
+        std::cerr<<thenNode->namelexeme<< "HURRAY \n";
+        std::cerr<<condition->namelexeme<< "HURRAY \n";
+        // print3AC1(thenNode->code);
         codeInsert(node, thenNode->code);
         node->code.push_back(generate(qid(label, NULL), emptyQid , emptyQid, emptyQid  , -1));
-        // print3AC(node->code);
+
+        // print3AC1(node->code);
     }
 
     else if(nodeName == "IfThenElseStatement" || nodeName == "IfThenElseStatementNoShortIf"){
-        Node* condition = node->children[0]->children[0];
-        Node*  thenNode = node->children[1]->children[0];
-        Node* elseNode = node->children[2]->children[0];
+        Node* condition = node->children[0];
+        Node*  thenNode = node->children[1];
+        Node* elseNode = node->children[2];
         labelCounter++;
         std::string l1 = "$L" + std::to_string(labelCounter);
         labelCounter++;
@@ -1342,10 +1361,8 @@ void three_AC(Node *node){
         node->code.push_back(L2);
         codeInsert(node, elseNode->code);
         node->code.push_back(L3);
-        print3AC(node->code);
+        // print3AC(node->code);
     }
-
-
 
     
 
@@ -1380,6 +1397,7 @@ void three_AC(Node *node){
             codeInsert(node, ForExpression->code);
             quad ifThenQuad = generate(qid("IfFalse", NULL),  ForExpression->node_tmp , qid(endFor, NULL), emptyQid  , -1);
             node->code.push_back(ifThenQuad);
+            // print3AC(node->code);
         }
         if(ForBody){
              codeInsert(node, ForBody->code);
@@ -1391,6 +1409,7 @@ void three_AC(Node *node){
         node->code.push_back(gotoBeginFor);
         node->code.push_back(endFOR);
         // print3AC(node->code);
+        // print3AC1(node->code);
 
         
     }
@@ -1448,12 +1467,20 @@ void three_AC(Node *node){
                 node->node_tmp = final;
                 quad I1 = generate(qid("*",NULL) , qid(std::to_string(offset),NULL), qid(width,NULL), t1 , -1);
                 quad I2 = generate(qid("*",NULL) , t1 , node->children[1]->node_tmp, t2, -1);
-                quad I3 = generate(qid("[ ]" , NULL) , qid(leaf->namelexeme , NULL) ,  t2, final, -1);
+                std::string getid = "";
+                int cntgetid=0;
+                // if(node->children.size() > 1  && node->children[1]->namelexeme[0] == 'L' && node->children[1]->namelexeme[1] =='i') {
+                //     for(auto x : node->children[1]->namelexeme){
+                //         if(cntgetid < 8) getid.push_back(x);
+                //         cntgetid++;
+                //     }
+                // }
+                quad I3 = generate(qid("[ ]" + getid , NULL) , qid(leaf->namelexeme , NULL) ,  t2, final, -1);
                 codeInsert(node, node->children[0]->code);
                 node->code.push_back(I1);
                 node->code.push_back(I2);
                 node->code.push_back(I3);
-                print3AC(node->code);
+                // print3AC(node->code);
             }
             else{
                 offset = setOffset(type);
@@ -1529,7 +1556,7 @@ void three_AC(Node *node){
                 node->code.push_back(I1);
                 node->code.push_back(I2);
                 node->code.push_back(I3);
-                print3AC(node->code);
+                // print3AC(node->code);
             }
         }
         else{
@@ -1553,6 +1580,164 @@ void three_AC(Node *node){
         }
 
     }
+    else if(nodeName == "." ){
+        if(node->children[0]->namelexeme != "."){
+            Node* leftleaf = node;
+            Node* fieldName = node->children[1];
+            while(leftleaf->children.size()){
+                leftleaf = leftleaf->children[0];
+            }
+            while(fieldName->children.size()){
+                fieldName = fieldName->children[0];
+            }
+            std::string objname = leftleaf->namelexeme;
+            node->node_tmp = newtempstar("dot",node->nearSymbolTable);
+            quad I1 = generate(qid("",NULL) , qid(objname  ,NULL) , emptyQid ,node->node_tmp,-1 );
+            string temp = "";
+            for(auto ch : node->node_tmp.first){
+                if(ch!='*'){
+                    temp.push_back(ch);
+                }
+            }
+            quad I2 = generate(qid("+",NULL) , qid(temp,NULL) , qid("OFFSET_" + fieldName->namelexeme,NULL), qid(temp,NULL),-1);
+            node->code.push_back(I1);
+            node->code.push_back(I2);
+            // print3AC1(node->code);
+
+        }
+    }
+    else if(nodeName == "MethodDeclaration"){
+            Node* header = NULL , *block = NULL ,  *declarator =NULL, *FormalParameterList =NULL;
+            for(auto child : node->children){
+                if(child->namelexeme == "MethodHeader"){
+                    header = child;
+                }
+                if(child->namelexeme == "Block"){
+                    block = child;
+                }
+                
+            }
+            for(auto child : header->children){
+                if(child->namelexeme == "MethodDeclarator"){
+                    declarator = child;
+                }
+                
+            }
+            for(auto child : declarator->children){
+                if(child->namelexeme == "FormalParameterList"){
+                    FormalParameterList = child;
+                }
+            }
+            
+            // label
+            auto funcName = declarator->children[0]->children[0]->namelexeme;
+            auto funclabel = quad(qid("#" +funcName , NULL) , emptyQid, emptyQid, emptyQid , -1);
+            node->code.push_back(funclabel);
+            // beginFunc statement
+            if(FormalParameterList!= NULL){
+            std::cerr<<FormalParameterList->value<<"\n";
+            int paramNumber = FormalParameterList->children.size();
+            std::vector<std::string> paramNames; 
+            for(auto param  : FormalParameterList->children){
+                auto Id = param->children.back();
+                paramNames.push_back(Id->children[0]->children[0]->namelexeme);
+            }
+
+            for(int i=paramNumber-1 ; i>=0;i--){
+                auto t1 = newtemp("param" , node->nearSymbolTable);
+                quad I1 = generate(qid("PopParam",NULL), emptyQid, emptyQid, t1,-1  );
+                quad I2 = generate(emptyQid , t1, emptyQid , qid(paramNames[i], NULL) , -1 );
+                node->code.push_back(I1);
+                node->code.push_back(I2);
+            }
+            }
+            codeInsert(node, block->code);
+            print3AC1(node->code);
+
+
+
+        }
+    else if(nodeName == "ConstructorDeclaration"){
+         Node* block = NULL ,  *declarator =NULL, *FormalParameterList =NULL;
+            for(auto child : node->children){
+                if(child->namelexeme == "ConstructorDeclarator"){
+                    declarator = child;
+                }
+                if(child->namelexeme == "Block"){
+                    block = child;
+                }
+                
+            }
+           
+            for(auto child : declarator->children){
+                if(child->namelexeme == "FormalParameterList"){
+                    FormalParameterList = child;
+                }
+            }
+            
+            // label
+            auto funcName = declarator->children[0]->namelexeme;
+            auto funclabel = quad(qid("#" +funcName , NULL) , emptyQid, emptyQid, emptyQid , -1);
+            node->code.push_back(funclabel);
+            // beginFunc statement
+            if(FormalParameterList!= NULL){
+            std::cerr<<FormalParameterList->value<<"\n";
+            int paramNumber = FormalParameterList->children.size();
+            std::vector<std::string> paramNames; 
+            for(auto param  : FormalParameterList->children){
+                auto Id = param->children.back();
+                paramNames.push_back(Id->children[0]->children[0]->namelexeme);
+            }
+
+            for(int i=paramNumber-1 ; i>=0;i--){
+                auto t1 = newtemp("param" , node->nearSymbolTable);
+                quad I1 = generate(qid("PopParam",NULL), emptyQid, emptyQid, t1,-1  );
+                quad I2 = generate(emptyQid , t1, emptyQid , qid(paramNames[i], NULL) , -1 );
+                node->code.push_back(I1);
+                node->code.push_back(I2);
+            }
+            }
+            codeInsert(node, block->code);
+            // print3AC1(node->code);
+    }
+    else if(nodeName == "ArrayCreationExpression"){
+        int offset = setOffset(node->typeForExpr);
+        std::vector<std::string> axisWidths;
+        Node* dimEx ;
+        for(auto child : node->children){
+            if(child->namelexeme == "DimExprs"){
+                dimEx = child;
+            }
+        }
+        if(dimEx){
+            for(auto child : dimEx->children){
+                Node* leaf = child;
+                while(leaf->children.size()){
+                    leaf = leaf->children[0];
+                }
+                axisWidths.push_back(leaf->namelexeme);
+            }
+            
+
+        }
+        node->node_tmp = newtemp("size",node->nearSymbolTable);
+        quad I1 = generate(emptyQid , qid(std::to_string(offset) , NULL), emptyQid , node->node_tmp , -1);
+        node->code.push_back(I1);
+        for(auto width : axisWidths){
+            quad I1 = generate(qid("*",NULL), qid(width , NULL), node->node_tmp , node->node_tmp , -1);
+            node->code.push_back(I1);
+        }
+        auto x = newtemp("final" , node->nearSymbolTable);
+        I1 =  generate(emptyQid , qid("allocmem",NULL) , node->node_tmp , x , -1);
+        node->node_tmp = x;
+        node->code.push_back(I1);
+    }
+    else if(nodeName == "ReturnStatement"){
+        codeInsert(node , node->children[0]->code);
+        quad I1 = generate(qid("RETURN", NULL) , node->children[0]->node_tmp , emptyQid, emptyQid,-1);
+        node->code.push_back(I1);
+    }
+
     // else if(node->children.size() == 0 && node->parent->namelexeme == "Identifier"   && node->parent->parent->namelexeme != "MethodInvocation" && node->parent->parent->namelexeme != "UnqualifiedClassInstanceCreationExpression" && node->parent->parent->namelexeme != "LocalVariableDeclaration" && node->parent->parent->namelexeme != "MethodDeclarator" && node->parent->parent->namelexeme!= "." && node->parent->parent->namelexeme != "class"){
         
     //     auto t1 = newtemp(node->typeForExpr , node->nearSymbolTable );
@@ -1576,11 +1761,29 @@ void three_AC(Node *node){
     
     else{
         // std::cerr<<nodeName<<"__nodename__\n";
+        
         for(auto child : node->children){
+            if(nodeName == "Then"){
+            // std::cerr<<nodeName<<" "<< node->namelexeme <<" __nodename__\n";
+            std::cerr<<node->namelexeme<<" child " <<node->code.size()<<"\n";
+            std::cerr<<child->namelexeme<<" child " <<child->code.size()<<"\n";
+            // print3AC1(child->code);
+        }
             // std::cerr<<child->namelexeme<<" child " <<child->code.size()<<"\n";
 
             codeInsert(node, child->code);
         }
+        if(nodeName == "Then"){
+    
+            std::cerr<<node->namelexeme<<" child " <<node->code.size()<<"\n";
+            // print3AC1(child->code);
+        }
+       
+    }
+
+
+    if(node->namelexeme == "Block"){
+        // print3AC(node->code);
     }
 
 
@@ -1616,6 +1819,9 @@ void typecheck(Node *node)
         Node *leftHandSide = node->children[0];
         Node *rightHandSide = node->children[1];
         std::cerr<<nodeName <<" "<<leftHandSide->typeForExpr <<" "<<rightHandSide->typeForExpr<< "\n";
+        if(leftHandSide->typeForExpr=="" || rightHandSide->typeForExpr ==""){
+            return;
+        }
         if(nodeName == "="){
             node->typeForExpr = leftHandSide->typeForExpr;
         }
@@ -1636,6 +1842,10 @@ void typecheck(Node *node)
             if(setTypeCheckType1( leftHandSide->typeForExpr)< setTypeCheckType1( rightHandSide->typeForExpr)){
                 // leftHandSide->typeForExpr = rightHandSide->typeForExpr;
                 if(nodeName != "=" ) node->typeForExpr = rightHandSide->typeForExpr;
+                else {
+                    std::string s = "2 Type Mismatch "+leftHandSide->typeForExpr + " and " + rightHandSide->typeForExpr + " does not match under " + nodeName +  " in line number " + std::to_string(node->lineNumber);
+                    yyerror(s.c_str());
+                }
             }
             else if(setTypeCheckType1( leftHandSide->typeForExpr) > setTypeCheckType1( rightHandSide->typeForExpr)){
                 // rightHandSide->typeForExpr = leftHandSide->typeForExpr;
@@ -1805,7 +2015,7 @@ CompilationUnit:    OrdinaryCompilationUnit
                         currSymTable->insert(stEntry);
                         createST(root);
                         SymTableCSVDump();
-                         globalSymTable->__printAll();
+                        //  globalSymTable->__printAll();
                         three_AC(root);
                         // globalSymTable = $$->symTable;
                        

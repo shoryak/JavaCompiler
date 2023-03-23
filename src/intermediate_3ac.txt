@@ -1,13 +1,63 @@
-$t1 = 9.8CAST_int
-$t0 = $t1
-x = $t0
+Main:
+     $t1 =  PopParam 
+     a = $t1  
+     $t0 = a  
+     str = $t0  
 
-$t2 = 90.8
-z = $t2
+myStatMethod:
+     PushParam Static is better or not 
+     CALL println 
+     PopParams
 
-$t4 = xCASTfloat
-$t3 = z+$t4
-$t6 = $t3CAST_int
-$t5 = $t6
-y = $t5
+Public__Method:
+     $t4 =  PopParam 
+     y = $t4  
+     $t5 =  PopParam 
+     x = $t5  
+     PushParam Public is better or not 
+     CALL println 
+     PopParams
+
+main:
+     $t21 =  PopParam 
+     args = $t21  
+     PushParam Public is better or not 
+     $t6 = CALL myStatMethod 
+     PopParams
+     PushParam anc 
+     $t7 = CALL Main 
+     PopParams
+     $t9 = CAST_Main $t7 
+     $t8 = $t9  
+     myObject = $t8  
+     $t10 = 1  
+     a = $t10  
+     $t11 = 2  
+     b = $t11  
+     $t12 = 4  
+     $t12 = 10 * $t12
+     $t13 = allocmem  $t12
+     $t14 = $t13  
+     arr = $t14  
+     *$t15 = myObject  
+     $t15 = $t15 + OFFSET_Public__Method
+     PushParam a 
+     PushParam b 
+     PushParam myObject 
+     $t16 = CALL Public__Method 
+     PopParams
+     *$t17 = myObject  
+     $t17 = $t17 + OFFSET_str
+     $t18 = Hello World!  
+     *$t17 = $t18  
+     *$t19 = this  
+     $t19 = $t19 + OFFSET_str
+     $t20 = abc  
+     *$t19 = $t20  
+
+somefunc:
+     $t22 =  PopParam 
+     arg2 = $t22  
+     $t23 =  PopParam 
+     arg1 = $t23  
 
