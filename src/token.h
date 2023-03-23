@@ -40,7 +40,7 @@
 extern int yydebug;
 #endif
 /* "%code requires" blocks.  */
-#line 1636 "parser.y" /* yacc.c:1909  */
+#line 1726 "parser.y" /* yacc.c:1909  */
 
     #include <vector>
     #include <cstdio>
@@ -190,7 +190,7 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 1647 "parser.y" /* yacc.c:1909  */
+#line 1737 "parser.y" /* yacc.c:1909  */
 
     Node* node;
     char* str;
