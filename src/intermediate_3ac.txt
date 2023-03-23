@@ -1,107 +1,13 @@
-$t0 = 
-a = $t0
+$t1 = 9.8CAST_int
+$t0 = $t1
+x = $t0
 
-$t1 = 
-b = $t1
+$t2 = 90.8
+z = $t2
 
-$t3 = 0
-i = $t3
-
-$t9 = 8*dim
-$t10 = $t9*i
-$t11 = a[ ]$t10
-
-$t13 = iCASTlong
-$t9 = 8*dim
-$t10 = $t9*i
-$t11 = a[ ]$t10
-$t12 = $t13
-$t11 = $t12
-
-$t14 = 0
-j = $t14
-
-$t20 = 0
-k = $t20
-
-$t26 = 4*dim
-$t27 = $t26*j
-$t28 = b[ ]$t27
-
-$t26 = 4*dim
-$t27 = $t26*j
-$t28 = b[ ]$t27
-$t29 = 4*dim
-$t30 = $t29*k
-$t31 = b[ ]$t30
-
-$t34 = $t32CASTfloat
-$t32 = j+k
-$t26 = 4*dim
-$t27 = $t26*j
-$t28 = b[ ]$t27
-$t29 = 4*dim
-$t30 = $t29*k
-$t31 = b[ ]$t30
-$t33 = $t34
-$t31 = $t33
-
-$t35 = 
-c = $t35
-
-$t36 = 
-d = $t36
-
-$t38 = 0
-i = $t38
-
-$t44 = 0
-j = $t44
-
-$t50 = 4*dim
-$t51 = $t50*i
-$t52 = c[ ]$t51
-
-$t50 = 4*dim
-$t51 = $t50*i
-$t52 = c[ ]$t51
-$t53 = 4*dim
-$t54 = $t53*j
-$t55 = c[ ]$t54
-
-$t56 = i+j
-$t50 = 4*dim
-$t51 = $t50*i
-$t52 = c[ ]$t51
-$t53 = 4*dim
-$t54 = $t53*j
-$t55 = c[ ]$t54
-$t57 = $t56
-$t55 = $t57
-
-$t58 = 0
-i = $t58
-
-$t64 = 8*dim
-$t65 = $t64*i
-$t66 = d[ ]$t65
-
-$t68 = iCASTdouble
-$t64 = 8*dim
-$t65 = $t64*i
-$t66 = d[ ]$t65
-$t67 = $t68
-$t66 = $t67
-
-$t71 = $t69CASTInner2
- = 1PushParam
- = 2PushParam
- = 3PushParam
-$t69 = Inner2CALL
- = PopParams
-$t70 = $t71
-obj2 = $t70
-
-$t72 = 
- = $t72
+$t4 = xCASTfloat
+$t3 = z+$t4
+$t6 = $t3CAST_int
+$t5 = $t6
+y = $t5
 

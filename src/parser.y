@@ -1231,19 +1231,17 @@ void three_AC(Node *node){
         // if(node->children[1]->namelexeme  == "UnqualifiedClassInstanceCreationExpression" ){
         //     return;
         // }
-
+        codeInsert(node, node->children[1]->code);
         node->node_tmp = newtemp(node->children[0]->typeForExpr, node->nearSymbolTable);
 
         if(node->children[0]->typeForExpr !=node->children[1]->typeForExpr){
-            auto tempcastright = newtemp(node->typeForExpr, node->nearSymbolTable);
-            quad castInstruction = generate(qid("CAST" + node->typeForExpr, NULL), node->children[1]->node_tmp, emptyQid, tempcastright, -1);
+            auto tempcastright = newtemp(node->children[0]->typeForExpr, node->nearSymbolTable);
+            quad castInstruction = generate(qid("CAST_" + node->children[0]->typeForExpr, NULL), node->children[1]->node_tmp, emptyQid, tempcastright, -1);
             node->code.push_back(castInstruction);
             node->children[1]->node_tmp= tempcastright;
         }
         quad tempassign = generate(emptyQid, node->children[1]->node_tmp, emptyQid, node->node_tmp, -1);
-        quad exp = generate(emptyQid, node->node_tmp, emptyQid, node->children[0]->node_tmp, -1);
-        codeInsert(node, node->children[1]->code);
-        codeInsert(node, node->children[0]->code);        
+        quad exp = generate(emptyQid, node->node_tmp, emptyQid, node->children[0]->node_tmp, -1);        
         node->code.push_back(tempassign);
         node->code.push_back(exp);
         print3AC(node->code);
