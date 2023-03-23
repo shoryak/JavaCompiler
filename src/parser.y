@@ -1056,6 +1056,11 @@ void createST(Node* node)
         typecheck(node);
         node->typeForExpr = "boolean";
     }
+    else if(nodeName == "<<" || nodeName == ">>" || nodeName == ">>>")
+    {
+        typecheck(node);
+        node->typeForExpr = node->children[0]->typeForExpr;
+    }
 
     else if(nodeName == "CastExpression")
     {
@@ -1656,6 +1661,7 @@ void three_AC(Node *node){
 void typecheck(Node *node)
 {
     std::string nodeName = node->namelexeme;
+    std::set<std::string> primitiveTypes{"int", "char", "short", "long", "float", "double", "boolean", "String"};
     // if(nodeName == "=")
     // {
     //     assert((int)(node->children.size()) >= 2);
@@ -1682,15 +1688,26 @@ void typecheck(Node *node)
 
         if(leftHandSide->numDims !=  rightHandSide->numDims){
             std::string s = "Number of dimensions does not match on leftHandSide  and rightHandSide "  + nodeName +  " in line number " + std::to_string(node->lineNumber);
-            // yyerror(s.c_str());
+            yyerror(s.c_str());
         }
-        if(setTypeCheckType1( rightHandSide->typeForExpr)==8 && setTypeCheckType1( leftHandSide->typeForExpr)!=8){
-           std::string s = "1 Type Mismatch "+leftHandSide->typeForExpr + " and " + rightHandSide->typeForExpr + " does not match under " + nodeName +  " in line number " + std::to_string(node->lineNumber);
-            // yyerror(s.c_str());
+
+        if(nodeName == "+" && (leftHandSide->typeForExpr == "String" || rightHandSide->typeForExpr == "String") && leftHandSide->numDims == 0)
+        {
+            std::string otherType = (leftHandSide->typeForExpr == "String") ? rightHandSide->typeForExpr: leftHandSide->typeForExpr;
+            if(primitiveTypes.find(otherType) == primitiveTypes.end())
+            {
+                std::string errorMessage = "Type mismatch: " + leftHandSide->typeForExpr + " and " + rightHandSide->typeForExpr + " does not match under " + nodeName + " in line number " + std::to_string(node->lineNumber);
+                yyerror(errorMessage.c_str());
+            }
+        }
+
+        else if(setTypeCheckType1( rightHandSide->typeForExpr)==8 && setTypeCheckType1( leftHandSide->typeForExpr)!=8){
+           std::string s = "1 Type Mismatch: "+leftHandSide->typeForExpr + " and " + rightHandSide->typeForExpr + " does not match under " + nodeName +  " in line number " + std::to_string(node->lineNumber);
+            yyerror(s.c_str());
         }
         else if(setTypeCheckType1( leftHandSide->typeForExpr)==8 && setTypeCheckType1( rightHandSide->typeForExpr)!=8){
-            std::string s = "2 Type Mismatch "+leftHandSide->typeForExpr + " and " + rightHandSide->typeForExpr + " does not match under " + nodeName +  " in line number " + std::to_string(node->lineNumber);
-            // yyerror(s.c_str());
+            std::string s = "2 Type Mismatch: "+leftHandSide->typeForExpr + " and " + rightHandSide->typeForExpr + " does not match under " + nodeName +  " in line number " + std::to_string(node->lineNumber);
+            yyerror(s.c_str());
         }
         else if(setTypeCheckType1( leftHandSide->typeForExpr)!=8 && setTypeCheckType1( rightHandSide->typeForExpr)!=8){
             if(setTypeCheckType1( leftHandSide->typeForExpr)< setTypeCheckType1( rightHandSide->typeForExpr)){
@@ -1724,6 +1741,16 @@ void typecheck(Node *node)
         }
         else{
             // for other data types
+        }
+    }
+
+    else if(nodeName == ">>" || nodeName == "<<" || nodeName == ">>>")
+    {
+        auto leftHandSide = node->children[0], rightHandSide = node->children[1];
+        if(setTypeCheckType1(leftHandSide->typeForExpr) > 4 || setTypeCheckType1(rightHandSide->typeForExpr) > 4)
+        {
+            std::string errorMessage = "Type mismatch: both operands must be of integral types";
+            yyerror(errorMessage.c_str());
         }
     }
 

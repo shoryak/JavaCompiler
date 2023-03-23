@@ -30,7 +30,8 @@ public class Main {
       myObject.str = "Hello World!";
       Adder add = new Adder();
       B bobj = new B();
-      bobj.somerandomfunc();
+      bobj.bint = 'a' << 1;
+      String strr = "Hello World" + bobj;
       // int y[] = {4, 3, 5};
     }
 
