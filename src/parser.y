@@ -290,18 +290,19 @@ int setTypeCheckType1(std::string type)
 }
 
 void declarationTypeCheck(Node* node){
-    if(node->children.size()==0 && node->value[0] == 'I' && node->value[1]=='d' && node->parent->parent->namelexeme != "." &&  node->parent->parent->namelexeme != "VariableDeclaratorId" && node->parent->parent->namelexeme!= "UnqualifiedClassInstanceCreationExpression" && node->parent->parent->namelexeme != "MethodInvocation" && node->parent->parent->namelexeme != "MethodDeclarator" ){
+    if(node->children.size()==0 && node->value[0] == 'I' && node->value[1]=='d' && node->parent->parent->namelexeme != "." &&  node->parent->parent->namelexeme != "VariableDeclaratorId" && node->parent->parent->namelexeme!= "UnqualifiedClassInstanceCreationExpression" && node->parent->parent->namelexeme != "MethodInvocation" && node->parent->parent->namelexeme != "MethodDeclarator" )
+    {
         auto stEntry = currSymTable->lookup(node->namelexeme);
         if(!stEntry){
              std::string err = "Undeclared Variable " + node->namelexeme +" on line " + std::to_string(node->lineNumber);
             yyerror(err.c_str()); 
         }
     }
-    for(auto child : node->children) {
+    for(auto child : node->children)
+    {
         if(node->namelexeme == "." && child->namelexeme == "." ) continue;
         declarationTypeCheck(child);
     }
-
 }
 
 
@@ -834,9 +835,8 @@ void createST(Node* node)
         node->nextList.clear();
 
         newScope=1;
-        
-
     }
+
     else if(nodeName == "Identifier" && node->parent->namelexeme != "VariableDeclaratorId" && node->parent->namelexeme!= "UnqualifiedClassInstanceCreationExpression" && node->parent->namelexeme != "MethodInvocation" && node->parent->namelexeme != "MethodDeclarator" && node->parent->namelexeme!= "."){
         auto stEntry = currSymTable->lookup(node->children[0]->namelexeme);
         if(!stEntry){
@@ -848,6 +848,7 @@ void createST(Node* node)
             node->numDims = stEntry->getDimension();
         }
     }
+    
     else if(nodeName == "VariableDeclaratorId"){
         for(auto child : node->children){
                         if(child->namelexeme == "Dims"){
@@ -855,6 +856,7 @@ void createST(Node* node)
             }
         }
     }
+    
     else if(nodeName == "ArrayCreationExpression"){
         node->typeForExpr = node->children[1]->lexeme;
         node->numDims = node->children[2]->children.size();
@@ -957,36 +959,49 @@ void createST(Node* node)
                 leaf = leaf->children[0];
                 
             }
-        if(leaf->namelexeme == "."){
-            auto stEntry = leaf->children[0]->children[0]->nearSymbolTable->lookup(leaf->children[0]->children[0]->namelexeme);
-            if(!stEntry){
-                 std::string s = "Undeclared Object " +  leaf->children[0]->children[0]->namelexeme + " in line number " + std::to_string(node->lineNumber);
-                yyerror(s.c_str());
+            if(leaf->namelexeme == "."){
+                auto stEntry = leaf->children[0]->children[0]->nearSymbolTable->lookup(leaf->children[0]->children[0]->namelexeme);
+                if(!stEntry){
+                    std::string s = "Undeclared Object " +  leaf->children[0]->children[0]->namelexeme + " in line number " + std::to_string(node->lineNumber);
+                    yyerror(s.c_str());
+                }
+                auto curClass = stEntry->getType();
+                auto fieldName = leaf->children[1]->children[0]->namelexeme;
+                if(fieldsForClass[curClass].find(fieldName) == fieldsForClass[curClass].end()){
+                    std::string s = "Undeclared field for class " + curClass + " in line number " + std::to_string(node->lineNumber);
+                    yyerror(s.c_str());
+                }
+                std::string cfield = curClass + "_" +fieldName;
+                auto fData = classFieldData[cfield];
+                node->typeForExpr = fData.type;
+                node->numDims = fData.numDims - nc;
             }
-            auto curClass = stEntry->getType();
-            auto fieldName = leaf->children[1]->children[0]->namelexeme;
-            if(fieldsForClass[curClass].find(fieldName) == fieldsForClass[curClass].end()){
-                std::string s = "Undeclared field for class " + curClass + " in line number " + std::to_string(node->lineNumber);
-                yyerror(s.c_str());
+            else{
+                auto entry = leaf->nearSymbolTable->lookup(leaf->namelexeme);
+                if(!entry){
+                    std::string s = "Undeclared Object " +  leaf->namelexeme + " in line number " + std::to_string(node->lineNumber);
+                    yyerror(s.c_str());
+                }
+                node->typeForExpr = entry->getType();
+                node->numDims =  entry->getDimension() - nc + 1;
             }
-            std::string cfield = curClass + "_" +fieldName;
-            auto fData = classFieldData[cfield];
-            node->typeForExpr = fData.type;
-            node->numDims = fData.numDims - nc;
         }
-        else{
-            auto entry = leaf->nearSymbolTable->lookup(leaf->namelexeme);
-            if(!entry){
-                std::string s = "Undeclared Object " +  leaf->namelexeme + " in line number " + std::to_string(node->lineNumber);
-                yyerror(s.c_str());
-            }
-            node->typeForExpr = entry->getType();
-            node->numDims =  entry->getDimension() - nc + 1;
-        }
-        } 
-    
-        
     }
+
+    else if(nodeName == "ArrayInitializer")
+    {
+        node->numDims = node->children[0]->numDims;
+        assert(((int)node->children.size()) >= 1);
+        node->typeForExpr = node->children[0]->typeForExpr;
+    }
+    
+    else if(nodeName == "VariableInitializerList")
+    {
+        node->numDims = node->children.size();
+        typecheck(node);
+        node->typeForExpr = node->children[0]->typeForExpr;
+    }
+
     else if(node->children.size() == 0 && node->namelexeme[0] == 'L' && node->namelexeme[1] == 'i'){
         node->typeForExpr = node->type;
     }
@@ -996,6 +1011,7 @@ void createST(Node* node)
 void codeInsert(Node* node, std::vector<quad> code ){
     node->code.insert(node->code.end() , code.begin(), code.end());
 }
+
 qid emptyQid("", NULL);
 
 void binary3AC(Node* node, std::string op)
@@ -1308,11 +1324,11 @@ void typecheck(Node *node)
 
         if(leftHandSide->numDims !=  rightHandSide->numDims){
             std::string s = "Number of dimensions does not match on leftHandSide  and rightHandSide "  + nodeName +  " in line number " + std::to_string(node->lineNumber);
-            yyerror(s.c_str());
+            // yyerror(s.c_str());
         }
         if(setTypeCheckType1( rightHandSide->typeForExpr)==8 && setTypeCheckType1( leftHandSide->typeForExpr)!=8){
            std::string s = "1 Type Mismatch "+leftHandSide->typeForExpr + " and " + rightHandSide->typeForExpr + " does not match under " + nodeName +  " in line number " + std::to_string(node->lineNumber);
-            yyerror(s.c_str());
+            // yyerror(s.c_str());
         }
         else if(setTypeCheckType1( leftHandSide->typeForExpr)==8 && setTypeCheckType1( rightHandSide->typeForExpr)!=8){
             std::string s = "2 Type Mismatch "+leftHandSide->typeForExpr + " and " + rightHandSide->typeForExpr + " does not match under " + nodeName +  " in line number " + std::to_string(node->lineNumber);
@@ -1378,8 +1394,6 @@ void typecheck(Node *node)
         }
     }
 
-
-
     // else if(nodeName == "+"  || nodeName == "*" || nodeName == "/" || nodeName == "%" || nodeName == "-")
     // {
     //     assert((int)(node->children.size()) >= 2);
@@ -1394,15 +1408,13 @@ void typecheck(Node *node)
     //     }
     // }
 
-
-    
-
-
-        
-
-    
-
-    
+    else if(nodeName == "VariableInitializerList")
+    {
+        for(auto listMem: node->children)
+        {
+            
+        }
+    }
 }
 
 %}

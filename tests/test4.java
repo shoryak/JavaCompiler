@@ -1,6 +1,7 @@
 //testCASE4
 public class Main {
   String str;
+  int x[] = {1, 2, 3};
   
     static void myStatMethod() {
       System.out.println("Static is better or not");
@@ -18,6 +19,7 @@ public class Main {
       int a=1, b=2;
       myObject.Public__Method(a, b);  
       myObject.str = "Hello World!";
+      // int y[] = {4, 3, 5};
     }
 
     public static void somefunc(String arg1, int arg2) {}
