@@ -292,8 +292,8 @@ int setTypeCheckType1(std::string type)
     // if(type=="byte" || type=="short" || type=="char" || type=="int" || type=="long" || type == "float" || type == "double"){
     //     return 0;
     // }
-    if(type=="int") return 1;
-    else if(type=="short" || type=="char") return 2;
+
+    if(type=="short" || type=="char") return 2;
     // else if(type=="char"){
     //     return 3;
     // }
@@ -341,7 +341,8 @@ void methodTypeCheck(Node* node)
         {
             methodName = node->children[0]->children[0]->namelexeme;
         }
-        else if(node->children[0]->namelexeme == ".")
+
+        if(node->children[0]->namelexeme == ".")
         {
             Node* dot = node->children[0];
             methodName = node->children[0]->children[1]->children[0]->namelexeme;
@@ -357,6 +358,7 @@ void methodTypeCheck(Node* node)
                
             }
             else{
+                std::cerr<<"huhu\n";
                 auto obj = node->children[0]->children[0]->children[0]->namelexeme;
                 auto stEntry = node->nearSymbolTable->lookup(obj);
                 if(!stEntry){
@@ -365,6 +367,8 @@ void methodTypeCheck(Node* node)
                 }
                 else{
                     auto className = node->nearSymbolTable->lookup(obj)->getType();
+                    std::cerr<<className<<"a\n";
+                    std::cerr<<methodName<<"a\n";
                     node->typeForExpr = className;
                     if(methodsForClass[className].find(methodName) == methodsForClass[className].end()){
                         std::string s = "Undeclared function for class " + className + " in line number " + std::to_string(node->lineNumber);
@@ -373,9 +377,11 @@ void methodTypeCheck(Node* node)
                 }
             }
         }
-        if(methodName == "println"){
+        
+        else if (methodName == "println"){
             return;
         }
+        else{
         for(auto child : node->children)
         {
             if(child->namelexeme == "Arguments")
@@ -387,20 +393,23 @@ void methodTypeCheck(Node* node)
                     while(leaf->children.size())
                         leaf = leaf->children[0];
                     
-                   
+                    std::cerr<<leaf->namelexeme<<"\n";
                     if(leaf->value[0] == 'I' && leaf->value[1] == 'd' ){
                         auto entry  = node->nearSymbolTable->lookup(leaf->namelexeme);
                         args.push_back(entry->getType());
-                        methodName += "_" + entry->getType() + "_" + std::to_string(entry->getDimension());
+                        
+                        // methodName += "_" + entry->getType() + "_" + std::to_string(entry->getDimension());
                     }
         
                     else if(leaf->value[0] == 'L' && leaf->value[1] == 'i' ){
-                        methodName += "_" + leaf->type + "_" + std::to_string(leaf->numDims);
+                        // methodName += "_" + leaf->type + "_" + std::to_string(leaf->numDims);
+                        args.push_back(leaf->type);
                         std::cerr<<leaf->value[0]<<" "<< leaf->value[1]<<" "<<leaf->namelexeme <<"\n";
                     }
                 }
             }
         }
+        std::cerr<<methodName<<" Methodname\n";
         SymbolTableEntry* stEntry = node->nearSymbolTable->lookup(methodName);
         // node->nearSymbolTable->print();
         // stEntry->print();
@@ -420,18 +429,20 @@ void methodTypeCheck(Node* node)
             {
                 int indArg=0;
                 std::vector<std::string > types;
-                for(int i=0;i<args.size(); i++){
-                    auto argEntry = node->nearSymbolTable->lookup(args[i]);
-                    if(argEntry == nullptr){
-                        // error
-                    }
-                    else{
-                        types.push_back(argEntry->getType());
-                    }
-                }
-                for(int i =0; i<types.size();i++){
-                    if(types[i] != fp.argTypes[i]){
-                        // error
+                // for(int i=0;i<args.size(); i++){
+                //     auto argEntry = node->nearSymbolTable->lookup(args[i]);
+                //     if(argEntry == nullptr){
+                //         // error
+                //     }
+                //     else{
+                //         types.push_back(argEntry->getType());
+                //     }
+                // }
+                for(int i =0; i<args.size();i++){
+                    
+                    if(setTypeCheckType1( args[i] ) > setTypeCheckType1 (fp.argTypes[i])){
+                        std::string s = "Incorrrect Type in argument in line  " + std::to_string(node->lineNumber);
+                        yyerror(s.c_str()); 
                     }
                 }
             }
@@ -442,6 +453,7 @@ void methodTypeCheck(Node* node)
             yyerror(err.c_str());
         }
         std::cerr<<methodName<<" "<<node->typeForExpr<<"\n";
+        }
     }
     
 
@@ -602,13 +614,17 @@ void createST(Node* node)
             name.pop_back();
         }
         if(currSymTable->lookup(name+type)){
+            std::cerr<<name+type<<"\n";
             yyerror("Redeclaration of function");
+              
             // error;
         }
-        SymbolTableEntry* stEntry = new SymbolTableEntry(name+type, "$func", -1, -1, decLine, 0, fproto);
+        SymbolTableEntry* stEntry = new SymbolTableEntry(name, "$func", -1, -1, decLine, 0, fproto);
         node->lineNumber = decLine;
         currSymTable->insert(stEntry);
-        methodsForClass[currentClass].insert(name+type);
+        std::cerr<<currentClass<<"a\n";
+        std::cerr<<currentFuncName<<"a\n";
+        methodsForClass[currentClass].insert(currentFuncName);
         newScope = 1;
         useCurlyForNewScope = 0;
 
@@ -953,14 +969,21 @@ void createST(Node* node)
             }
 
         }
+        }
       while(name.size() && name.back()==' '){
             name.pop_back();
         }
-        if(currSymTable->lookup(name+type)){
+        std::cerr<<"HURRAY"<<"\n";
+        if(currSymTable->lookup(name+type) !=NULL){
+            auto entry  = currSymTable->lookup(name+type);
+
+             std::cerr<<name+type<<" "<< entry->getName()<< "\n";
+              std::cerr<<name+type<<" "<< entry->getType()<< "\n";
             yyerror("Redeclaration of function");
+           
             // error;
         }
-        SymbolTableEntry* stEntry = new SymbolTableEntry(name+type, "$func", -1, -1, decLine, 0, fproto);
+        SymbolTableEntry* stEntry = new SymbolTableEntry(name, "$func", -1, -1, decLine, 0, fproto);
         currSymTable->insert(stEntry);
 
         //3 AC
@@ -968,7 +991,7 @@ void createST(Node* node)
         node->nextList.clear();
         useCurlyForNewScope = 0;
         newScope=1;
-    }
+    
     }
 
     else if(nodeName == "Identifier" && node->parent->namelexeme != "VariableDeclaratorId" && node->parent->namelexeme!= "UnqualifiedClassInstanceCreationExpression" && node->parent->namelexeme != "MethodInvocation" && node->parent->namelexeme != "MethodDeclarator" && node->parent->namelexeme!= "."){
@@ -1136,8 +1159,8 @@ void createST(Node* node)
         node->numDims = node->children[0]->numDims;
         assert(((int)node->children.size()) >= 1);
         node->typeForExpr = node->children[0]->typeForExpr;
-    }
-        node->typeForExpr = node->children[1]->typeForExpr;
+    
+        // node->typeForExpr = node->children[1]->typeForExpr;
     }
     else if(nodeName == "VariableInitializerList")
     {
@@ -1153,9 +1176,11 @@ void createST(Node* node)
         std::string rightField = rightFieldNode->children[0]->namelexeme;
         std::string fieldClass = leftFieldPrefixNode->typeForExpr;
         std::string key = fieldClass + "_" + rightField;
+        
         std::cerr << key << '\n';
-        if(classFieldData.find(key) == classFieldData.end() && fieldClass != "$package")
+        if(classFieldData.find(key) == classFieldData.end() && fieldClass != "$package" )
         {
+            std::cerr<<key<<"\n";
             std::string errorMessage = std::string("Member ") + rightField + " of class " + fieldClass + " not found on line " + std::to_string(rightFieldNode->children[0]->lineNumber);
             yyerror(errorMessage.c_str());
         }
@@ -1169,11 +1194,19 @@ void createST(Node* node)
         else node->typeForExpr = fieldStructData.type;
     }
 
-    else if(node->children.size() == 0 && node->namelexeme[0] == 'L' && node->namelexeme[1] == 'i'){
+    else if(node->children.size() == 0 && node->value[0] == 'L' && node->value[1] == 'i'){
         node->typeForExpr = node->type;
     }
     else if(nodeName == "."){
         node->typeForExpr = node->children[1]->typeForExpr;
+    }
+    
+    
+    if(node->children.size() == 0 && node->value[0] == 'K'){
+        if(node->namelexeme == "this"){
+           
+        node->typeForExpr = currentClass;
+        }
     }
     
     
@@ -1185,9 +1218,21 @@ void codeInsert(Node* node, std::vector<quad> & code ){
 }
 
 qid emptyQid("", NULL);
+void unary3AC(Node* node, std::string op)
+{
+    node->node_tmp = newtemp(node->typeForExpr, node->nearSymbolTable);
+    quad instruction = generate(qid(op, NULL), emptyQid, node->children[0]->node_tmp, node->node_tmp, -1);
+    // codeInsert(node,node->code);
+    node->code.push_back(instruction);
+    // print3AC(node->code);
+}
 
 void binary3AC(Node* node, std::string op)
 {
+    if(node->children.size() <2){
+        unary3AC(node, op);
+        return;
+    }
 
     // std::cerr<< node->namelexeme <<" "<< node->typeForExpr <<" "<< node->children[0]->typeForExpr << " "<< node->children[1]->typeForExpr << "\n";
     node->node_tmp = newtemp(node->typeForExpr, node->nearSymbolTable);
@@ -1215,14 +1260,7 @@ void binary3AC(Node* node, std::string op)
     // print3AC(node->code);
 }
 
-void unary3AC(Node* node, std::string op)
-{
-    node->node_tmp = newtemp(node->typeForExpr, node->nearSymbolTable);
-    quad instruction = generate(qid(op, NULL), emptyQid, node->children[0]->node_tmp, node->node_tmp, -1);
-    codeInsert(node,node->code);
-    node->code.push_back(instruction);
-    // print3AC(node->code);
-}
+
 
 void preOperation3AC(Node* node, std::string oper)
 {
@@ -1585,6 +1623,7 @@ void three_AC(Node *node){
                         yyerror(s.c_str());
                     }
                     else{
+                        
                         quad I1 = generate(qid("PushParam",NULL) , Arguments->children[0]->node_tmp , emptyQid, emptyQid , -1);
                         quad I2 = generate(qid("CALL",NULL) , qid("println", NULL) , emptyQid, emptyQid , -1);
                         quad I3 = generate(qid("PopParams",NULL) , emptyQid , emptyQid, emptyQid , -1);
@@ -1604,6 +1643,7 @@ void three_AC(Node *node){
                 }
             }
             else{
+               
                 for(auto codechild : node->children){
                     codeInsert(node, codechild->code);
                 }
@@ -1624,7 +1664,7 @@ void three_AC(Node *node){
                 node->code.push_back(I1);
                 node->code.push_back(I2);
                 node->code.push_back(I3);
-                // print3AC(node->code);
+                // print3AC1(node->code);
             }
         }
         else{
@@ -1648,7 +1688,7 @@ void three_AC(Node *node){
         }
 
     }
-    else if(nodeName == "." ){
+    else if(nodeName == "." && node->parent->namelexeme != "MethodInvocation" ){
         if(node->children[0]->namelexeme != "."){
             Node* leftleaf = node;
             Node* fieldName = node->children[1];
@@ -1766,7 +1806,7 @@ void three_AC(Node *node){
             }
             }
             codeInsert(node, block->code);
-            // print3AC1(node->code);
+            print3AC1(node->code);
     }
     else if(nodeName == "ArrayCreationExpression"){
         int offset = setOffset(node->typeForExpr);
@@ -1805,6 +1845,13 @@ void three_AC(Node *node){
         quad I1 = generate(qid("RETURN", NULL) , node->children[0]->node_tmp , emptyQid, emptyQid,-1);
         node->code.push_back(I1);
     }
+    else if(nodeName == "CastExpression"){
+        Node* left = node->children[0];
+        auto tempcastleft = newtemp(left->typeForExpr, node->nearSymbolTable);
+        quad castInstruction = generate(qid("CAST_"+ left->typeForExpr, NULL), node->children[1]->node_tmp, emptyQid, tempcastleft, -1);
+        node->code.push_back(castInstruction);
+        node->node_tmp = tempcastleft;
+    }
 
     // else if(node->children.size() == 0 && node->parent->namelexeme == "Identifier"   && node->parent->parent->namelexeme != "MethodInvocation" && node->parent->parent->namelexeme != "UnqualifiedClassInstanceCreationExpression" && node->parent->parent->namelexeme != "LocalVariableDeclaration" && node->parent->parent->namelexeme != "MethodDeclarator" && node->parent->parent->namelexeme!= "." && node->parent->parent->namelexeme != "class"){
         
@@ -1826,16 +1873,12 @@ void three_AC(Node *node){
         node->node_tmp = qid(node->namelexeme , NULL);
     }
     
+    
     else{
         // std::cerr<<nodeName<<"__nodename__\n";
         
         for(auto child : node->children){
-            if(nodeName == "Then"){
-            // std::cerr<<nodeName<<" "<< node->namelexeme <<" __nodename__\n";
-            std::cerr<<node->namelexeme<<" child " <<node->code.size()<<"\n";
-            std::cerr<<child->namelexeme<<" child " <<child->code.size()<<"\n";
-            // print3AC1(child->code);
-        }
+          
             // std::cerr<<child->namelexeme<<" child " <<child->code.size()<<"\n";
 
             codeInsert(node, child->code);
@@ -1849,9 +1892,6 @@ void three_AC(Node *node){
     }
 
 
-    if(node->namelexeme == "Block"){
-        // print3AC(node->code);
-    }
 
 
     
@@ -1883,7 +1923,7 @@ void typecheck(Node *node)
     // }
 
     if(nodeName=="=" || nodeName == "+"  || nodeName == "*" || nodeName == "/" || nodeName == "%" || nodeName == "-" || nodeName == "<" || nodeName == ">" || nodeName == "<=" || nodeName == ">=" || nodeName== "==" || nodeName=="!=" || nodeName=="&" ||nodeName=="|" || nodeName==":" || nodeName=="^" || nodeName=="||" || nodeName=="&&" || nodeName=="+=" || nodeName=="-=" || nodeName=="*=" || nodeName=="/=" || nodeName=="&=" || nodeName=="|=" || nodeName=="^=" ||nodeName=="%=" ){
-        assert((int)(node->children.size()) >= 2);
+        if(node->children.size() < 2) return;
         Node *leftHandSide = node->children[0];
         Node *rightHandSide = node->children[1];
         std::cerr<<nodeName <<" "<<leftHandSide->typeForExpr <<" "<<rightHandSide->typeForExpr<< "\n";
@@ -3631,23 +3671,25 @@ TypeArgumentsOrDiamond: TypeArguments
 
 FieldAccess:    Primary Dot Identifier
                 {
-                    $$ = createNode("FieldAccess");
-                    $2->add_child($1);
-                    $2->add_child($3);
+                    $$ = createNode(".");
+                    $$->add_child($1);
+                    $$->add_child($3);
+
                 }
                 | SUPER Dot Identifier
                 {
-                    $$ = createNode("FieldAccess");
-                    $2->add_child($1);
-                    $2->add_child($3);
+                    $$ = createNode(".");
+                    $$->add_child($1);
+                    $$->add_child($3);
                 }
                 | TypeName Dot SUPER Dot Identifier
                 {
-                    $$ = createNode("FieldAccess");
+                    $$ = createNode(".");
+                    $$->add_child($5);
                     $2->add_child($1);
                     $2->add_child($3);
-                    $4->add_child($2);
-                    $4->add_child($5);
+                    $$->add_child($2);
+                    
 
                     $$->stEntries = $1->stEntries;
                 }

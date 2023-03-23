@@ -1,21 +1,30 @@
-//testcase 9
-class octbin{
- 
-    int binoct(long bin_)
-    {
+class checkthis
+{
+	int a;
+	int b;
+	
+	checkthis(int a)
+	{
+		this.a = a;
+	
+	}
+    // above is paramaterised const and this keyword
+	void diskfn()
+	{
+		
+      int x = 10;
+      int y = -100;
+      int z = 3;
+      float a = 2;
+  
+    //   double largest = (x > y) ? ((z > z) ? y : y) : ((x <= a) ? a : x);
+      
+      System.out.println("ternary");
+	}
 
-        while (bin_ >= 0) {
- 
-            bin_ /= 10;
-        }
- 
-        int dc=bin_;
-        return dc;
-    }
-    int dcoct(long bin_)
-    {
-        // returning the number
-         int dna_ = binoct(bin_);
-        return dna_;
-    }
+	public static void main(String[] args)
+	{
+		checkthis object = new checkthis(100);
+		object.diskfn();
+	}
 }
