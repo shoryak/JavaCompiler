@@ -16,8 +16,14 @@ extern "C"
     int yylex(void);
     int yyerror(const char* s)
     {  
+        if(s[0] == 's' && s[1] == 'y'){
+              fprintf(stderr, "ERROR: %s  in  line Number %d \n\n", s, linenum);
+        }
+        else{
         fprintf(stderr, "ERROR: %s \n\n", s);
+        }
         exit(1);
+        
         return 1;
     }
 }
@@ -292,7 +298,6 @@ int setTypeCheckType1(std::string type)
     // if(type=="byte" || type=="short" || type=="char" || type=="int" || type=="long" || type == "float" || type == "double"){
     //     return 0;
     // }
-
     if(type=="short" || type=="char") return 2;
     // else if(type=="char"){
     //     return 3;
@@ -347,7 +352,7 @@ void methodTypeCheck(Node* node)
             Node* dot = node->children[0];
             methodName = node->children[0]->children[1]->children[0]->namelexeme;
             if(node->children[0]->children[0]->namelexeme == "."){
-                if(dot->children[1]->children[0]->namelexeme == "println" && dot->children[0]->children[1]->children[0]->namelexeme == "out" && dot->children[0]->children[0]->children[0]->namelexeme == "System"){
+                if(dot->children[1]->children[0]->namelexeme == "println" ||dot->children[1]->children[0]->namelexeme == "print"  && dot->children[0]->children[1]->children[0]->namelexeme == "out" && dot->children[0]->children[0]->children[0]->namelexeme == "System"){
                     
                 }
                 else{
@@ -378,7 +383,7 @@ void methodTypeCheck(Node* node)
             }
         }
         
-        else if (methodName == "println"){
+        else if (methodName == "println" || methodName == "print" ){
             return;
         }
         else{
@@ -411,6 +416,7 @@ void methodTypeCheck(Node* node)
         }
         std::cerr<<methodName<<" Methodname\n";
         SymbolTableEntry* stEntry = node->nearSymbolTable->lookup(methodName);
+        std::cerr<<stEntry->getName()<<"\n";
         // node->nearSymbolTable->print();
         // stEntry->print();
         if(stEntry)
@@ -422,8 +428,9 @@ void methodTypeCheck(Node* node)
             }
             if(nArgs !=  fp.numArgs)
             {
-               std::string err = "Incorrect number of Arguments in" + methodName +" Invoked on line " + std::to_string(node->lineNumber);
-                yyerror(err.c_str()); 
+                std::cerr<<nArgs<<" "<<fp.numArgs<<"\n"; 
+            //    std::string err = "Incorrect number of Arguments in" + methodName +" Invoked on line " + std::to_string(node->lineNumber);
+            //     yyerror(err.c_str()); 
             }
             else
             {
@@ -619,7 +626,7 @@ void createST(Node* node)
               
             // error;
         }
-        SymbolTableEntry* stEntry = new SymbolTableEntry(name, "$func", -1, -1, decLine, 0, fproto);
+        SymbolTableEntry* stEntry = new SymbolTableEntry(name, fproto.returnType, -1, -1, decLine, 0, fproto);
         node->lineNumber = decLine;
         currSymTable->insert(stEntry);
         std::cerr<<currentClass<<"a\n";
@@ -961,6 +968,7 @@ void createST(Node* node)
                                 }
                             }
                             fproto.numArgs++;
+                            std::cerr<<"XYZ\n";
                             fproto.argTypes.push_back(typeParam);
                             fproto.argDims.push_back(nDimsParam);
                         
@@ -983,7 +991,8 @@ void createST(Node* node)
            
             // error;
         }
-        SymbolTableEntry* stEntry = new SymbolTableEntry(name, "$func", -1, -1, decLine, 0, fproto);
+        std::cerr<<"XYZ "<<fproto.numArgs<<" "<<currentFuncName<<"\n";
+        SymbolTableEntry* stEntry = new SymbolTableEntry(currentFuncName, currentClass, -1, -1, decLine, 0, fproto);
         currSymTable->insert(stEntry);
 
         //3 AC
@@ -1027,7 +1036,7 @@ void createST(Node* node)
 
     if(newScope) {
         startScope();
-        if(nodeName == "MethodDeclaration"){
+        if(nodeName == "MethodDeclaration" || nodeName == "ConstructorDeclaration"){
         methodSymbolTable[currentClass + "." + currentFuncName] = currSymTable;
         }
     }
@@ -1067,7 +1076,9 @@ void createST(Node* node)
     
     else if(nodeName == "=") {
 
-        if(node->children[1]->namelexeme != "Ternary" || node->children[1]->typeForExpr != ""){
+
+        if(node->children[1]->namelexeme != "Ternary" && node->children[1]->typeForExpr != ""  ){
+           
         typecheck(node);
         }
     }
@@ -1347,6 +1358,7 @@ void three_AC(Node *node){
         
     if(nodeName == "="){
         assert(node->nearSymbolTable);
+       
         // if(node->children[1]->namelexeme  == "UnqualifiedClassInstanceCreationExpression" ){
         //     return;
         // }
@@ -1484,7 +1496,7 @@ void three_AC(Node *node){
                 if(child->namelexeme == "ForUpdate"){
                     ForUpdate = child;
                 } 
-                if(child->namelexeme == "Block"){
+                if(child->namelexeme == "Block" || child->namelexeme == "="){
                     ForBody = child;
                 } 
                
@@ -1525,7 +1537,7 @@ void three_AC(Node *node){
             if(child->namelexeme == "WhileExpression"){
                 WhileExpression  = child;
             }
-            if(child->namelexeme == "WhileBody"){
+            if(child->namelexeme == "WhileBody" || child->namelexeme == "="){
                 WhileBody  = child;
             }
         } 
@@ -1623,14 +1635,16 @@ void three_AC(Node *node){
                         yyerror(s.c_str());
                     }
                     else{
-                        
+                        if(Arguments){
                         quad I1 = generate(qid("PushParam",NULL) , Arguments->children[0]->node_tmp , emptyQid, emptyQid , -1);
+
+                        node->code.push_back(I1);
+                        }
                         quad I2 = generate(qid("CALL",NULL) , qid("println", NULL) , emptyQid, emptyQid , -1);
                         quad I3 = generate(qid("PopParams",NULL) , emptyQid , emptyQid, emptyQid , -1);
                         for(auto codechild : node->children){
                             codeInsert(node, codechild->code);
                         }
-                        node->code.push_back(I1);
                         node->code.push_back(I2);
                         node->code.push_back(I3);
                         // print3AC(node->code);
@@ -1688,7 +1702,7 @@ void three_AC(Node *node){
         }
 
     }
-    else if(nodeName == "." && node->parent->namelexeme != "MethodInvocation" ){
+    else if(nodeName == "." && node->parent->namelexeme != "MethodInvocation" && node->parent->namelexeme != "." ){
         if(node->children[0]->namelexeme != "."){
             Node* leftleaf = node;
             Node* fieldName = node->children[1];
@@ -1760,10 +1774,14 @@ void three_AC(Node *node){
             }
             }
             codeInsert(node, block->code);
-            print3AC1(node->code);
 
-
-
+            // Dump 3AC code into file
+            Node *classNode = node->parent->parent->parent;
+            std::string className = classNode->children[(int)classNode->children.size()-2]->namelexeme;
+            std::string fileName = className + "." + funcName + ".3ac";
+            std::cerr << fileName << ' ' << node->code.size() << ' ' << '\n';
+            print3AC1(node->code, fileName);
+            node->code.clear();
         }
     else if(nodeName == "ConstructorDeclaration"){
          Node* block = NULL ,  *declarator =NULL, *FormalParameterList =NULL;
@@ -1806,7 +1824,13 @@ void three_AC(Node *node){
             }
             }
             codeInsert(node, block->code);
-            print3AC1(node->code);
+
+            // Dump 3AC code into file
+            Node *classNode = node->parent->parent->parent;
+            std::string className = classNode->children[classNode->children.size() - 2]->namelexeme;
+            std::string fileName = className + "." + funcName + ".3ac";
+            print3AC1(node->code, fileName);
+            node->code.clear();
     }
     else if(nodeName == "ArrayCreationExpression"){
         int offset = setOffset(node->typeForExpr);
