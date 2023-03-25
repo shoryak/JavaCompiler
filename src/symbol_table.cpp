@@ -1,10 +1,12 @@
 #include "symbol_table.h"
 
+using namespace compiler;
+
 /*
 Print all entries of a particular tableMap (of a symbol table)
 PARAM: scope -- tableMap which contains all symbol table entries
 */
-void printScope(const std::unordered_map<std::string, SymbolTableEntry*>& scope)
+void printScope(const std::unordered_map<std::string, symbolTable::SymbolTableEntry*>& scope)
 {
     
     for(auto [lexeme, stEntry]: scope)
@@ -16,200 +18,131 @@ void printScope(const std::unordered_map<std::string, SymbolTableEntry*>& scope)
 }
 
 /*
-Get the lexeme (name) from the Symbol Table Entry
-PARAM: None
-*/
-std::string SymbolTableEntry::getName(void)
-{
-    return name;
-}
-
-/*
-Set the type in this Symbol Table Entry
-PARAM: type -- type to be set
-*/
-void SymbolTableEntry::setType(std::string type)
-{
-    this->type = type;
-}
-
-/*
-Get the type in this Symbol Table Entry
-*/
-std::string SymbolTableEntry::getType()
-{
-    return this->type;
-}
-
-/*
-Get the declLine in this Symbol Table Entry
-*/
-int SymbolTableEntry::getDeclLine()
-{
-    return this->declLine;
-}
-
-/*
-Get the funcproto in this Symbol Table Entry
-*/
-funcproto SymbolTableEntry::getFuncProto(){
-    return this->functionProto;
-}
-
-/*
-Set the dimension in this Symbol Table Entry
-PARAM: dimension -- dimension to be set
-*/
-void SymbolTableEntry::setDimension(int32 dimension)
-{
-    this->dimension = dimension;
-}
-
-int SymbolTableEntry::getDimension()
-{
-    return this->dimension;
-}
-
-std::vector<std::string> SymbolTableEntry::getAxisWidths(){
-    return this->axisWidths;
-}
-
-/*
 Print a particular symbol table entry (lexeme: attributes)
 PARAM: None
 */
-void SymbolTableEntry::print()
+void symbolTable::Entry::print__()
 {
-    std::cerr << "Name: " << name << " Type: " << type << '\n';
-    std::cerr << "Size: " << size << " Dim: " << dimension;
-    std::cerr << " LoDecl: " << declLine << '\n';
-    std::cerr << std::hex;
-    std::cerr << "Address: " << address << '\n';
-    std::cerr << std::dec;
-  
-    if(type == "$func"){
-        std::cerr << "Number of Arguments "<< functionProto.numArgs<< '\n';
-        std::cerr << "Types of Arguments \n";
-        int pos = 1;
-        for(auto tp : functionProto.argTypes){
-            std::cerr<< "Type "<<pos <<"   "<< tp<< '\n';
-            pos++;
-        }
-    }
-    if(dimension > 0){
-        for(auto dim : axisWidths){
-            std::cerr<< dim<<" ";
-        }
-        std::cerr<<"\n";
-    }
-     std::cerr << '\n';
-
-}
-
-/*
-Insert symbol table entry.
-PARAM: name -- Lexeme
-PARAM: stEntry -- Symbol Table Entry to be inserted
-*/
-void SymbolTable::insert(std::string name, SymbolTableEntry *stEntry)
-{
-    assert(stEntry != nullptr);
-    tableMap[name] = stEntry;
-}
-
-/*
-Insert symbol table entry.
-PARAM: stEntry -- Symbol Table Entry to be inserted
-*/
-void SymbolTable::insert(SymbolTableEntry *stEntry)
-{
-    assert(stEntry);
-    std::string name = stEntry->getName();
-    while(name.back() == ' '){
-        name.pop_back();
-    }
-    int ind = name.length()-1;
-    while(ind>0 &&  name[ind-1]!=' ') {
-        ind--;
-    }
-    tableMap[name.substr(ind , name.length()-ind )] = stEntry;
-}
-
-/*
-Lookup an entry in the symbol table.
-Starting from the current scope (represented by a SymbolTable*),
-go up all the parent scopes and search.
-PARAM: name -- Lexeme to be searched
-*/
-SymbolTableEntry* SymbolTable::lookup(const std::string& name)
-{
-    for(auto symTable = this; symTable != nullptr; symTable = symTable->parentTable)
+    std::cerr << "Name: " << name_ << " Type: ";
+    if(type_ != types::c_NONE_TYPE) std::cerr << type_.printable();
+    else
     {
-        // std::cerr<<name<<std::endl;
-        // for(auto i : symTable->tableMap){
-        //     std::cerr<<i.first<<std::endl;
-        // }
-        if(symTable->tableMap.find(name) != symTable->tableMap.end())
-            return symTable->tableMap[name];
+        assert(functionType_.returnType() != c_NONE_TYPE);
+        std::cerr << functionType_.printable();
+    }
+    std::cerr << '\n';
+    std::cerr << "Size: " << size_ << " LoDecl: " << declarationLine_ << '\n';
+    std::cerr << std::hex;
+    std::cerr << "Address: " << address_ << '\n';
+    std::cerr << std::dec;
+    std::cerr<<"\n";
+}
+
+/*
+Insert symbol table variable entry.
+PARAM: entry -- Symbol Table Variable Entry to be inserted
+*/
+void symbolTable::Table::insertVariable(symbolTable::Entry *entry)
+{
+    assert(entry);
+    symbolTable::VariableKey key = entry->name;
+    this->variableTableMap_[key] = entry;
+}
+
+/*
+Insert symbol table function entry.
+PARAM: entry -- Symbol Table Function Entry to be inserted
+*/
+void symbolTable::Table::insertFunction(symbolTable::Entry *entry)
+{
+    assert(entry);
+    symbolTable::FunctionKey key(entry->name(), entry->functionType());
+    this->functionTableMap_[key] = entry;
+}
+
+/*
+Lookup a variable entry in the symbol table.
+Starting from the current scope (represented by a Table*),
+go up all the parent scopes and search.
+PARAM: key -- key to be searched (Variable name)
+*/
+symbolTable::Entry* symbolTable::Table::lookupVariable
+(symbolTable::VariableKey key)
+{
+    for(auto table = this; table != nullptr; table = table->parentTable_)
+    {
+        if(table->variableTableMap_.find(key) != table->variableTableMap_.end())
+            return table->variableTableMap_[key];
     }
     return nullptr;
 }
 
-SymbolTableEntry* SymbolTable::currentScopeLookup(const std::string& name)
+/*
+Lookup a function entry in the symbol table.
+Starting from the current scope (represented by a Table*),
+go up all the parent scopes and search.
+PARAM: key -- key to be searched ( pair(func name, func type fingerprint) )
+*/
+symbolTable::Entry* symbolTable::Table::lookupFunction
+(symbolTable::FunctionKey key)
 {
-    auto symTable = this; 
-    if(symTable->tableMap.find(name) != symTable->tableMap.end())
-        return symTable->tableMap[name];
-    
+    for(auto table = this; table != nullptr; table = table->parentTable_)
+    {
+        if(table->functionTableMap_.find(key) != table->functionTableMap_.end())
+            return table->functionTableMap_[key];
+    }
     return nullptr;
 }
+
+// symbolTable::Entry* symbolTable::currentScopeLookup(const std::string& name)
+// {
+//     auto symTable = this; 
+//     if(symTable->tableMap.find(name) != symTable->tableMap.end())
+//         return symTable->tableMap[name];
+    
+//     return nullptr;
+// }
 
 /*
 Set the parent symbol table of the symbol table.
 PARAM: parent -- Pointer to Symbol Table to be set as parent
 */
-void SymbolTable::setParent(SymbolTable *parent)
+void symbolTable::Table::setParent(symbolTable::Table *parent)
 {
-    parentTable = parent;
-    parent->__add_child(this);
-}
-
-/*
-Get the parent symbol table of the symbol table.
-PARAM: None
-*/
-SymbolTable* SymbolTable::getParent()
-{
-    return parentTable;
+    this->parentTable_ = parent;
+    parent->add_child__(this);
 }
 
 /*
 Print all symbol tables corresponding to all nested scopes,
 starting from the current scope; we move to parent scope by
 going to the parent symbol table.
-PARAM: Noneg
+PARAM: None
 */
-void SymbolTable::print()
+void symbolTable::Table::print__()
 {
     std::cerr << "~~~~~~~~~~ BEGIN PRINTING TABLE ~~~~~~~~~~\n\n";
     std::cerr << "Open Scopes:\n";
-    for(auto symTable = this; symTable != nullptr; symTable = symTable->parentTable)
+    for(auto table = this; table != nullptr; table = table->parentTable_)
     {
-        printScope(symTable->tableMap);
+        printScope(table->variableTableMap_);
+        printScope(table->functionTableMap_);
     }
     std::cerr << "\n~~~~~~~~~~ END PRINTING TABLE ~~~~~~~~~~\n";
 }
 
-void SymbolTable::__add_child(SymbolTable* symTable)
+void symbolTable::Table::add_child__(SymbolTable* symTable)
 {
-    childTables.push_back(symTable);
+    this->childTables.push_back(symTable);
 }
 
-void SymbolTable::__printAll()
+void SymbolTable::printAll__(void)
 {
     std::cerr << "\n~~~~~ BEGIN PRINTING SCOPE ~~~~~\n";
-    printScope(tableMap);
-    for(auto childTable: childTables) childTable->__printAll();
+    printScope(variableTableMap_);
+    printScope(functionTableMap_);
+    for(auto childTable: this->childTables)
+        childTable->__printAll();
     std::cerr << "~~~~~ END PRINTING SCOPE ~~~~~\n";
 }
 
