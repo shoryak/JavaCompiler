@@ -7,179 +7,101 @@
 #include <fstream>
 #include <iostream>
 #include <cassert>
-#include "custom_types.h"
 #include "types.h"
 
-using namespace compiler;
-namespace compiler::symbolTable
-{
-    class Entry
-    {
-    protected:
-    /*  Identifier name (e.g. Variable name, function name) */
-        std::string name_;
+class SymbolTable; // Forward declaration
+
+// structure of function prototype for storing number and types of args
+struct funcproto{
+    int32 numArgs;
+    std::vector<std::string> argTypes;
+    std::vector<int> argSizes;
+    std::vector<int> argDims;
     
-    /*  Booleans for modifiers: whether the identifier
-        is Public/Private, Static/non-static    */
-        bool bIsPublic_ = false, bIsStatic_ = false;
+    std::string returnType;
+    int returnSize, returnDim;
 
-    /*  Identifier size (in bytes),
-        Line of declaration  */
-        int32 size_ = 0, declarationLine_ = -1;
-
-    /*  Address of the Identifier   */
-        uint64 address_ = 0;
-
-    public:
-    /*  Constructors    */
-        Entry(void) {}
-
-        Entry
-        (
-            std::string name,
-            bool bIsPublic, bool bIsStatic,
-            int32 size, int32 declarationLine,
-            uint64 address
-        ):
-        name_{name}, size_{size},
-        bIsPublic_{bIsPublic}, bIsStatic_{bIsStatic},
-        declarationLine_{declarationLine}, address_{address} {}
-
-        std::string name(void)
-        {
-            return this->name_;
-        }
-
-        int declarationLine(void)
-        {
-            return this->declarationLine_;
-        }
-
-    /*  Return type of the Entry:
-        Variable type in the case of a variable,
-        Function return type in the case of a function  */
-        virtual types::Type returnType(void);
-
-        void print__(void);
-    
-        void addToCSV(std::ofstream& ofs);
-    };
-    void addToCSV(Entry*);
-
-    class VariableEntry: public Entry
-    {
-    protected:
-    /*  Type of the Variable Symbol Table Entry */
-        types::Type type_;
-
-    public:
-    /*  Constructors    */
-        VariableEntry(void): Entry(void) {}
-        VariableEntry
-        (
-            std::string name, types::Type type,
-            bool bIsPublic, bool bIsStatic,
-            int32 size, int32 declarationLine,
-            uint64 address
-        ):
-        Entry(name, bIsPublic, bIsStatic, size, declarationLine, address),
-        type_{type} {}
-
-        types::Type type(void)
-        {
-            return this->type_;
-        }
-
-    /*  Return type of the Entry: Variable's type   */
-        types::Type returnType(void) override
-        {
-            return this->type_;
-        }
-    };
-
-    class FunctionEntry: public Entry
-    {
-    protected:
-    /*  The type fingerprint of the Function Symbol Table Entry */
-        types::FunctionType functionType_;
-    
-    public:
-    /*  Constructors    */
-        FunctionEntry(void): Entry(void) {}
-        FunctionEntry
-        (
-            std::string name, types::FunctionType functionType,
-            bool bIsPublic, bool bIsStatic,
-            int32 size, int32 declarationLine,
-            uint64 address
-        ):
-        Entry(name, bIsPublic, bIsStatic, size, declarationLine, address),
-        functionType_{functionType} {}
-
-        types::FunctionType functionType(void)
-        {
-            return this->functionType_;
-        }
-
-    /*  Return type of the Entry: Function's return type  */
-        types::Type returnType(void) override
-        {
-            return this->functionType_->returnType();
-        }
+    funcproto(){
+        numArgs=0;
     }
+};
 
-    using VariableKey = std::string;
-    using FunctionKey = std::pair<std::string, types::FunctionType>;
-    class Table {
-        /*  The actual map which maps names to Symbol Table Entries */
-        std::unordered_map<VariableKey, Entry*> variableTableMap_;
-        std::unordered_map<FunctionKey, Entry*> functionTableMap_;
 
-        /*  The parent Symbol Table (i.e. one scope above)  */
-        Table *parentTable_;
+class SymbolTableEntry {
+    // Type of the identifier
+    std::string name, type;
 
-        /*  Children Symbol Tables (i.e. scopes inside current scope)   */
-        std::vector<Table*> childTables_;
+    // Identifier size (in bytes),
+    // dimension (0 for primitive type, 1 for 1D array etc.)
+    // line of declaration
+    int32 size, dimension, declLine;
 
-    public:
-    /*  Constructors */
-        Table(void): parentTable_{nullptr} {}
-        Table(Table *parentTable): parentTable_{parentTable}
-        {
-            parentTable->__add_child(this);
-        }
+    // Address of the Identifier
+    uint64 address;
 
-    /*  Insert Symbol Table Entry into Symbol Table */
-        void insertVariable(Entry *entry);
-        void insertFunction(Entry *entry);
+    // stores number and types of arguments for functions/constructor methods
+    funcproto functionProto;
+    std::vector<std::string> axisWidths;
 
-    /*  Lookup Symbol Table Entry from Symbol Table
-        using the proper key    */
-        Entry* lookupVariable(VariableKey key);
-        Entry* lookupFunction(FunctionKey key);
+public:
+    SymbolTableEntry(void): name{""},type{""}, size{-1}, dimension{-1}, declLine{-1}, address{0} {}
+    SymbolTableEntry(
+        std::string name, std::string type,
+        int32 size, int32 dimension, int32 declLine,
+        uint64 address
+    )
+    : name{name}, type{type}, size{size}, dimension{dimension},
+    declLine{declLine}, address{address} {}
+    SymbolTableEntry(
+        std::string name, std::string type,
+        int32 size, int32 dimension, int32 declLine,
+        uint64 address , std::vector<std::string> axisWidths
+    )
+    : name{name}, type{type}, size{size}, dimension{dimension},
+    declLine{declLine}, address{address} , axisWidths{axisWidths} {}
+    SymbolTableEntry(
+        std::string name, std::string type,
+        int32 size, int32 dimension, int32 declLine,
+        uint64 address , funcproto functionProto
+    )
+    : name{name}, type{type}, size{size}, dimension{dimension},
+    declLine{declLine}, address{address}, functionProto{functionProto} {}
+    std::string getName(void);
+    void setType(std::string type);
+    std::string getType();
+    int getDeclLine();
+    funcproto getFuncProto();
+    void setDimension(int32 dimension);
+    int getDimension();
+    std::vector<std::string> getAxisWidths();
+    void print(void);
+    void _addToCSV(std::ofstream& ofs);
+};
 
-        /*  */
-        Entry* currentScopeLookup(const std::string& name);
+class SymbolTable {
+    // The identifier name is already stored in the map
+    // No need for it in the symbol table entry
+    std::unordered_map<std::string, SymbolTableEntry*> tableMap;
+    SymbolTable *parentTable;
+    std::vector<SymbolTable*> childTables;
 
-        /*  Set the parent of the Symbol Table to the required Symbol Table */
-        void setParent(Table *parent);
-
-        /*  Parent Symbol Table of the current Symbol Table */
-        Table* parentTable(void);
-        {
-            return this->parentTable_;
-        }
-
-        void print__(void);
-        void add_child__(SymbolTable* symTable);
-        void printAll__(void);
-        
-        void csvDumpWithoutHeader(std::ofstream& ofs);
-
-        /*  Dump all Symbol Table Entries of the whole scope
-            (including all nested scopes inside) in CSV format  */
-        void csvDump(std::ofstream& ofs);
-    };
-}
+public:
+    SymbolTable(void): parentTable{nullptr} {}
+    SymbolTable(SymbolTable *parentSymbolTable): parentTable{parentSymbolTable}
+    {
+        parentSymbolTable->__add_child(this);
+    }
+    void insert(std::string name, SymbolTableEntry *stEntry);
+    void insert(SymbolTableEntry *stEntry);
+    SymbolTableEntry* lookup(const std::string& name);
+    SymbolTableEntry* currentScopeLookup(const std::string& name);
+    void setParent(SymbolTable *parent);
+    SymbolTable* getParent(void);
+    void print(void);
+    void __add_child(SymbolTable* symTable);
+    void __printAll(void);
+    void _csvDumpWithoutHeader(std::ofstream& ofs);
+    void csvDump(std::ofstream& ofs);
+};
 
 #endif

@@ -8,8 +8,6 @@
 #include <algorithm>
 #include "symbol_table.h"
 #include "3ac.h"
-#include "types.h"
-
 int lines = 0;
 int yyparse();
 extern "C"
@@ -17,7 +15,7 @@ extern "C"
     extern int linenum;
     int yylex(void);
     int yyerror(const char* s)
-    {
+    {  
         if(s[0] == 's' && s[1] == 'y'){
               fprintf(stderr, "ERROR: %s  in  line Number %d \n\n", s, linenum);
         }
@@ -58,21 +56,20 @@ std::map<std::string , field > classFieldData;
 struct Node
 {
 /*  Attributes needed for AST generation    */
-
-/*  Display value for the node in the AST   */
     char* value;
-
-    compiler::typeSystem::Type t;
-
-/*  CHildren of the node in the AST */
     std::vector<Node*> children;
+    Node* parent;
+    int isId;
 
-/*  Parent of the node in the AST   */
-    Node* parent = nullptr;
+/*  this stores the expression type for applying appropriate type checking 
+    0 -> operator , 1 -> assignment , 2 -> methods , 3 -> classes */
+    int exprType = -1;
 
-/*  If the subtree of the node in the AST represents some expression,
-    typeForExpr will store the its type */
+/*  If the node is the root of some subtree of an expression in the AST
+    typeForExpr will store the type of it's subexpression and
+    dimsTypeForExpr will storeit's the number of dimensions */
     std::string typeForExpr = "";
+    int dimsTypeForExpr = -1;
 
 /*  Attributes needed for semantic analysis.
     All are attributes of the identifier located 
@@ -117,11 +114,11 @@ struct Node
 
 /*  Constructors    */
     Node(char* value, std::vector<Node*> children)
-    : value{value}, children{children}, lineNumber{linenum} {}
+    : value{value}, children{children}, lineNumber{linenum} , isId{1} {}
     Node(char* value)
-    : value{value}, children{std::vector<Node*>()}, lineNumber{linenum} {}
+    : value{value}, children{std::vector<Node*>()}, lineNumber{linenum} , isId{1} {}
     Node(char* value, std::string lexeme, std::string type)
-    : value{value}, lexeme{lexeme}, type{type}, lineNumber{linenum} , namelexeme{lexeme} , typeForExpr{type} {}
+    : value{value}, lexeme{lexeme}, type{type}, lineNumber{linenum} , namelexeme{lexeme} , typeForExpr{type} , isId{1}  {}
 
 /*  Add a node as a child   */
     void add_child(Node* nd)
@@ -3717,7 +3714,7 @@ FieldAccess:    Primary Dot Identifier
                     $2->add_child($3);
                     $$->add_child($2);
                     
- 
+
                     $$->stEntries = $1->stEntries;
                 }
                 ;
@@ -4093,6 +4090,7 @@ AssignmentExpression:   ConditionalExpression
 Assignment: LeftHandSide AssignmentOperator Expression
             {
                 $$ = createNode($2->value);
+                $$->exprType = 1;
                 $$->add_child($1);
                 $$->add_child($3);
             }
@@ -4131,6 +4129,7 @@ ConditionalOrExpression:    ConditionalAndExpression
                             | ConditionalOrExpression OR ConditionalAndExpression
                             {
                                 $$ = createNode("||");
+                                $$->exprType = 0;
                                 $$->add_child($1);
                                 $$->add_child($3);
                             }
@@ -4140,6 +4139,7 @@ ConditionalAndExpression:   InclusiveOrExpression
                             | ConditionalAndExpression AND InclusiveOrExpression
                             {
                                 $$ = createNode("&&");
+                                $$->exprType = 0;
                                 $$->add_child($1);
                                 $$->add_child($3);
                             }
@@ -4149,6 +4149,7 @@ InclusiveOrExpression:  ExclusiveOrExpression
                         | InclusiveOrExpression BITOR ExclusiveOrExpression
                         {
                             $$ = createNode("|");
+                            $$->exprType = 0;
                             $$->add_child($1);
                             $$->add_child($3);
                         }
@@ -4158,6 +4159,7 @@ ExclusiveOrExpression:  AndExpression
                         | ExclusiveOrExpression CARET AndExpression
                         {
                             $$ = createNode("^");
+                            $$->exprType = 0;
                             $$->add_child($1);
                             $$->add_child($3);
                         }
@@ -4167,6 +4169,7 @@ AndExpression:  EqualityExpression
                 | AndExpression BITAND EqualityExpression
                 {
                     $$ = createNode("&");
+                    $$->exprType = 0;
                     $$->add_child($1);
                     $$->add_child($3);
                 }
@@ -4176,12 +4179,14 @@ EqualityExpression: RelationalExpression
                     | EqualityExpression EQUAL RelationalExpression
                     {
                         $$ = createNode("==");
+                        $$->exprType = 0;
                         $$->add_child($1);
                         $$->add_child($3);
                     }
                     | EqualityExpression NOTEQUAL RelationalExpression
                     {
                         $$ = createNode("!=");
+                        $$->exprType = 0;
                         $$->add_child($1);
                         $$->add_child($3);
                     }
@@ -4191,24 +4196,28 @@ RelationalExpression:   ShiftExpression
                         | RelationalExpression LT ShiftExpression
                         {
                             $$ = createNode("<");
+                            $$->exprType = 0;
                             $$->add_child($1);
                             $$->add_child($3);
                         }
                         | RelationalExpression GT ShiftExpression
                         {
                             $$ = createNode(">");
+                            $$->exprType = 0;
                             $$->add_child($1);
                             $$->add_child($3);
                         }
                         | RelationalExpression LE ShiftExpression
                         {
                             $$ = createNode("<=");
+                            $$->exprType = 0;
                             $$->add_child($1);
                             $$->add_child($3);
                         }
                         | RelationalExpression GE ShiftExpression
                         {
                             $$ = createNode(">=");
+                            $$->exprType = 0;
                             $$->add_child($1);
                             $$->add_child($3);
                         }
@@ -4233,18 +4242,21 @@ ShiftExpression:    AdditiveExpression
                     | ShiftExpression LSHIFT AdditiveExpression
                     {
                         $$ = createNode("<<");
+                        $$->exprType = 0;
                         $$->add_child($1); 
                         $$->add_child($3);
                     }
                     | ShiftExpression RSHIFT AdditiveExpression
                     {
                         $$ = createNode(">>");
+                        $$->exprType = 0;
                         $$->add_child($1);
                         $$->add_child($3);
                     }
                     | ShiftExpression URSHIFT AdditiveExpression
                     {
                         $$ = createNode(">>>");
+                        $$->exprType = 0;
                         $$->add_child($1);
                         $$->add_child($3);
                     }
@@ -4254,12 +4266,14 @@ AdditiveExpression: MultiplicativeExpression
                     | AdditiveExpression ADD MultiplicativeExpression
                     {
                         $$ = createNode("+");
+                        $$->exprType = 0;
                         $$->add_child($1);
                         $$->add_child($3);
                     }
                     | AdditiveExpression SUB MultiplicativeExpression
                     {
                         $$ = createNode("-");
+                        $$->exprType = 0;
                         $$->add_child($1);
                         $$->add_child($3);
                     }
@@ -4269,18 +4283,21 @@ MultiplicativeExpression:   UnaryExpression
                             | MultiplicativeExpression MUL UnaryExpression
                             {
                                 $$ = createNode("*");
+                                $$->exprType = 0;
                                 $$->add_child($1);
                                 $$->add_child($3);
                             }
                             | MultiplicativeExpression DIV UnaryExpression
                             {
                                 $$ = createNode("/");
+                                $$->exprType = 0;
                                 $$->add_child($1);
                                 $$->add_child($3);
                             }
                             | MultiplicativeExpression MOD UnaryExpression
                             {
                                 $$ = createNode("%");
+                                $$->exprType = 0;
                                 $$->add_child($1);
                                 $$->add_child($3);
                             }
@@ -4304,6 +4321,7 @@ UnaryExpression:    PreIncrementExpression
 PreIncrementExpression: INC UnaryExpression
                         {
                             $$ = createNode("PreIncrementExpression");
+                            $$->exprType = 0;
                             $$->add_child($1);
                             $$->add_child($2);
                         }
@@ -4312,6 +4330,7 @@ PreIncrementExpression: INC UnaryExpression
 PreDecrementExpression: DEC UnaryExpression
                         {
                             $$ = createNode("PreDecrementExpression");
+                            $$->exprType = 0;
                             $$->add_child($1);
                             $$->add_child($2);
                         }
