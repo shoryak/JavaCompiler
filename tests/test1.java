@@ -1,7 +1,3 @@
-class XYZ
-{
-    public int num;
-}
 public class CS335A {
 
     public static void main(String[] args) {
