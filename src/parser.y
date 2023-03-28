@@ -1244,30 +1244,49 @@ void binary3AC(Node* node, std::string op)
         unary3AC(node, op);
         return;
     }
-
-    // std::cerr<< node->namelexeme <<" "<< node->typeForExpr <<" "<< node->children[0]->typeForExpr << " "<< node->children[1]->typeForExpr << "\n";
-    node->node_tmp = newtemp(node->typeForExpr, node->nearSymbolTable);
+    codeInsert(node, node->children[0]->code);
+    codeInsert(node, node->children[1]->code);
+    std::cerr<< node->namelexeme <<" "<< node->typeForExpr <<" "<< node->children[0]->typeForExpr << " "<< node->children[1]->typeForExpr << "\n";
     qid left = node->children[0]->node_tmp;
     qid right  = node->children[1]->node_tmp;
     bool flag = node->children[0]->typeForExpr != "";
     flag = flag && (node->children[1]->typeForExpr != "");
     flag = flag && (node->typeForExpr != "");
-    if(node->children[0]->typeForExpr != node->typeForExpr  && flag){
-        auto tempcastleft = newtemp(node->typeForExpr, node->nearSymbolTable);
-        quad castInstruction = generate(qid("CAST_"+ node->typeForExpr, NULL), node->children[0]->node_tmp, emptyQid, tempcastleft, -1);
+    int castChild = -1;
+    std::string greaterType = node->children[0]->typeForExpr;
+    if(node->children[0]->typeForExpr != node->children[1]->typeForExpr  && flag){
+        
+        if(setTypeCheckType1(node->children[0]->typeForExpr) > setTypeCheckType1(node->children[1]->typeForExpr) ){
+            greaterType = node->children[0]->typeForExpr;
+            castChild = 1;
+        }
+        else{
+            greaterType = node->children[1]->typeForExpr;
+            castChild = 0;
+        }
+        auto tempCastChild = newtemp(greaterType, node->nearSymbolTable);
+        quad castInstruction = generate(qid("CAST_"+ greaterType, NULL), node->children[castChild]->node_tmp, emptyQid, tempCastChild, -1);
         node->code.push_back(castInstruction);
-        left = tempcastleft;
+        if(castChild == 0){
+            left = tempCastChild;
+        }
+        else{
+            right = tempCastChild;
+        }
     }
-    if(node->children[1]->typeForExpr != node->typeForExpr && flag ){
-        auto tempcastright = newtemp(node->typeForExpr, node->nearSymbolTable);
-        quad castInstruction = generate(qid("CAST_" + node->typeForExpr, NULL), node->children[1]->node_tmp, emptyQid, tempcastright, -1);
+    node->node_tmp = newtemp(node->typeForExpr, node->nearSymbolTable);
+    if(greaterType != node->typeForExpr && flag ){
+        auto tempCastResult = newtemp(greaterType , node->nearSymbolTable);
+        quad instruction = generate(qid(op, NULL), left, right, tempCastResult, -1);
+        node->code.push_back(instruction);
+        quad castInstruction = generate(qid("CAST_" + node->typeForExpr, NULL), tempCastResult, emptyQid, node->node_tmp, -1);
         node->code.push_back(castInstruction);
-        right = tempcastright;
+        
     }
-    quad instruction = generate(qid(op, NULL), left, right, node->node_tmp, -1);
-    codeInsert(node, node->children[0]->code);
-    codeInsert(node, node->children[1]->code);
-    node->code.push_back(instruction);
+    else{
+        quad instruction = generate(qid(op, NULL), left, right, node->node_tmp, -1);
+        node->code.push_back(instruction);
+    }
     // print3AC(node->code);
 }
 
@@ -1415,8 +1434,8 @@ void three_AC(Node *node){
         node->code = condition->code; 
         
         node->code.push_back(ifThenQuad);
-        std::cerr<<thenNode->namelexeme<< "HURRAY \n";
-        std::cerr<<condition->namelexeme<< "HURRAY \n";
+        // std::cerr<<thenNode->namelexeme<< "HURRAY \n";
+        // std::cerr<<condition->namelexeme<< "HURRAY \n";
         // print3AC1(thenNode->code);
         codeInsert(node, thenNode->code);
         node->code.push_back(generate(qid(label, NULL), emptyQid , emptyQid, emptyQid  , -1));
@@ -1950,7 +1969,7 @@ void typecheck(Node *node)
         if(node->children.size() < 2) return;
         Node *leftHandSide = node->children[0];
         Node *rightHandSide = node->children[1];
-        std::cerr<<nodeName <<" "<<leftHandSide->typeForExpr <<" "<<rightHandSide->typeForExpr<< "\n";
+        // std::cerr<<nodeName <<" "<<leftHandSide->typeForExpr <<" "<<rightHandSide->typeForExpr<< "\n";
         if(leftHandSide->typeForExpr=="" || rightHandSide->typeForExpr ==""){
             return;
         }
