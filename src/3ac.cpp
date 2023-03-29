@@ -87,7 +87,7 @@ void print3AC1(std::vector<quad> code, std::string fileName){
                 }
                 else cnt++;
             }
-            // tac_file<<"     "<<" ";
+            tac_file1<<"     "<<"";
             tac_file1 << ""<<str<< codeLine.argument1.first;
             tac_file1 << "\n";
         }

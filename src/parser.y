@@ -1543,15 +1543,24 @@ void three_AC(Node *node){
              codeInsert(node, ForUpdate->code);
         }
         quad gotoBeginFor = generate(qid( "$goto " + beginFor, NULL), emptyQid, emptyQid, emptyQid, -1);
+        quad gotoEndFor = generate(qid( "$goto " + endFor, NULL), emptyQid, emptyQid, emptyQid, -1);
         node->code.push_back(gotoBeginFor);
         node->code.push_back(endFOR);
+        for(int ind = 0; ind < node->code.size() ; ind++){
+            if(node->code[ind].oper.first == "BREAK"){
+                node->code[ind] = gotoEndFor;
+            }
+            if(node->code[ind].oper.first == "CONTINUE"){
+                node->code[ind] = gotoBeginFor;
+            }
+        }
         // print3AC(node->code);
         // print3AC1(node->code);
 
         
     }
     else if(nodeName == "While"){
-        Node* WhileExpression ,* WhileBody;
+        Node* WhileExpression = NULL ,* WhileBody = NULL;
         for(auto child : node->children){
             if(child->namelexeme == "WhileExpression"){
                 WhileExpression  = child;
@@ -1566,6 +1575,8 @@ void three_AC(Node *node){
         std::string endWhile = "$L" + std::to_string(labelCounter);
         quad whileBegin = generate(qid(beginWhile, NULL), emptyQid, emptyQid, emptyQid, -1);
         quad whileEnd = generate(qid(endWhile, NULL), emptyQid, emptyQid, emptyQid, -1);
+        quad gotoBeginWhile = generate(qid( "$goto " + beginWhile, NULL), emptyQid, emptyQid, emptyQid, -1);
+        quad gotoEndWhile = generate(qid( "$goto " + endWhile, NULL), emptyQid, emptyQid, emptyQid, -1);
         node->code.push_back(whileBegin);
         if(WhileExpression){
             codeInsert(node, WhileExpression->code);
@@ -1575,7 +1586,17 @@ void three_AC(Node *node){
         if(WhileBody){
             codeInsert(node, WhileBody->code);
         }
+        node->code.push_back(gotoBeginWhile);
         node->code.push_back(whileEnd);
+
+        for(int ind = 0; ind < node->code.size() ; ind++){
+            if(node->code[ind].oper.first == "BREAK"){
+                node->code[ind] = gotoEndWhile;
+            }
+            if(node->code[ind].oper.first == "CONTINUE"){
+                node->code[ind] = gotoBeginWhile;
+            }
+        }
         // print3AC(node->code);
     }
     else if(nodeName == "[ ]" && node->children.size() >0){
@@ -1638,7 +1659,7 @@ void three_AC(Node *node){
         }
     }
     else if(nodeName == "MethodInvocation"){
-        Node* Arguments = NULL;
+        Node* Arguments =NULL;
         for(auto child : node->children){
             if(child->namelexeme == "Arguments"){
                 Arguments = child;
@@ -1891,6 +1912,16 @@ void three_AC(Node *node){
         quad castInstruction = generate(qid("CAST_"+ left->typeForExpr, NULL), node->children[1]->node_tmp, emptyQid, tempcastleft, -1);
         node->code.push_back(castInstruction);
         node->node_tmp = tempcastleft;
+    }
+    else if(nodeName == "BREAK"){
+       quad Instruction = generate(qid("BREAK", NULL), emptyQid, emptyQid, emptyQid, -1);
+        node->code.push_back(Instruction); 
+    }
+    else if(nodeName == "ContinueStatement"){
+        
+       quad Instruction = generate(qid("CONTINUE", NULL), emptyQid, emptyQid, emptyQid, -1);
+        node->code.push_back(Instruction); 
+    
     }
 
     // else if(node->children.size() == 0 && node->parent->namelexeme == "Identifier"   && node->parent->parent->namelexeme != "MethodInvocation" && node->parent->parent->namelexeme != "UnqualifiedClassInstanceCreationExpression" && node->parent->parent->namelexeme != "LocalVariableDeclaration" && node->parent->parent->namelexeme != "MethodDeclarator" && node->parent->parent->namelexeme!= "." && node->parent->parent->namelexeme != "class"){
@@ -3500,7 +3531,7 @@ YieldStatement: YIELD Expression Semicolon
 
 ContinueStatement:  CONTINUE Semicolon 
                     {  
-                        $$ = createNode("ContinueStatemnet");
+                        $$ = createNode("ContinueStatement");
                         $$->add_child($1);
                         $$->add_child($2);
 
