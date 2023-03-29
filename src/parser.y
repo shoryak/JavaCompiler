@@ -1648,12 +1648,15 @@ void three_AC(Node *node){
             Node* dot = node->children[0];
             if(dot->children[0]->namelexeme == "."){
                 if(dot->children[1]->children[0]->namelexeme == "println" && dot->children[0]->children[1]->children[0]->namelexeme == "out" && dot->children[0]->children[0]->children[0]->namelexeme == "System"){
-                    if(Arguments->children.size()!=1){
+                    if(Arguments->children.size()>1){
                         //error incorrect number of arguments in println
                         std::string s = "Incorrect number of arguments in println " + std::to_string(node->children[0]->children[1]->children[0]->lineNumber);
                         yyerror(s.c_str());
                     }
                     else{
+                        for(auto codechild : node->children){
+                            codeInsert(node, codechild->code);
+                        }
                         if(Arguments){
                         quad I1 = generate(qid("PushParam",NULL) , Arguments->children[0]->node_tmp , emptyQid, emptyQid , -1);
 
@@ -1661,9 +1664,6 @@ void three_AC(Node *node){
                         }
                         quad I2 = generate(qid("CALL",NULL) , qid("println", NULL) , emptyQid, emptyQid , -1);
                         quad I3 = generate(qid("PopParams",NULL) , emptyQid , emptyQid, emptyQid , -1);
-                        for(auto codechild : node->children){
-                            codeInsert(node, codechild->code);
-                        }
                         node->code.push_back(I2);
                         node->code.push_back(I3);
                         // print3AC(node->code);
