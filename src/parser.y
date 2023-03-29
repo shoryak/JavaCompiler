@@ -1638,7 +1638,7 @@ void three_AC(Node *node){
         }
     }
     else if(nodeName == "MethodInvocation"){
-        Node* Arguments;
+        Node* Arguments = NULL;
         for(auto child : node->children){
             if(child->namelexeme == "Arguments"){
                 Arguments = child;
@@ -1690,9 +1690,6 @@ void three_AC(Node *node){
                 node->node_tmp = newtemp(node->children[0]->typeForExpr, node->nearSymbolTable);
                 quad I2 = generate(qid("CALL",NULL) , dot->children[1]->node_tmp , emptyQid, node->node_tmp , -1);
                 quad I3 = generate(qid("PopParams",NULL) , emptyQid , emptyQid, emptyQid , -1);
-                for(auto codechild : node->children){
-                    codeInsert(node, codechild->code);
-                }
                 
                 node->code.push_back(I1);
                 node->code.push_back(I2);
