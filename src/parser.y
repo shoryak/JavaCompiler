@@ -1829,6 +1829,23 @@ void three_AC(Node *node){
             
             codeInsert(node, block->code);
 
+            // popping local variables and saved registers and temporaries off the stack
+            quad stack2base = generate(qid("",NULL) , qid("base_pointer", NULL) , emptyQid, qid("stack_pointer", NULL) , -1);
+            node->code.push_back(stack2base);
+
+            // restore the base pointer 
+            quad restoreBase = generate(qid("",NULL) , qid("*(stack_pointer)", NULL) , emptyQid, qid("base_pointer", NULL) , -1);
+            node->code.push_back(restoreBase);
+
+            // pop base_pointer
+
+            quad popBasePointer = generate(qid("pop",NULL) , qid("8", NULL) , emptyQid, emptyQid , -1);
+            node->code.push_back(popBasePointer);
+
+            // ret instruction
+            quad ret = generate(qid("ret",NULL) , qid("", NULL) , emptyQid, emptyQid , -1);
+            node->code.push_back(ret);
+
             // Dump 3AC code into file
             Node *classNode = node->parent->parent->parent;
             std::string className = classNode->children[(int)classNode->children.size()-2]->namelexeme;
@@ -1837,7 +1854,6 @@ void three_AC(Node *node){
             print3AC1(node->code, fileName);
             node->code.clear();
 
-            // popping local variables and saved registers and temporaries off the stack
 
         }
     else if(nodeName == "ConstructorDeclaration"){

@@ -117,7 +117,7 @@ void print3AC1(std::vector<quad> code, std::string fileName){
         }
         else if(codeLine.oper.first == "pop"){
             tac_file1<<"    "<<" ";
-            tac_file1 << codeLine.oper.first;
+            tac_file1 << codeLine.oper.first <<" "<< codeLine.argument1.first;
             tac_file1 << "\n";
         }
         else if(codeLine.oper.first[0] == '#'){
