@@ -1679,12 +1679,12 @@ void three_AC(Node *node){
                             codeInsert(node, codechild->code);
                         }
                         if(Arguments){
-                        quad I1 = generate(qid("PushParam",NULL) , Arguments->children[0]->node_tmp , emptyQid, emptyQid , -1);
+                        quad I1 = generate(qid("push",NULL) , Arguments->children[0]->node_tmp , emptyQid, emptyQid , -1);
 
                         node->code.push_back(I1);
                         }
                         quad I2 = generate(qid("CALL",NULL) , qid("println", NULL) , emptyQid, emptyQid , -1);
-                        quad I3 = generate(qid("PopParams",NULL) , emptyQid , emptyQid, emptyQid , -1);
+                        quad I3 = generate(qid("pop",NULL) , emptyQid , emptyQid, emptyQid , -1);
                         node->code.push_back(I2);
                         node->code.push_back(I3);
                         // print3AC(node->code);
@@ -1703,14 +1703,14 @@ void three_AC(Node *node){
                 }
                 if(Arguments){
                     for(auto child : Arguments->children){
-                        quad I1 = generate(qid("PushParam",NULL) , child->node_tmp , emptyQid, emptyQid , -1);
+                        quad I1 = generate(qid("push",NULL) , child->node_tmp , emptyQid, emptyQid , -1);
                         node->code.push_back(I1);
                     }
                 }
-                quad I1 = generate(qid("PushParam",NULL) , dot->children[0]->node_tmp , emptyQid, emptyQid , -1);
+                quad I1 = generate(qid("push",NULL) , dot->children[0]->node_tmp , emptyQid, emptyQid , -1);
                 node->node_tmp = newtemp(node->children[0]->typeForExpr, node->nearSymbolTable);
                 quad I2 = generate(qid("CALL",NULL) , dot->children[1]->node_tmp , emptyQid, node->node_tmp , -1);
-                quad I3 = generate(qid("PopParams",NULL) , emptyQid , emptyQid, emptyQid , -1);
+                quad I3 = generate(qid("pop",NULL) , emptyQid , emptyQid, emptyQid , -1);
                 
                 node->code.push_back(I1);
                 node->code.push_back(I2);
@@ -1726,12 +1726,12 @@ void three_AC(Node *node){
             }
             if(Arguments){
                 for(auto child : Arguments->children){
-                    quad I1 = generate(qid("PushParam",NULL) , child->node_tmp , emptyQid, emptyQid , -1);
+                    quad I1 = generate(qid("push",NULL) , child->node_tmp , emptyQid, emptyQid , -1);
                     node->code.push_back(I1);
                 }
             }
             quad I2 = generate(qid("CALL",NULL) , qid(node->children[0]->children[0]->namelexeme,NULL) , emptyQid, node->node_tmp , -1);
-            quad I3 = generate(qid("PopParams",NULL) , emptyQid , emptyQid, emptyQid , -1);
+            quad I3 = generate(qid("pop",NULL) , emptyQid , emptyQid, emptyQid , -1);
             node->code.push_back(I2);
             node->code.push_back(I3);
             // print3AC(node->code);
@@ -1793,6 +1793,7 @@ void three_AC(Node *node){
             auto funclabel = quad(qid("#" +funcName , NULL) , emptyQid, emptyQid, emptyQid , -1);
             node->code.push_back(funclabel);
             // beginFunc statement
+            
             if(FormalParameterList!= NULL){
             std::cerr<<FormalParameterList->value<<"\n";
             int paramNumber = FormalParameterList->children.size();
@@ -1810,6 +1811,22 @@ void three_AC(Node *node){
                 node->code.push_back(I2);
             }
             }
+            // push current base base pointer
+            quad storeBasePointer = generate(qid("push",NULL) , qid("base_pointer", NULL) , emptyQid, emptyQid , -1);
+            node->code.push_back(storeBasePointer);
+
+            // move base_pointer to current stack_pointer
+            quad base2stack = generate(qid("",NULL) , qid("stack_pointer", NULL) , emptyQid, qid("base_pointer", NULL) , -1);
+            node->code.push_back(base2stack);
+
+            // give space for local variables which can be accessed from their offsets in stored in symbol table
+            quad localSpace = generate(qid("-",NULL) , qid("stack_pointer", NULL) , qid("sum(size(variables))", NULL), qid("stack_pointer", NULL) , -1);
+            node->code.push_back(localSpace);
+
+            // give space for saved registers 
+            quad registerSpace = generate(qid("-",NULL) , qid("stack_pointer", NULL) , qid("8*num_of_callee_saved_registers", NULL), qid("stack_pointer", NULL) , -1);
+            node->code.push_back(registerSpace);
+            
             codeInsert(node, block->code);
 
             // Dump 3AC code into file
@@ -1819,6 +1836,9 @@ void three_AC(Node *node){
             std::cerr << fileName << ' ' << node->code.size() << ' ' << '\n';
             print3AC1(node->code, fileName);
             node->code.clear();
+
+            // popping local variables and saved registers and temporaries off the stack
+
         }
     else if(nodeName == "ConstructorDeclaration"){
          Node* block = NULL ,  *declarator =NULL, *FormalParameterList =NULL;
