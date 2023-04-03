@@ -42,6 +42,22 @@ std::string SymbolTableEntry::getType()
 }
 
 /*
+Set the total local variable size (for function symbol table entry)
+*/
+void SymbolTableEntry::setSizeofLocals(int sizeofLocals)
+{
+    this->sizeofLocals = sizeofLocals;
+}
+
+/*
+Get the total local variable size (for function symbol table entry)
+*/
+int SymbolTableEntry::getSizeofLocals(void)
+{
+    return this->sizeofLocals;
+}
+
+/*
 Get the declLine in this Symbol Table Entry
 */
 int SymbolTableEntry::getDeclLine()
@@ -83,8 +99,9 @@ void SymbolTableEntry::print()
     std::cerr << "Name: " << name << " Type: " << type << '\n';
     std::cerr << "Size: " << size << " Dim: " << dimension;
     std::cerr << " LoDecl: " << declLine << '\n';
-    std::cerr << std::hex;
+    // std::cerr << std::hex;
     std::cerr << "Address: " << address << '\n';
+    std::cerr << "localOffset: " << sizeofLocals << '\n';
     std::cerr << std::dec;
   
     if(type == "$func"){

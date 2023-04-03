@@ -48,6 +48,7 @@ int useCurlyForNewScope  = 1;
 std::vector<int> curlyScopes;
 int labelCounter = 0;
 std::string currentClass, currentFuncName ; int classOffset;
+int localOffset;
 std::unordered_map<std::string, SymbolTable*> methodSymbolTable;
 std::map<std::string , std::set<std::string > > methodsForClass;
 std::map<std::string , std::set<std::string>  > fieldsForClass;
@@ -247,6 +248,7 @@ void setSymTables2(Node* node , SymbolTable* currSymbolTable){
 }
 
 int setOffset(std::string type){
+    std:cerr<<"Type "<<type<<"\n";
     if(type=="int") return 4;
     else if(type=="short") return 2;
     else if(type=="char"){
@@ -256,6 +258,12 @@ int setOffset(std::string type){
     else if(type=="float") return 4;
     else if(type=="double") return 8;
     else if(type=="boolean") return 1; // specialcase
+    else if(type == "void"){
+        return 0;
+    }
+    else {
+        return 8;
+    }
     
     
 }
@@ -532,6 +540,7 @@ void createST(Node* node)
     else if(nodeName == "MethodDeclaration")
     {
         int decLine = 0;
+        localOffset  = 0;
         std::vector<Node*> children = node->children;
         std::string name = "";        //modifiers_returntype_functionname
         struct funcproto fproto;
@@ -626,7 +635,8 @@ void createST(Node* node)
               
             // error;
         }
-        SymbolTableEntry* stEntry = new SymbolTableEntry(name, fproto.returnType, -1, -1, decLine, 0, fproto);
+        std::cerr<<"sizeofLocals "<<name<<" "<<localOffset<<"\n";
+        SymbolTableEntry* stEntry = new SymbolTableEntry(name, fproto.returnType, -1, -1, decLine, 0, fproto , localOffset);
         node->lineNumber = decLine;
         currSymTable->insert(stEntry);
         std::cerr<<currentClass<<"a\n";
@@ -869,7 +879,14 @@ void createST(Node* node)
                         }
                     }
                     // Problematic to create symbol table entry here for cases like int x = x+1;
-                    SymbolTableEntry* stEntry = new SymbolTableEntry(name + y->children[0]->children[0]->children[0]->namelexeme, type, -1, nDims, y->children[0]->children[0]->children[0]->lineNumber, 0, axisWidths);
+                    std::string typeForOffset = type;
+                    if(nDims > 0){
+                        typeForOffset = "pointer";
+                    }
+                    localOffset += setOffset(typeForOffset);
+                    std::cerr<<"Lexeme "<<y->children[0]->children[0]->children[0]->namelexeme<<"\n";
+                    std::cerr<<"localOffset "<<localOffset<<"\n";
+                    SymbolTableEntry* stEntry = new SymbolTableEntry(name + y->children[0]->children[0]->children[0]->namelexeme, type, -1, nDims, y->children[0]->children[0]->children[0]->lineNumber, localOffset, axisWidths);
                     currSymTable->insert(stEntry);
 
                     //3 AC
@@ -889,7 +906,17 @@ void createST(Node* node)
                         std::string s = "Redeclaration of " + y->children[0]->children[0]->namelexeme + " in line number " + std::to_string(y->children[0]->children[0]->lineNumber);
                         yyerror(s.c_str());
                     }
-                    SymbolTableEntry* stEntry = new SymbolTableEntry(name + y->children[0]->children[0]->namelexeme, type, -1, nDims, y->children[0]->children[0]->lineNumber, 0);
+                    
+                    // code for calculating offset of local variable in function
+                    std::string typeForOffset = type;
+                    if(nDims > 0){
+                        typeForOffset = "pointer";
+                    }
+                    localOffset += setOffset(typeForOffset);
+
+                    std::cerr<<"Lexeme "<<y->children[0]->children[0]->namelexeme<<"\n";
+                    std::cerr<<"localOffset "<<localOffset<<"\n";
+                    SymbolTableEntry* stEntry = new SymbolTableEntry(name + y->children[0]->children[0]->namelexeme, type, -1, nDims, y->children[0]->children[0]->lineNumber, localOffset);
                     currSymTable->insert(stEntry);
 
                     //3 AC
@@ -1179,6 +1206,24 @@ void createST(Node* node)
         typecheck(node);
         node->numDims = node->children[0]->numDims + 1;
         node->typeForExpr = node->children[0]->typeForExpr;
+    }
+    
+    else if(nodeName == "MethodDeclaration")
+    {
+        std::string funcName;
+        for(auto methodDeclChildNode: node->children)
+        {
+            if(methodDeclChildNode->namelexeme == "MethodHeader")
+                for(auto methodHeaderChildNode: methodDeclChildNode->children)
+                {
+                    if(methodHeaderChildNode->namelexeme == "MethodDeclarator")
+                    {
+                        funcName = methodHeaderChildNode->children[0]->children[0]->namelexeme;
+                    }
+                }
+        }
+        auto funcEntry = currSymTable->lookup(funcName);
+        funcEntry->setSizeofLocals(localOffset);
     }
 
     else if(nodeName == "." && node->parent->namelexeme != "MethodInvocation")
@@ -1679,10 +1724,12 @@ void three_AC(Node *node){
                             codeInsert(node, codechild->code);
                         }
                         if(Arguments){
+                        // Arguments->children[0]->node_tmp = newtemp("")
                         quad I1 = generate(qid("push",NULL) , Arguments->children[0]->node_tmp , emptyQid, emptyQid , -1);
 
                         node->code.push_back(I1);
                         }
+                        
                         quad I2 = generate(qid("CALL",NULL) , qid("println", NULL) , emptyQid, emptyQid , -1);
                         quad I3 = generate(qid("pop",NULL) , emptyQid , emptyQid, emptyQid , -1);
                         node->code.push_back(I2);
@@ -1782,35 +1829,35 @@ void three_AC(Node *node){
         }
     }
     else if(nodeName == "MethodDeclaration"){
-            Node* header = NULL , *block = NULL ,  *declarator =NULL, *FormalParameterList =NULL;
-            for(auto child : node->children){
-                if(child->namelexeme == "MethodHeader"){
-                    header = child;
-                }
-                if(child->namelexeme == "Block"){
-                    block = child;
-                }
-                
+        Node* header = NULL , *block = NULL ,  *declarator =NULL, *FormalParameterList =NULL;
+        for(auto child : node->children){
+            if(child->namelexeme == "MethodHeader"){
+                header = child;
             }
-            for(auto child : header->children){
-                if(child->namelexeme == "MethodDeclarator"){
-                    declarator = child;
-                }
-                
-            }
-            for(auto child : declarator->children){
-                if(child->namelexeme == "FormalParameterList"){
-                    FormalParameterList = child;
-                }
+            if(child->namelexeme == "Block"){
+                block = child;
             }
             
-            // label
-            auto funcName = declarator->children[0]->children[0]->namelexeme;
-            auto funclabel = quad(qid("#" +funcName , NULL) , emptyQid, emptyQid, emptyQid , -1);
-            node->code.push_back(funclabel);
-            // beginFunc statement
+        }
+        for(auto child : header->children){
+            if(child->namelexeme == "MethodDeclarator"){
+                declarator = child;
+            }
             
-            if(FormalParameterList!= NULL){
+        }
+        for(auto child : declarator->children){
+            if(child->namelexeme == "FormalParameterList"){
+                FormalParameterList = child;
+            }
+        }
+        
+        // label
+        auto funcName = declarator->children[0]->children[0]->namelexeme;
+        auto funclabel = quad(qid("#" +funcName , NULL) , emptyQid, emptyQid, emptyQid , -1);
+        node->code.push_back(funclabel);
+        // beginFunc statement
+        
+        if(FormalParameterList!= NULL){
             std::cerr<<FormalParameterList->value<<"\n";
             int paramNumber = FormalParameterList->children.size();
             std::vector<std::string> paramNames; 
@@ -1818,60 +1865,93 @@ void three_AC(Node *node){
                 auto Id = param->children.back();
                 paramNames.push_back(Id->children[0]->children[0]->namelexeme);
             }
-
+            int rv_= 8 + setOffset(header->children[0]->namelexeme);
             for(int i=paramNumber-1 ; i>=0;i--){
                 auto t1 = newtemp("param" , node->nearSymbolTable);
-                quad I1 = generate(qid("PopParam",NULL), emptyQid, emptyQid, t1,-1  );
+                //quad I1 = generate(qid("PopParam",NULL), emptyQid, emptyQid, t1,-1 s);
+          
+                std::vector<Node*>formalParam = FormalParameterList->children[i]->children;
+                std::string type1 = "";
+      
+                for(auto x: formalParam)
+                {
+                    if(x->namelexeme == "final")
+                    {
+                        
+                    }
+                    else if(x->namelexeme == "VariableDeclaratorId")
+                    {
+                        
+                    }
+                    else 
+                    {
+                        if(x->namelexeme == "UnannArrayType")
+                        {
+                            type1  = x->children[0]->namelexeme;
+                        }
+                        else type1 = x->namelexeme;
+                        
+                    }
+                }
+
+                quad I1 =  generate(qid("*($sp +"+std::to_string(rv_)+ ")",NULL) , emptyQid , emptyQid, t1 , -1);
+                std::cerr<<"___ "<<type1<<" "<<rv_<<"\n";
+                rv_ += setOffset(type1);
+                std::cerr<<"___ "<<type1<<" "<<rv_<<"\n";
                 quad I2 = generate(emptyQid , t1, emptyQid , qid(paramNames[i], NULL) , -1 );
                 node->code.push_back(I1);
                 node->code.push_back(I2);
             }
-            }
-            // push current base base pointer
-            quad storeBasePointer = generate(qid("push",NULL) , qid("$bp", NULL) , emptyQid, emptyQid , -1);
-            node->code.push_back(storeBasePointer);
-
-            // move $bp to current $sp
-            quad base2stack = generate(qid("",NULL) , qid("$sp", NULL) , emptyQid, qid("$bp", NULL) , -1);
-            node->code.push_back(base2stack);
-
-            // give space for local variables which can be accessed from their offsets in stored in symbol table
-            quad localSpace = generate(qid("-",NULL) , qid("$sp", NULL) , qid("sum(size(variables))", NULL), qid("$sp", NULL) , -1);
-            node->code.push_back(localSpace);
-
-            // give space for saved registers 
-            quad registerSpace = generate(qid("-",NULL) , qid("$sp", NULL) , qid("8*num_of_callee_saved_registers", NULL), qid("$sp", NULL) , -1);
-            node->code.push_back(registerSpace);
-            
-            codeInsert(node, block->code);
-
-            // popping local variables and saved registers and temporaries off the stack
-            quad stack2base = generate(qid("",NULL) , qid("$bp", NULL) , emptyQid, qid("$sp", NULL) , -1);
-            node->code.push_back(stack2base);
-
-            // restore the base pointer 
-            quad restoreBase = generate(qid("",NULL) , qid("*($sp)", NULL) , emptyQid, qid("$bp", NULL) , -1);
-            node->code.push_back(restoreBase);
-
-            // pop $bp
-
-            quad popBasePointer = generate(qid("pop",NULL) , qid("8", NULL) , emptyQid, emptyQid , -1);
-            node->code.push_back(popBasePointer);
-
-            // ret instruction
-            quad ret = generate(qid("ret",NULL) , qid("", NULL) , emptyQid, emptyQid , -1);
-            node->code.push_back(ret);
-
-            // Dump 3AC code into file
-            Node *classNode = node->parent->parent->parent;
-            std::string className = classNode->children[(int)classNode->children.size()-2]->namelexeme;
-            std::string fileName = className + "." + funcName + ".3ac";
-            std::cerr << fileName << ' ' << node->code.size() << ' ' << '\n';
-            print3AC1(node->code, fileName);
-            node->code.clear();
-
-
         }
+        // push current base base pointer
+        quad storeBasePointer = generate(qid("push",NULL) , qid("$bp", NULL) , emptyQid, emptyQid , -1);
+        node->code.push_back(storeBasePointer);
+
+        // move $bp to current $sp
+        quad base2stack = generate(qid("",NULL) , qid("$sp", NULL) , emptyQid, qid("$bp", NULL) , -1);
+        node->code.push_back(base2stack);
+
+        // give space for local variables which can be accessed from their offsets in stored in symbol table
+        Node *classNode = node->parent->parent->parent;
+        std::string className = classNode->children[(int)classNode->children.size()-2]->namelexeme;
+        auto classSymbolTable = methodSymbolTable[className + "." + funcName];
+        auto funcEntry = classSymbolTable->lookup(funcName);
+        int sizeofLocals = funcEntry->getSizeofLocals();
+        
+        quad localSpace = generate(qid("-",NULL) , qid("$sp", NULL) , qid(std::to_string(sizeofLocals), NULL), qid("$sp", NULL) , -1);
+        node->code.push_back(localSpace);
+
+        // give space for saved registers 
+        quad registerSpace = generate(qid("-",NULL) , qid("$sp", NULL) , qid("8*num_of_callee_saved_registers", NULL), qid("$sp", NULL) , -1);
+        node->code.push_back(registerSpace);
+        
+        codeInsert(node, block->code);
+
+        // popping local variables and saved registers and temporaries off the stack
+        quad stack2base = generate(qid("",NULL) , qid("$bp", NULL) , emptyQid, qid("$sp", NULL) , -1);
+        node->code.push_back(stack2base);
+
+        // restore the base pointer 
+        quad restoreBase = generate(qid("",NULL) , qid("*($sp)", NULL) , emptyQid, qid("$bp", NULL) , -1);
+        node->code.push_back(restoreBase);
+
+        // pop $bp
+
+        quad popBasePointer = generate(qid("pop",NULL) , qid("8", NULL) , emptyQid, emptyQid , -1);
+        node->code.push_back(popBasePointer);
+
+        // ret instruction
+        quad ret = generate(qid("ret",NULL) , qid("", NULL) , emptyQid, emptyQid , -1);
+        node->code.push_back(ret);
+
+        // Dump 3AC code into file
+        std::string fileName = className + "." + funcName + ".3ac";
+        std::cerr << fileName << ' ' << node->code.size() << ' ' << '\n';
+        print3AC1(node->code, fileName);
+        node->code.clear();
+
+
+    }
     else if(nodeName == "ConstructorDeclaration"){
          Node* block = NULL ,  *declarator =NULL, *FormalParameterList =NULL;
             for(auto child : node->children){
@@ -2263,7 +2343,7 @@ CompilationUnit:    OrdinaryCompilationUnit
                         currSymTable->insert(stEntry);
                         createST(root);
                         SymTableCSVDump();
-                        //  globalSymTable->__printAll();
+                        globalSymTable->__printAll();
                         three_AC(root);
                         // globalSymTable = $$->symTable;
                        
