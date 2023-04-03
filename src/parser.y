@@ -416,7 +416,7 @@ void methodTypeCheck(Node* node)
         }
         std::cerr<<methodName<<" Methodname\n";
         SymbolTableEntry* stEntry = node->nearSymbolTable->lookup(methodName);
-        std::cerr<<stEntry->getName()<<"\n";
+        // std::cerr<<stEntry->getName()<<"\n";
         // node->nearSymbolTable->print();
         // stEntry->print();
         if(stEntry)
@@ -1708,12 +1708,28 @@ void three_AC(Node *node){
                     }
                 }
                 quad I1 = generate(qid("push",NULL) , dot->children[0]->node_tmp , emptyQid, emptyQid , -1);
-                node->node_tmp = newtemp(node->children[0]->typeForExpr, node->nearSymbolTable);
-                quad I2 = generate(qid("CALL",NULL) , dot->children[1]->node_tmp , emptyQid, node->node_tmp , -1);
-                quad I3 = generate(qid("pop",NULL) , emptyQid , emptyQid, emptyQid , -1);
-                
                 node->code.push_back(I1);
+
+                // space for return value 
+                quad returnValSpace = generate(qid("-",NULL) , qid("$sp", NULL) , qid("sizeof(type)", NULL), qid("$sp", NULL) , -1);
+                node->code.push_back(returnValSpace);
+
+                // space for return address for ret
+                quad returnAddSpace = generate(qid("-",NULL) , qid("$sp", NULL) , qid("8", NULL), qid("$sp", NULL) , -1);
+                node->code.push_back(returnAddSpace);
+
+                // calling function
+                node->node_tmp = newtemp(node->children[0]->typeForExpr, node->nearSymbolTable);
+                quad I2 = generate(qid("CALL",NULL) , dot->children[1]->node_tmp , emptyQid, emptyQid, -1);
                 node->code.push_back(I2);
+
+                // retrieving return value from frame
+                quad returnVal = generate(qid("",NULL) , qid("*($sp + 8)", NULL) , qid("", NULL), node->node_tmp , -1);
+                node->code.push_back(returnVal);
+
+
+
+                quad I3 = generate(qid("pop",NULL) , emptyQid , emptyQid, emptyQid , -1);
                 node->code.push_back(I3);
                 // print3AC1(node->code);
             }
@@ -1812,32 +1828,32 @@ void three_AC(Node *node){
             }
             }
             // push current base base pointer
-            quad storeBasePointer = generate(qid("push",NULL) , qid("base_pointer", NULL) , emptyQid, emptyQid , -1);
+            quad storeBasePointer = generate(qid("push",NULL) , qid("$bp", NULL) , emptyQid, emptyQid , -1);
             node->code.push_back(storeBasePointer);
 
-            // move base_pointer to current stack_pointer
-            quad base2stack = generate(qid("",NULL) , qid("stack_pointer", NULL) , emptyQid, qid("base_pointer", NULL) , -1);
+            // move $bp to current $sp
+            quad base2stack = generate(qid("",NULL) , qid("$sp", NULL) , emptyQid, qid("$bp", NULL) , -1);
             node->code.push_back(base2stack);
 
             // give space for local variables which can be accessed from their offsets in stored in symbol table
-            quad localSpace = generate(qid("-",NULL) , qid("stack_pointer", NULL) , qid("sum(size(variables))", NULL), qid("stack_pointer", NULL) , -1);
+            quad localSpace = generate(qid("-",NULL) , qid("$sp", NULL) , qid("sum(size(variables))", NULL), qid("$sp", NULL) , -1);
             node->code.push_back(localSpace);
 
             // give space for saved registers 
-            quad registerSpace = generate(qid("-",NULL) , qid("stack_pointer", NULL) , qid("8*num_of_callee_saved_registers", NULL), qid("stack_pointer", NULL) , -1);
+            quad registerSpace = generate(qid("-",NULL) , qid("$sp", NULL) , qid("8*num_of_callee_saved_registers", NULL), qid("$sp", NULL) , -1);
             node->code.push_back(registerSpace);
             
             codeInsert(node, block->code);
 
             // popping local variables and saved registers and temporaries off the stack
-            quad stack2base = generate(qid("",NULL) , qid("base_pointer", NULL) , emptyQid, qid("stack_pointer", NULL) , -1);
+            quad stack2base = generate(qid("",NULL) , qid("$bp", NULL) , emptyQid, qid("$sp", NULL) , -1);
             node->code.push_back(stack2base);
 
             // restore the base pointer 
-            quad restoreBase = generate(qid("",NULL) , qid("*(stack_pointer)", NULL) , emptyQid, qid("base_pointer", NULL) , -1);
+            quad restoreBase = generate(qid("",NULL) , qid("*($sp)", NULL) , emptyQid, qid("$bp", NULL) , -1);
             node->code.push_back(restoreBase);
 
-            // pop base_pointer
+            // pop $bp
 
             quad popBasePointer = generate(qid("pop",NULL) , qid("8", NULL) , emptyQid, emptyQid , -1);
             node->code.push_back(popBasePointer);

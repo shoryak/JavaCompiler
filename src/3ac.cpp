@@ -97,13 +97,13 @@ void print3AC1(std::vector<quad> code, std::string fileName){
             tac_file1 << codeLine.oper.first<<" "<<codeLine.argument1.first << " " << codeLine.argument2.first;
             tac_file1 << "\n";
         }
-        else if(codeLine.oper.first == "CALL" && codeLine.argument1.first != "println"){
-            tac_file1<<"    "<<" ";
-            tac_file1 << codeLine.result.first << " = ";
-            tac_file1 << codeLine.oper.first<<" "<<codeLine.argument1.first <<" "<< codeLine.argument2.first;
-            tac_file1 << "\n";
-        }
-        else if(codeLine.oper.first == "CALL" && codeLine.argument1.first == "println"){
+        // else if(codeLine.oper.first == "CALL" && codeLine.argument1.first != "println"){
+        //     tac_file1<<"    "<<" ";
+        //     tac_file1 << codeLine.result.first << " = ";
+        //     tac_file1 << codeLine.oper.first<<" "<<codeLine.argument1.first <<" "<< codeLine.argument2.first;
+        //     tac_file1 << "\n";
+        // }
+        else if(codeLine.oper.first == "CALL" /*&& codeLine.argument1.first == "println"*/){
             tac_file1<<"    "<<" ";
             tac_file1 << codeLine.oper.first<<" ";
             tac_file1 << codeLine.argument1.first << " " << codeLine.argument2.first;
