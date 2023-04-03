@@ -416,7 +416,7 @@ void methodTypeCheck(Node* node)
         }
         std::cerr<<methodName<<" Methodname\n";
         SymbolTableEntry* stEntry = node->nearSymbolTable->lookup(methodName);
-        std::cerr<<stEntry->getName()<<"\n";
+        // std::cerr<<stEntry->getName()<<"\n";
         // node->nearSymbolTable->print();
         // stEntry->print();
         if(stEntry)
@@ -1244,30 +1244,49 @@ void binary3AC(Node* node, std::string op)
         unary3AC(node, op);
         return;
     }
-
-    // std::cerr<< node->namelexeme <<" "<< node->typeForExpr <<" "<< node->children[0]->typeForExpr << " "<< node->children[1]->typeForExpr << "\n";
-    node->node_tmp = newtemp(node->typeForExpr, node->nearSymbolTable);
+    codeInsert(node, node->children[0]->code);
+    codeInsert(node, node->children[1]->code);
+    std::cerr<< node->namelexeme <<" "<< node->typeForExpr <<" "<< node->children[0]->typeForExpr << " "<< node->children[1]->typeForExpr << "\n";
     qid left = node->children[0]->node_tmp;
     qid right  = node->children[1]->node_tmp;
     bool flag = node->children[0]->typeForExpr != "";
     flag = flag && (node->children[1]->typeForExpr != "");
     flag = flag && (node->typeForExpr != "");
-    if(node->children[0]->typeForExpr != node->typeForExpr  && flag){
-        auto tempcastleft = newtemp(node->typeForExpr, node->nearSymbolTable);
-        quad castInstruction = generate(qid("CAST_"+ node->typeForExpr, NULL), node->children[0]->node_tmp, emptyQid, tempcastleft, -1);
+    int castChild = -1;
+    std::string greaterType = node->children[0]->typeForExpr;
+    if(node->children[0]->typeForExpr != node->children[1]->typeForExpr  && flag){
+        
+        if(setTypeCheckType1(node->children[0]->typeForExpr) > setTypeCheckType1(node->children[1]->typeForExpr) ){
+            greaterType = node->children[0]->typeForExpr;
+            castChild = 1;
+        }
+        else{
+            greaterType = node->children[1]->typeForExpr;
+            castChild = 0;
+        }
+        auto tempCastChild = newtemp(greaterType, node->nearSymbolTable);
+        quad castInstruction = generate(qid("CAST_"+ greaterType, NULL), node->children[castChild]->node_tmp, emptyQid, tempCastChild, -1);
         node->code.push_back(castInstruction);
-        left = tempcastleft;
+        if(castChild == 0){
+            left = tempCastChild;
+        }
+        else{
+            right = tempCastChild;
+        }
     }
-    if(node->children[1]->typeForExpr != node->typeForExpr && flag ){
-        auto tempcastright = newtemp(node->typeForExpr, node->nearSymbolTable);
-        quad castInstruction = generate(qid("CAST_" + node->typeForExpr, NULL), node->children[1]->node_tmp, emptyQid, tempcastright, -1);
+    node->node_tmp = newtemp(node->typeForExpr, node->nearSymbolTable);
+    if(greaterType != node->typeForExpr && flag ){
+        auto tempCastResult = newtemp(greaterType , node->nearSymbolTable);
+        quad instruction = generate(qid(op, NULL), left, right, tempCastResult, -1);
+        node->code.push_back(instruction);
+        quad castInstruction = generate(qid("CAST_" + node->typeForExpr, NULL), tempCastResult, emptyQid, node->node_tmp, -1);
         node->code.push_back(castInstruction);
-        right = tempcastright;
+        
     }
-    quad instruction = generate(qid(op, NULL), left, right, node->node_tmp, -1);
-    codeInsert(node, node->children[0]->code);
-    codeInsert(node, node->children[1]->code);
-    node->code.push_back(instruction);
+    else{
+        quad instruction = generate(qid(op, NULL), left, right, node->node_tmp, -1);
+        node->code.push_back(instruction);
+    }
     // print3AC(node->code);
 }
 
@@ -1415,8 +1434,8 @@ void three_AC(Node *node){
         node->code = condition->code; 
         
         node->code.push_back(ifThenQuad);
-        std::cerr<<thenNode->namelexeme<< "HURRAY \n";
-        std::cerr<<condition->namelexeme<< "HURRAY \n";
+        // std::cerr<<thenNode->namelexeme<< "HURRAY \n";
+        // std::cerr<<condition->namelexeme<< "HURRAY \n";
         // print3AC1(thenNode->code);
         codeInsert(node, thenNode->code);
         node->code.push_back(generate(qid(label, NULL), emptyQid , emptyQid, emptyQid  , -1));
@@ -1524,15 +1543,24 @@ void three_AC(Node *node){
              codeInsert(node, ForUpdate->code);
         }
         quad gotoBeginFor = generate(qid( "$goto " + beginFor, NULL), emptyQid, emptyQid, emptyQid, -1);
+        quad gotoEndFor = generate(qid( "$goto " + endFor, NULL), emptyQid, emptyQid, emptyQid, -1);
         node->code.push_back(gotoBeginFor);
         node->code.push_back(endFOR);
+        for(int ind = 0; ind < node->code.size() ; ind++){
+            if(node->code[ind].oper.first == "BREAK"){
+                node->code[ind] = gotoEndFor;
+            }
+            if(node->code[ind].oper.first == "CONTINUE"){
+                node->code[ind] = gotoBeginFor;
+            }
+        }
         // print3AC(node->code);
         // print3AC1(node->code);
 
         
     }
     else if(nodeName == "While"){
-        Node* WhileExpression ,* WhileBody;
+        Node* WhileExpression = NULL ,* WhileBody = NULL;
         for(auto child : node->children){
             if(child->namelexeme == "WhileExpression"){
                 WhileExpression  = child;
@@ -1547,6 +1575,8 @@ void three_AC(Node *node){
         std::string endWhile = "$L" + std::to_string(labelCounter);
         quad whileBegin = generate(qid(beginWhile, NULL), emptyQid, emptyQid, emptyQid, -1);
         quad whileEnd = generate(qid(endWhile, NULL), emptyQid, emptyQid, emptyQid, -1);
+        quad gotoBeginWhile = generate(qid( "$goto " + beginWhile, NULL), emptyQid, emptyQid, emptyQid, -1);
+        quad gotoEndWhile = generate(qid( "$goto " + endWhile, NULL), emptyQid, emptyQid, emptyQid, -1);
         node->code.push_back(whileBegin);
         if(WhileExpression){
             codeInsert(node, WhileExpression->code);
@@ -1556,7 +1586,17 @@ void three_AC(Node *node){
         if(WhileBody){
             codeInsert(node, WhileBody->code);
         }
+        node->code.push_back(gotoBeginWhile);
         node->code.push_back(whileEnd);
+
+        for(int ind = 0; ind < node->code.size() ; ind++){
+            if(node->code[ind].oper.first == "BREAK"){
+                node->code[ind] = gotoEndWhile;
+            }
+            if(node->code[ind].oper.first == "CONTINUE"){
+                node->code[ind] = gotoBeginWhile;
+            }
+        }
         // print3AC(node->code);
     }
     else if(nodeName == "[ ]" && node->children.size() >0){
@@ -1619,7 +1659,7 @@ void three_AC(Node *node){
         }
     }
     else if(nodeName == "MethodInvocation"){
-        Node* Arguments;
+        Node* Arguments =NULL;
         for(auto child : node->children){
             if(child->namelexeme == "Arguments"){
                 Arguments = child;
@@ -1629,22 +1669,22 @@ void three_AC(Node *node){
             Node* dot = node->children[0];
             if(dot->children[0]->namelexeme == "."){
                 if(dot->children[1]->children[0]->namelexeme == "println" && dot->children[0]->children[1]->children[0]->namelexeme == "out" && dot->children[0]->children[0]->children[0]->namelexeme == "System"){
-                    if(Arguments->children.size()!=1){
+                    if(Arguments->children.size()>1){
                         //error incorrect number of arguments in println
                         std::string s = "Incorrect number of arguments in println " + std::to_string(node->children[0]->children[1]->children[0]->lineNumber);
                         yyerror(s.c_str());
                     }
                     else{
+                        for(auto codechild : node->children){
+                            codeInsert(node, codechild->code);
+                        }
                         if(Arguments){
-                        quad I1 = generate(qid("PushParam",NULL) , Arguments->children[0]->node_tmp , emptyQid, emptyQid , -1);
+                        quad I1 = generate(qid("push",NULL) , Arguments->children[0]->node_tmp , emptyQid, emptyQid , -1);
 
                         node->code.push_back(I1);
                         }
                         quad I2 = generate(qid("CALL",NULL) , qid("println", NULL) , emptyQid, emptyQid , -1);
-                        quad I3 = generate(qid("PopParams",NULL) , emptyQid , emptyQid, emptyQid , -1);
-                        for(auto codechild : node->children){
-                            codeInsert(node, codechild->code);
-                        }
+                        quad I3 = generate(qid("pop",NULL) , emptyQid , emptyQid, emptyQid , -1);
                         node->code.push_back(I2);
                         node->code.push_back(I3);
                         // print3AC(node->code);
@@ -1663,20 +1703,33 @@ void three_AC(Node *node){
                 }
                 if(Arguments){
                     for(auto child : Arguments->children){
-                        quad I1 = generate(qid("PushParam",NULL) , child->node_tmp , emptyQid, emptyQid , -1);
+                        quad I1 = generate(qid("push",NULL) , child->node_tmp , emptyQid, emptyQid , -1);
                         node->code.push_back(I1);
                     }
                 }
-                quad I1 = generate(qid("PushParam",NULL) , dot->children[0]->node_tmp , emptyQid, emptyQid , -1);
-                node->node_tmp = newtemp(node->children[0]->typeForExpr, node->nearSymbolTable);
-                quad I2 = generate(qid("CALL",NULL) , dot->children[1]->node_tmp , emptyQid, node->node_tmp , -1);
-                quad I3 = generate(qid("PopParams",NULL) , emptyQid , emptyQid, emptyQid , -1);
-                for(auto codechild : node->children){
-                    codeInsert(node, codechild->code);
-                }
-                
+                quad I1 = generate(qid("push",NULL) , dot->children[0]->node_tmp , emptyQid, emptyQid , -1);
                 node->code.push_back(I1);
+
+                // space for return value 
+                quad returnValSpace = generate(qid("-",NULL) , qid("$sp", NULL) , qid("sizeof(type)", NULL), qid("$sp", NULL) , -1);
+                node->code.push_back(returnValSpace);
+
+                // space for return address for ret
+                quad returnAddSpace = generate(qid("-",NULL) , qid("$sp", NULL) , qid("8", NULL), qid("$sp", NULL) , -1);
+                node->code.push_back(returnAddSpace);
+
+                // calling function
+                node->node_tmp = newtemp(node->children[0]->typeForExpr, node->nearSymbolTable);
+                quad I2 = generate(qid("CALL",NULL) , dot->children[1]->node_tmp , emptyQid, emptyQid, -1);
                 node->code.push_back(I2);
+
+                // retrieving return value from frame
+                quad returnVal = generate(qid("",NULL) , qid("*($sp + 8)", NULL) , qid("", NULL), node->node_tmp , -1);
+                node->code.push_back(returnVal);
+
+
+
+                quad I3 = generate(qid("pop",NULL) , emptyQid , emptyQid, emptyQid , -1);
                 node->code.push_back(I3);
                 // print3AC1(node->code);
             }
@@ -1689,12 +1742,12 @@ void three_AC(Node *node){
             }
             if(Arguments){
                 for(auto child : Arguments->children){
-                    quad I1 = generate(qid("PushParam",NULL) , child->node_tmp , emptyQid, emptyQid , -1);
+                    quad I1 = generate(qid("push",NULL) , child->node_tmp , emptyQid, emptyQid , -1);
                     node->code.push_back(I1);
                 }
             }
             quad I2 = generate(qid("CALL",NULL) , qid(node->children[0]->children[0]->namelexeme,NULL) , emptyQid, node->node_tmp , -1);
-            quad I3 = generate(qid("PopParams",NULL) , emptyQid , emptyQid, emptyQid , -1);
+            quad I3 = generate(qid("pop",NULL) , emptyQid , emptyQid, emptyQid , -1);
             node->code.push_back(I2);
             node->code.push_back(I3);
             // print3AC(node->code);
@@ -1756,6 +1809,7 @@ void three_AC(Node *node){
             auto funclabel = quad(qid("#" +funcName , NULL) , emptyQid, emptyQid, emptyQid , -1);
             node->code.push_back(funclabel);
             // beginFunc statement
+            
             if(FormalParameterList!= NULL){
             std::cerr<<FormalParameterList->value<<"\n";
             int paramNumber = FormalParameterList->children.size();
@@ -1773,7 +1827,40 @@ void three_AC(Node *node){
                 node->code.push_back(I2);
             }
             }
+            // push current base base pointer
+            quad storeBasePointer = generate(qid("push",NULL) , qid("$bp", NULL) , emptyQid, emptyQid , -1);
+            node->code.push_back(storeBasePointer);
+
+            // move $bp to current $sp
+            quad base2stack = generate(qid("",NULL) , qid("$sp", NULL) , emptyQid, qid("$bp", NULL) , -1);
+            node->code.push_back(base2stack);
+
+            // give space for local variables which can be accessed from their offsets in stored in symbol table
+            quad localSpace = generate(qid("-",NULL) , qid("$sp", NULL) , qid("sum(size(variables))", NULL), qid("$sp", NULL) , -1);
+            node->code.push_back(localSpace);
+
+            // give space for saved registers 
+            quad registerSpace = generate(qid("-",NULL) , qid("$sp", NULL) , qid("8*num_of_callee_saved_registers", NULL), qid("$sp", NULL) , -1);
+            node->code.push_back(registerSpace);
+            
             codeInsert(node, block->code);
+
+            // popping local variables and saved registers and temporaries off the stack
+            quad stack2base = generate(qid("",NULL) , qid("$bp", NULL) , emptyQid, qid("$sp", NULL) , -1);
+            node->code.push_back(stack2base);
+
+            // restore the base pointer 
+            quad restoreBase = generate(qid("",NULL) , qid("*($sp)", NULL) , emptyQid, qid("$bp", NULL) , -1);
+            node->code.push_back(restoreBase);
+
+            // pop $bp
+
+            quad popBasePointer = generate(qid("pop",NULL) , qid("8", NULL) , emptyQid, emptyQid , -1);
+            node->code.push_back(popBasePointer);
+
+            // ret instruction
+            quad ret = generate(qid("ret",NULL) , qid("", NULL) , emptyQid, emptyQid , -1);
+            node->code.push_back(ret);
 
             // Dump 3AC code into file
             Node *classNode = node->parent->parent->parent;
@@ -1782,6 +1869,8 @@ void three_AC(Node *node){
             std::cerr << fileName << ' ' << node->code.size() << ' ' << '\n';
             print3AC1(node->code, fileName);
             node->code.clear();
+
+
         }
     else if(nodeName == "ConstructorDeclaration"){
          Node* block = NULL ,  *declarator =NULL, *FormalParameterList =NULL;
@@ -1876,6 +1965,16 @@ void three_AC(Node *node){
         node->code.push_back(castInstruction);
         node->node_tmp = tempcastleft;
     }
+    else if(nodeName == "BREAK"){
+       quad Instruction = generate(qid("BREAK", NULL), emptyQid, emptyQid, emptyQid, -1);
+        node->code.push_back(Instruction); 
+    }
+    else if(nodeName == "ContinueStatement"){
+        
+       quad Instruction = generate(qid("CONTINUE", NULL), emptyQid, emptyQid, emptyQid, -1);
+        node->code.push_back(Instruction); 
+    
+    }
 
     // else if(node->children.size() == 0 && node->parent->namelexeme == "Identifier"   && node->parent->parent->namelexeme != "MethodInvocation" && node->parent->parent->namelexeme != "UnqualifiedClassInstanceCreationExpression" && node->parent->parent->namelexeme != "LocalVariableDeclaration" && node->parent->parent->namelexeme != "MethodDeclarator" && node->parent->parent->namelexeme!= "." && node->parent->parent->namelexeme != "class"){
         
@@ -1950,7 +2049,7 @@ void typecheck(Node *node)
         if(node->children.size() < 2) return;
         Node *leftHandSide = node->children[0];
         Node *rightHandSide = node->children[1];
-        std::cerr<<nodeName <<" "<<leftHandSide->typeForExpr <<" "<<rightHandSide->typeForExpr<< "\n";
+        // std::cerr<<nodeName <<" "<<leftHandSide->typeForExpr <<" "<<rightHandSide->typeForExpr<< "\n";
         if(leftHandSide->typeForExpr=="" || rightHandSide->typeForExpr ==""){
             return;
         }
@@ -3484,7 +3583,7 @@ YieldStatement: YIELD Expression Semicolon
 
 ContinueStatement:  CONTINUE Semicolon 
                     {  
-                        $$ = createNode("ContinueStatemnet");
+                        $$ = createNode("ContinueStatement");
                         $$->add_child($1);
                         $$->add_child($2);
 

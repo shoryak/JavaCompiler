@@ -87,7 +87,7 @@ void print3AC1(std::vector<quad> code, std::string fileName){
                 }
                 else cnt++;
             }
-            // tac_file<<"     "<<" ";
+            tac_file1<<"     "<<"";
             tac_file1 << ""<<str<< codeLine.argument1.first;
             tac_file1 << "\n";
         }
@@ -97,27 +97,27 @@ void print3AC1(std::vector<quad> code, std::string fileName){
             tac_file1 << codeLine.oper.first<<" "<<codeLine.argument1.first << " " << codeLine.argument2.first;
             tac_file1 << "\n";
         }
-        else if(codeLine.oper.first == "CALL" && codeLine.argument1.first != "println"){
-            tac_file1<<"    "<<" ";
-            tac_file1 << codeLine.result.first << " = ";
-            tac_file1 << codeLine.oper.first<<" "<<codeLine.argument1.first <<" "<< codeLine.argument2.first;
-            tac_file1 << "\n";
-        }
-        else if(codeLine.oper.first == "CALL" && codeLine.argument1.first == "println"){
-            tac_file1<<"    "<<" ";
-            tac_file1 << codeLine.oper.first<<" ";
-            tac_file1 << codeLine.argument1.first << " " << codeLine.argument2.first;
-            tac_file1 << "\n";
-        }
-        else if(codeLine.oper.first == "PushParam"){
+        // else if(codeLine.oper.first == "CALL" && codeLine.argument1.first != "println"){
+        //     tac_file1<<"    "<<" ";
+        //     tac_file1 << codeLine.result.first << " = ";
+        //     tac_file1 << codeLine.oper.first<<" "<<codeLine.argument1.first <<" "<< codeLine.argument2.first;
+        //     tac_file1 << "\n";
+        // }
+        else if(codeLine.oper.first == "CALL" /*&& codeLine.argument1.first == "println"*/){
             tac_file1<<"    "<<" ";
             tac_file1 << codeLine.oper.first<<" ";
             tac_file1 << codeLine.argument1.first << " " << codeLine.argument2.first;
             tac_file1 << "\n";
         }
-        else if(codeLine.oper.first == "PopParams"){
+        else if(codeLine.oper.first == "push"){
             tac_file1<<"    "<<" ";
-            tac_file1 << codeLine.oper.first;
+            tac_file1 << codeLine.oper.first<<" ";
+            tac_file1 << codeLine.argument1.first << " " << codeLine.argument2.first;
+            tac_file1 << "\n";
+        }
+        else if(codeLine.oper.first == "pop"){
+            tac_file1<<"    "<<" ";
+            tac_file1 << codeLine.oper.first <<" "<< codeLine.argument1.first;
             tac_file1 << "\n";
         }
         else if(codeLine.oper.first[0] == '#'){
