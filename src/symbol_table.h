@@ -42,6 +42,7 @@ class SymbolTableEntry {
     // stores number and types of arguments for functions/constructor methods
     funcproto functionProto;
     std::vector<std::string> axisWidths;
+    int sizeofLocals;
 
 public:
     SymbolTableEntry(void): name{""},type{""}, size{-1}, dimension{-1}, declLine{-1}, address{0} {}
@@ -66,9 +67,20 @@ public:
     )
     : name{name}, type{type}, size{size}, dimension{dimension},
     declLine{declLine}, address{address}, functionProto{functionProto} {}
+
+    SymbolTableEntry(
+        std::string name, std::string type,
+        int32 size, int32 dimension, int32 declLine,
+        uint64 address , funcproto functionProto , int sizeofLocals
+    )
+    : name{name}, type{type}, size{size}, dimension{dimension},
+    declLine{declLine}, address{address} , axisWidths{axisWidths} ,sizeofLocals{sizeofLocals} {}
+
     std::string getName(void);
     void setType(std::string type);
-    std::string getType();
+    std::string getType(void);
+    void setSizeofLocals(int sizeofLocals);
+    int getSizeofLocals(void);
     int getDeclLine();
     funcproto getFuncProto();
     void setDimension(int32 dimension);
