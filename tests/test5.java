@@ -1,21 +1,21 @@
 //testCASE5
 public class Main {
-	String str;
+		int a;
+		String str;
 	  
-	  void Main1(String a){
-		str = a;
+	  Main(String a){
+		this.str = a;
   
 	  }  
-	  static void myStatMethod() {
-		System.out.println("Static is better or not");
-	  }
+	  
 	
 	  public void Public__Method(int x, int y) {
-		System.out.println("Public is better or not");
+		this.a = x+y;
 	  }
 	
 	  public static void main(String[] args) {
-		myStatMethod(); // Static is better
+		Main obj = new Main();
+		obj.Public__Method(10,10);
   
 		
 	  }

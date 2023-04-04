@@ -76,16 +76,26 @@ public:
     : name{name}, type{type}, size{size}, dimension{dimension},
     declLine{declLine}, offset{offset} , axisWidths{axisWidths} ,sizeofLocals{sizeofLocals} {}
 
-    std::string getName(void);
-    void setType(std::string type);
-    std::string getType(void);
-    void setSizeofLocals(int sizeofLocals);
-    int getSizeofLocals(void);
-    int getDeclLine();
-    funcproto getFuncProto();
-    void setDimension(int32 dimension);
-    int getDimension();
-    std::vector<std::string> getAxisWidths();
+    std::string getName(void) { return this->name; }
+
+    void setType(std::string type) { this->type = type; }
+    std::string getType(void) { return this->type; }
+
+    void setSize(int size) { this->size = size; }
+    int getSize(void) { return this->size; }
+    
+    void setSizeofLocals(int sizeofLocals) { this->sizeofLocals = sizeofLocals; }
+    int getSizeofLocals(void) { return this->sizeofLocals; }
+    
+    int getDeclLine(void) { return this->declLine; }
+    
+    funcproto getFuncProto(void) { return this->functionProto; }
+    
+    void setDimension(int32 dimension) { this->dimension = dimension; }
+    int getDimension(void) { return this->dimension; }
+    
+    std::vector<std::string> getAxisWidths(void) { return this->axisWidths; }
+    
     void print(void);
     void _addToCSV(std::ofstream& ofs);
 };

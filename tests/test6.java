@@ -35,15 +35,14 @@ class Iam {
   calculating total size of the local variables (done)
   All non-static methods will have a this pointer as the first param (done but static ka dekn method invo main etc)
   num*callee saved = fix  number decide karo aur daaldo (9 taken , done)
-  return, return value set (done )
+  return, return value set (done)
+  MethodDeclaration (done, chek krlena testetcase main )
+  println theek karo (not reqd now)
 
-
-
+  methodInvocation (pop total sum pop  and static)
   array access code check karna
-  methodInvocation (pop total sum pop  and static )
-  MethodDeclaration 
   constructor_declaration  (done almost, check it allomem left , add this to popparams)  
-  println theek karo 
+
   
 */
 

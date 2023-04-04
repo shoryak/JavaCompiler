@@ -556,7 +556,8 @@ void createST(Node* node)
                 }
             }
             else if(x->namelexeme == "MethodHeader")
-            {
+            {   
+                std::cerr<<"MethodHeader"<<" "<<std::string(x->children[0]->namelexeme)<<"\n";
                 if(name != "") name += " ";                
                 name += std::string(x->children[0]->namelexeme);
 
@@ -619,6 +620,7 @@ void createST(Node* node)
                                 }
                             }
                             fproto.numArgs++;
+                            std::cerr<<"This us tarcking "<<typeParam<<" "<<name<<" "<<nDimsParam<<"\n";
                             fproto.argTypes.push_back(typeParam);
                             fproto.argDims.push_back(nDimsParam);
                         }
@@ -704,6 +706,7 @@ void createST(Node* node)
         std::vector<Node*> children = node->children;
         std::string name = "";
         std::string type = "";
+        int oldfieldOffset = fieldOffset;
         std::string modifier = "private";
         int nDimsType = 0;
         int decLine =- 1;
@@ -773,7 +776,7 @@ void createST(Node* node)
                     yyerror(s.c_str());
                 }
                 std::vector<std::string> axisWidths(nDims);
-                SymbolTableEntry* stEntry = new SymbolTableEntry(name + y->children[0]->children[0]->children[0]->namelexeme, type, -1, nDims, y->children[0]->children[0]->children[0]->lineNumber, fieldOffset, axisWidths);
+                SymbolTableEntry* stEntry = new SymbolTableEntry(name + y->children[0]->children[0]->children[0]->namelexeme, type, -1, nDims, y->children[0]->children[0]->children[0]->lineNumber, oldfieldOffset, axisWidths);
                 std::string fieldData;
                 field fieldStructData; 
                 fieldData += y->children[0]->children[0]->children[0]->namelexeme;
@@ -781,7 +784,7 @@ void createST(Node* node)
                 fieldStructData.type = type;
                 fieldStructData.numDims = nDims;
                 fieldStructData.modifier = modifier;
-                fieldStructData.offset = fieldOffset;
+                fieldStructData.offset = oldfieldOffset;
                 fieldsForClass[currentClass].insert(fieldData);
                 classFieldData[currentClass +"_" + fieldData] = fieldStructData;
                 std::cerr << "Inserting: " << currentClass + "_" + fieldData << '\n';
@@ -815,7 +818,7 @@ void createST(Node* node)
                 fieldStructData.type = type;
                 fieldStructData.numDims = nDims;
                 fieldStructData.modifier = modifier;
-                fieldStructData.offset = fieldOffset;
+                fieldStructData.offset = oldfieldOffset;
                 fieldsForClass[currentClass].insert(fieldData);
                 classFieldData[currentClass +"_" + fieldData] = fieldStructData;
                 std::cerr << "Inserting: " << currentClass + "_" + fieldData << '\n';
@@ -1002,9 +1005,7 @@ void createST(Node* node)
                             fproto.argTypes.push_back(typeParam);
                             fproto.argDims.push_back(nDimsParam);
                 }
-                
             }
-
         }
         }
       while(name.size() && name.back()==' '){
@@ -1101,7 +1102,13 @@ void createST(Node* node)
         node->position = node->children[0]->position;
      
     }
-    if(nodeName == "class") methodTypeCheck(node);
+    if(nodeName == "class") {
+        methodTypeCheck(node);
+        assert((int)node->children.size() >= 2);
+        std::string className = node->children[(int)node->children.size() - 2]->namelexeme;
+        auto classEntry = currSymTable->lookup(className);
+        classEntry->setSize(fieldOffset); // fieldOffset is now the total class size
+    }
     
     else if(nodeName == "=") {
 
@@ -1709,15 +1716,14 @@ void three_AC(Node *node){
             
         }
     }
-    else if(nodeName == "MethodInvocation"){
-        Node* Arguments =NULL;
-        for(auto child : node->children){
-            if(child->namelexeme == "Arguments"){
+    else if(nodeName == "MethodInvocation")
+    {
+        Node* Arguments = nullptr;
+        for(auto child: node->children)
+        {
+            if(child->namelexeme == "Arguments")
                 Arguments = child;
-            }
         }
-        
-
 
         // std::string nameStr = "";
         // Node* par
@@ -1738,169 +1744,268 @@ void three_AC(Node *node){
         //     }
         // }
 
-        // case added for constructor invocation
-        if(node->parent->namelexeme == "UnqualifiedClassInstanceCreationExpression"){
-            for(auto codechild : node->children){
-                    codeInsert(node, codechild->code);
-                }
+        // Constructor Invocation
+        if(node->parent->namelexeme == "UnqualifiedClassInstanceCreationExpression"){            
+            for(auto codechild : node->children)
+            {
+                codeInsert(node, codechild->code);
+            }
                 
-                // name of the class for which we are calling the constructor
+            // name of the class for which we are calling the constructor
             std::string className = node->parent->parent->parent->parent->children[0]->namelexeme;
-            auto objSize = newtemp( "size", node->nearSymbolTable);
+
+            // temporary for object created
+            auto objTemp = newtemp("size", node->nearSymbolTable);
             
             // allocmem for object 
-            quad assignSize = generate(emptyQid , qid("sizeof(Obj)",NULL) , emptyQid, objSize , -1);
-            node->code.push_back(assignSize);
-            quad allocMem = generate(emptyQid , qid("allocmem" , NULL) , objSize, objSize , -1);
+            auto classEntry = globalSymTable->lookup(className);
+            int objSize = classEntry->getSize();
+            
+            quad allocMem = generate(emptyQid, qid("allocmem", NULL), qid(std::to_string(objSize), NULL), objTemp, -1);
             node->code.push_back(allocMem);
 
-            if(Arguments){
-                    for(auto child : Arguments->children){
-                        quad I1 = generate(qid("push",NULL) , child->node_tmp , emptyQid, emptyQid , -1);
-                        node->code.push_back(I1);
-                    }
-                }
+            // get function type signature
+            auto consEntry = methodSymbolTable[className + "." + className]->lookup(className);
+            assert(consEntry);
+            auto functionPrototype = consEntry->getFuncProto();
 
-            quad I1 = generate(qid("push",NULL) , objSize , emptyQid, emptyQid , -1);
+            int totalPopSize = 0;
+
+            quad I1 = generate(qid("push", NULL), objTemp, emptyQid, emptyQid, -1);
             node->code.push_back(I1);
+            totalPopSize += 8;
+
+            if(Arguments)
+            {
+                assert(functionPrototype.argTypes.size() == Arguments->children.size());
+                assert(functionPrototype.argDims.size() == Arguments->children.size());
+                int argNum = 0;
+                for(auto child: Arguments->children)
+                {
+                    quad I1 = generate(qid("push", NULL), child->node_tmp, emptyQid, emptyQid, -1);
+                    node->code.push_back(I1);
+
+                    std::string argType = functionPrototype.argTypes[argNum];
+                    int argDim = functionPrototype.argDims[argNum];
+                    
+                    totalPopSize += (argDim > 0 ? 8: setOffset(argType));
+
+                    argNum++;
+                }
+            }
 
             // no space for return value for constructor
             
             // space for return address for ret
-            quad returnAddSpace = generate(qid("-",NULL) , qid("$sp", NULL) , qid("8", NULL), qid("$sp", NULL) , -1);
+            quad returnAddSpace = generate(qid("-", NULL), qid("$sp", NULL), qid("8", NULL), qid("$sp", NULL) , -1);
             node->code.push_back(returnAddSpace);
+            totalPopSize += 8;
 
-
-            quad I2 = generate(qid("CALL",NULL) , qid(node->children[0]->children[0]->namelexeme,NULL) , emptyQid, node->node_tmp , -1);
-            quad I3 = generate(qid("pop",NULL) , emptyQid , emptyQid, emptyQid , -1);
-
+            quad I2 = generate(qid("CALL", NULL), qid(node->children[0]->children[0]->namelexeme, NULL), emptyQid, node->node_tmp, -1);
             node->code.push_back(I2);
 
             // no retrieving return value from frame
-            // quad returnVal = generate(qid("",NULL) , qid("*($sp + 8)", NULL) , qid("", NULL), node->node_tmp , -1);
-            // node->code.push_back(returnVal);
 
+            quad I3 = generate(qid("pop", NULL), qid(std::to_string(totalPopSize), NULL), emptyQid, emptyQid, -1);
             node->code.push_back(I3);
-            node->node_tmp = objSize;
-            // print3AC(node->code);
+
+            node->node_tmp = objTemp;
         }
 
-        else if(node->children[0]->namelexeme == "."){
+        else if(node->children[0]->namelexeme == ".")
+        {
             Node* dot = node->children[0];
-            if(dot->children[0]->namelexeme == "."){
-                if(dot->children[1]->children[0]->namelexeme == "println" && dot->children[0]->children[1]->children[0]->namelexeme == "out" && dot->children[0]->children[0]->children[0]->namelexeme == "System"){
-                    if(Arguments->children.size()>1){
+            if(dot->children[0]->namelexeme == ".")
+            {
+                if(dot->children[1]->children[0]->namelexeme == "println" && dot->children[0]->children[1]->children[0]->namelexeme == "out" && dot->children[0]->children[0]->children[0]->namelexeme == "System")
+                {
+                    // handle System.out.println
+
+                    int totalPopSize = 0;
+
+                    if(Arguments->children.size() > 1)
+                    {
                         //error incorrect number of arguments in println
                         std::string s = "Incorrect number of arguments in println " + std::to_string(node->children[0]->children[1]->children[0]->lineNumber);
                         yyerror(s.c_str());
                     }
-                    else{
-                        for(auto codechild : node->children){
+                    else
+                    {
+                        for(auto codechild : node->children)
                             codeInsert(node, codechild->code);
-                        }
-                        if(Arguments){
-                        // Arguments->children[0]->node_tmp = newtemp("")
-                        quad I1 = generate(qid("push",NULL) , Arguments->children[0]->node_tmp , emptyQid, emptyQid , -1);
 
-                        node->code.push_back(I1);
+                        if(Arguments)
+                        {
+                            auto argumentNode = Arguments->children[0];
+                            quad I1 = generate(qid("push", NULL) , argumentNode->node_tmp, emptyQid, emptyQid, -1);
+                            node->code.push_back(I1);
+                            totalPopSize += 8;
                         }
-                        
-                        quad I2 = generate(qid("CALL",NULL) , qid("println", NULL) , emptyQid, emptyQid , -1);
-                        quad I3 = generate(qid("pop",NULL) , emptyQid , emptyQid, emptyQid , -1);
+
+                        quad I2 = generate(qid("CALL", NULL), qid("println", NULL), emptyQid, emptyQid, -1);
                         node->code.push_back(I2);
+
+                        quad I3 = generate(qid("pop", NULL), qid(std::to_string(totalPopSize), NULL), emptyQid, emptyQid, -1);
                         node->code.push_back(I3);
-                        // print3AC(node->code);
                     }
                 }
-                else{
+                else
+                {
                     // error chain of invocations 
                     std::string s = "Chain of calls in line number " + std::to_string(node->children[0]->children[1]->children[0]->lineNumber);
                     yyerror(s.c_str());
                 }
             }
-            else{
-               
-                for(auto codechild : node->children){
+            else
+            {
+                // handle obj.funcName()
+
+                for(auto codechild: node->children)
                     codeInsert(node, codechild->code);
+                
+                std::string objName = dot->children[0]->children[0]->namelexeme;
+                std::string funcName = dot->children[1]->children[0]->namelexeme;
+                std::string objClassName;
+                if(objName == "this")
+                {
+                    auto classNode = node;
+                    while(classNode->namelexeme != "class") classNode = classNode->parent;
+                    int classNameID=0;
+                    if(classNode->children[0]->namelexeme == "ModifierList") classNameID=1;
+                    objClassName = classNode->children[classNameID]->namelexeme;
                 }
-                if(Arguments){
-                    for(auto child : Arguments->children){
-                        quad I1 = generate(qid("push",NULL) , child->node_tmp , emptyQid, emptyQid , -1);
+                else
+                {
+                    auto objEntry = node->nearSymbolTable->lookup(objName);
+                    assert(objEntry);
+                    objClassName = objEntry->getType();
+                }
+                auto funcEntry = methodSymbolTable[objClassName + "." + funcName]->lookup(funcName);
+                assert(funcEntry);
+                auto functionPrototype = funcEntry->getFuncProto();
+                
+                int totalPopSize = 0;
+
+                quad I1 = generate(qid("push", NULL), dot->children[0]->node_tmp, emptyQid, emptyQid, -1);
+                node->code.push_back(I1);
+                totalPopSize += 8;
+ 
+                if(Arguments)
+                {
+                    std::cerr<<functionPrototype.argTypes.size()<<" "<<Arguments->children.size()<<"\n";
+                    assert(functionPrototype.argTypes.size() == Arguments->children.size());
+                    assert(functionPrototype.argDims.size() == Arguments->children.size());
+                    int argNum = 0;
+                    for(auto child: Arguments->children)
+                    {
+                        quad I1 = generate(qid("push", NULL), child->node_tmp, emptyQid, emptyQid, -1);
                         node->code.push_back(I1);
+
+                        std::string argType = functionPrototype.argTypes[argNum];
+                        int argDim = functionPrototype.argDims[argNum];
+
+                        totalPopSize += (argDim > 0 ? 8: setOffset(argType));
+
+                        argNum++;
                     }
                 }
-                quad I1 = generate(qid("push",NULL) , dot->children[0]->node_tmp , emptyQid, emptyQid , -1);
-                node->code.push_back(I1);
+
+                int returnValSize = (functionPrototype.returnDim > 0 ? 8: setOffset(functionPrototype.returnType));
 
                 // space for return value 
-                quad returnValSpace = generate(qid("-",NULL) , qid("$sp", NULL) , qid("sizeofRV", NULL), qid("$sp", NULL) , -1);
+                quad returnValSpace = generate(qid("-",NULL) , qid("$sp", NULL) , qid(std::to_string(returnValSize), NULL), qid("$sp", NULL) , -1);
                 node->code.push_back(returnValSpace);
+                totalPopSize += returnValSize;
 
                 // space for return address for ret
                 quad returnAddSpace = generate(qid("-",NULL) , qid("$sp", NULL) , qid("8", NULL), qid("$sp", NULL) , -1);
                 node->code.push_back(returnAddSpace);
+                totalPopSize += 8;
 
                 // calling function
                 node->node_tmp = newtemp(node->children[0]->typeForExpr, node->nearSymbolTable);
-                quad I2 = generate(qid("CALL",NULL) , dot->children[1]->node_tmp , emptyQid, emptyQid, -1);
+                quad I2 = generate(qid("CALL", NULL), dot->children[1]->node_tmp, emptyQid, emptyQid, -1);
                 node->code.push_back(I2);
 
                 // retrieving return value from frame
-                quad returnVal = generate(qid("",NULL) , qid("*($sp + 8)", NULL) , qid("", NULL), node->node_tmp , -1);
+                quad returnVal = generate(qid("", NULL), qid("*($sp + 8)", NULL), qid("", NULL), node->node_tmp, -1);
                 node->code.push_back(returnVal);
 
-
-
-                quad I3 = generate(qid("pop",NULL) , emptyQid , emptyQid, emptyQid , -1);
+                // pop everything to restore stack after function call
+                quad I3 = generate(qid("pop", NULL), qid(std::to_string(totalPopSize), NULL), emptyQid, emptyQid, -1);
                 node->code.push_back(I3);
-                // print3AC1(node->code);
             }
         }
-        else{
-            
-            node->node_tmp = newtemp("returnValue" , node->nearSymbolTable);
-            for(auto codechild : node->children){
+
+        else
+        {
+            int totalPopSize = 0;
+
+            node->node_tmp = newtemp("returnValue", node->nearSymbolTable);
+            for(auto codechild: node->children)
                 codeInsert(node, codechild->code);
-            }
-            if(Arguments){
-                for(auto child : Arguments->children){
-                    quad I1 = generate(qid("push",NULL) , child->node_tmp , emptyQid, emptyQid , -1);
+            
+            std::string funcName = node->children[0]->children[0]->namelexeme;
+            auto classNode = node;
+            while(classNode->namelexeme != "class") classNode = classNode->parent;
+            int classNameID=0;
+            if(classNode->children[0]->namelexeme == "ModifierList") classNameID=1;
+            std::string className = classNode->children[classNameID]->namelexeme;
+            auto funcEntry = methodSymbolTable[className + "." + funcName]->lookup(funcName);
+            assert(funcEntry);
+            auto functionPrototype = funcEntry->getFuncProto();
+
+            quad I1 = generate(qid("push", NULL), qid("this", NULL), emptyQid, emptyQid, -1);
+            node->code.push_back(I1);
+            totalPopSize += 8;
+
+            if(Arguments)
+            {
+                assert(functionPrototype.argTypes.size() == Arguments->children.size());
+                assert(functionPrototype.argDims.size() == Arguments->children.size());
+                int argNum = 0;
+                for(auto child: Arguments->children)
+                {
+                    quad I1 = generate(qid("push", NULL), child->node_tmp, emptyQid, emptyQid, -1);
                     node->code.push_back(I1);
+
+                    std::string argType = functionPrototype.argTypes[argNum];
+                    int argDim = functionPrototype.argDims[argNum];
+
+                    totalPopSize += (argDim > 0 ? 8: setOffset(argType));
+
+                    argNum++; 
                 }
             }
-            
-            
-            quad I1 = generate(qid("push",NULL) , qid("this",NULL) , emptyQid, emptyQid , -1);
-            node->code.push_back(I1);
+
+            int returnValSize = (functionPrototype.returnDim > 0 ? 8: setOffset(functionPrototype.returnType));
 
             // space for return value 
-            quad returnValSpace = generate(qid("-",NULL) , qid("$sp", NULL) , qid("sizeofRV", NULL), qid("$sp", NULL) , -1);
+            quad returnValSpace = generate(qid("-", NULL), qid("$sp", NULL), qid(std::to_string(returnValSize), NULL), qid("$sp", NULL), -1);
             node->code.push_back(returnValSpace);
+            totalPopSize += returnValSize;
 
             // space for return address for ret
-            quad returnAddSpace = generate(qid("-",NULL) , qid("$sp", NULL) , qid("8", NULL), qid("$sp", NULL) , -1);
+            quad returnAddSpace = generate(qid("-", NULL), qid("$sp", NULL), qid("8", NULL), qid("$sp", NULL) , -1);
             node->code.push_back(returnAddSpace);
+            totalPopSize += 8;
 
-
-            quad I2 = generate(qid("CALL",NULL) , qid(node->children[0]->children[0]->namelexeme,NULL) , emptyQid, node->node_tmp , -1);
-            quad I3 = generate(qid("pop",NULL) , emptyQid , emptyQid, emptyQid , -1);
-
-
+            quad I2 = generate(qid("CALL", NULL), qid(node->children[0]->children[0]->namelexeme, NULL), emptyQid, node->node_tmp, -1);
             node->code.push_back(I2);
 
             // retrieving return value from frame
-            quad returnVal = generate(qid("",NULL) , qid("*($sp + 8)", NULL) , qid("", NULL), node->node_tmp , -1);
+            quad returnVal = generate(qid("", NULL), qid("*($sp + 8)", NULL), qid("", NULL), node->node_tmp, -1);
             node->code.push_back(returnVal);
 
+            // pop everything to restore stack after function call
+            quad I3 = generate(qid("pop", NULL), qid(std::to_string(totalPopSize), NULL), emptyQid, emptyQid, -1);
             node->code.push_back(I3);
-            // print3AC(node->code);
-
-
-            
         }
-
     }
-    else if(nodeName == "." && node->parent->namelexeme != "MethodInvocation" && node->parent->namelexeme != "." ){
+
+    else if(nodeName == "." && node->parent->namelexeme != "MethodInvocation" && node->parent->namelexeme != "." )
+    {
+        // handle field access
         if(node->children[0]->namelexeme != "."){
             Node* leftleaf = node;
             Node* fieldNameNode = node->children[1];
@@ -1911,8 +2016,8 @@ void three_AC(Node *node){
                 fieldNameNode = fieldNameNode->children[0];
             }
             std::string objname = leftleaf->namelexeme;
-            node->node_tmp = newtemp("dot",node->nearSymbolTable);
-            quad I1 = generate(qid("",NULL) , qid(objname  ,NULL) , emptyQid ,node->node_tmp,-1 );
+            node->node_tmp = newtemp("dot", node->nearSymbolTable);
+            quad I1 = generate(qid("", NULL), qid(objname, NULL), emptyQid,node->node_tmp, -1);
             string temp = "";
             for(auto ch : node->node_tmp.first){
                 if(ch!='*'){
@@ -1925,7 +2030,9 @@ void three_AC(Node *node){
             {
                 auto classNode = node;
                 while(classNode->namelexeme != "class") classNode = classNode->parent;
-                objClassName = classNode->children[0]->namelexeme;
+                int classNameID=0;
+                if(classNode->children[0]->namelexeme == "ModifierList") classNameID=1;
+                objClassName = classNode->children[classNameID]->namelexeme;
             }
             else
             {
@@ -1945,7 +2052,6 @@ void three_AC(Node *node){
         }
     }
     else if(nodeName == "MethodDeclaration" || nodeName == "ConstructorDeclaration"){
-    // else if(nodeName == "MethodDeclaration"){
         Node* header = nullptr, *block = nullptr,  *declarator = nullptr, *FormalParameterList = nullptr;
         for(auto child: node->children)
         {
