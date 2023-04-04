@@ -1433,7 +1433,7 @@ void three_AC(Node *node){
         codeInsert(node, node->children[1]->code);
         node->node_tmp = newtemp(node->children[0]->typeForExpr, node->nearSymbolTable);
         
-        if(node->children[0]->typeForExpr !=node->children[1]->typeForExpr && node->children[0]->typeForExpr != "" ){
+        if(node->children[0]->typeForExpr !=node->children[1]->typeForExpr && node->children[0]->typeForExpr != "" && node->children[1]->namelexeme != "UnqualifiedClassInstanceCreationExpression" ){
             auto tempcastright = newtemp(node->children[0]->typeForExpr, node->nearSymbolTable);
             quad castInstruction = generate(qid("CAST_" + node->children[0]->typeForExpr, NULL), node->children[1]->node_tmp, emptyQid, tempcastright, -1);
             node->code.push_back(castInstruction);
@@ -1738,9 +1738,54 @@ void three_AC(Node *node){
         //     }
         // }
 
+        // case added for constructor invocation
+        if(node->parent->namelexeme == "UnqualifiedClassInstanceCreationExpression"){
+            for(auto codechild : node->children){
+                    codeInsert(node, codechild->code);
+                }
+                
+                // name of the class for which we are calling the constructor
+            std::string className = node->parent->parent->parent->parent->children[0]->namelexeme;
+            auto objSize = newtemp( "size", node->nearSymbolTable);
+            
+            // allocmem for object 
+            quad assignSize = generate(emptyQid , qid("sizeof(Obj)",NULL) , emptyQid, objSize , -1);
+            node->code.push_back(assignSize);
+            quad allocMem = generate(emptyQid , qid("allocmem" , NULL) , objSize, objSize , -1);
+            node->code.push_back(allocMem);
+
+            if(Arguments){
+                    for(auto child : Arguments->children){
+                        quad I1 = generate(qid("push",NULL) , child->node_tmp , emptyQid, emptyQid , -1);
+                        node->code.push_back(I1);
+                    }
+                }
+
+            quad I1 = generate(qid("push",NULL) , objSize , emptyQid, emptyQid , -1);
+            node->code.push_back(I1);
+
+            // no space for return value for constructor
+            
+            // space for return address for ret
+            quad returnAddSpace = generate(qid("-",NULL) , qid("$sp", NULL) , qid("8", NULL), qid("$sp", NULL) , -1);
+            node->code.push_back(returnAddSpace);
 
 
-        if(node->children[0]->namelexeme == "."){
+            quad I2 = generate(qid("CALL",NULL) , qid(node->children[0]->children[0]->namelexeme,NULL) , emptyQid, node->node_tmp , -1);
+            quad I3 = generate(qid("pop",NULL) , emptyQid , emptyQid, emptyQid , -1);
+
+            node->code.push_back(I2);
+
+            // no retrieving return value from frame
+            // quad returnVal = generate(qid("",NULL) , qid("*($sp + 8)", NULL) , qid("", NULL), node->node_tmp , -1);
+            // node->code.push_back(returnVal);
+
+            node->code.push_back(I3);
+            node->node_tmp = objSize;
+            // print3AC(node->code);
+        }
+
+        else if(node->children[0]->namelexeme == "."){
             Node* dot = node->children[0];
             if(dot->children[0]->namelexeme == "."){
                 if(dot->children[1]->children[0]->namelexeme == "println" && dot->children[0]->children[1]->children[0]->namelexeme == "out" && dot->children[0]->children[0]->children[0]->namelexeme == "System"){
