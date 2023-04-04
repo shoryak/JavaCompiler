@@ -1440,6 +1440,9 @@ void three_AC(Node *node){
             node->children[1]->node_tmp= tempcastright;
         }
         quad tempassign = generate(emptyQid, node->children[1]->node_tmp, emptyQid, node->node_tmp, -1);
+        if(node->children[0]->namelexeme == "."){
+            node->children[0]->node_tmp.first = "*" + node->children[0]->node_tmp.first;
+        }
         quad exp = generate(emptyQid, node->node_tmp, emptyQid, node->children[0]->node_tmp, -1);        
         node->code.push_back(tempassign);
         node->code.push_back(exp);
@@ -1863,7 +1866,7 @@ void three_AC(Node *node){
                 fieldNameNode = fieldNameNode->children[0];
             }
             std::string objname = leftleaf->namelexeme;
-            node->node_tmp = newtempstar("dot",node->nearSymbolTable);
+            node->node_tmp = newtemp("dot",node->nearSymbolTable);
             quad I1 = generate(qid("",NULL) , qid(objname  ,NULL) , emptyQid ,node->node_tmp,-1 );
             string temp = "";
             for(auto ch : node->node_tmp.first){
