@@ -17,7 +17,9 @@ class Iam {
       float b = 7;
       double c = 9.0;
       // create object
-      Iam itis = new Iam();
+   
+
+     Iam itis = new Iam();
       int arr[] = new int[5];
       int x = 90;
       boolean p = a < x;
@@ -29,17 +31,19 @@ class Iam {
   }
 
 /*
- arguments pop in the callee management  (done)
- calculating total size of the local variables ()
- array access code check karna
- whether this* passed or not in call ( static vs non static)
- println theek karo
- return , return value set 
- constructor
- pop total sum pop 
- num*callee saved = fix  number decide karo aur daaldo 
- 
- */
+  arguments pop in the callee management  (done)
+  calculating total size of the local variables (done)
+  All non-static methods will have a this pointer as the first param (done but static ka dekn method invo main etc)
+  num*callee saved = fix  number decide karo aur daaldo (9 taken , done)
+  return, return value set (done )
 
 
+
+  array access code check karna
+  methodInvocation (pop total sum pop  and static )
+  MethodDeclaration 
+  constructor_declaration  (done almost, check it allomem left , add this to popparams)  
+  println theek karo 
+  
+*/
 

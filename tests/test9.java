@@ -1,11 +1,12 @@
 class checkthis
 {
-	int a;
+	long a;
 	int b;
 	
 	checkthis(int a)
 	{
 		this.a = a;
+		this.b = 5;
 	
 	}
     // above is paramaterised const and this keyword
@@ -21,10 +22,24 @@ class checkthis
       
       System.out.println("ternary");
 	}
-
-	public static void main(String[] args)
+	
+	int func(int a, int b)
 	{
-		checkthis object = new checkthis(100);
-		object.diskfn();
+	    // checkthis c = new checkthis(200);
+		checkthis c;
+	    diskfn();
+	    c.diskfn();
+		return 10;
 	}
+}
+
+class Main
+{
+    public static void main()
+    {
+		checkthis object = new checkthis(100);
+		// checkthis object;
+		object.func();
+
+    }
 }

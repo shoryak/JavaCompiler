@@ -100,7 +100,7 @@ void SymbolTableEntry::print()
     std::cerr << "Size: " << size << " Dim: " << dimension;
     std::cerr << " LoDecl: " << declLine << '\n';
     // std::cerr << std::hex;
-    std::cerr << "Address: " << address << '\n';
+    std::cerr << "Offset: " << offset << '\n';
     std::cerr << "localOffset: " << sizeofLocals << '\n';
     std::cerr << std::dec;
   
