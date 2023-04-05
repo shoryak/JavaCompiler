@@ -21,8 +21,10 @@ struct funcproto{
     std::string returnType;
     int returnSize, returnDim;
 
-    funcproto(){
-        numArgs=0;
+    funcproto()
+    {
+        numArgs = 0;
+        returnDim = 0;
     }
 };
 
@@ -74,7 +76,7 @@ public:
         int32 offset , funcproto functionProto , int sizeofLocals
     )
     : name{name}, type{type}, size{size}, dimension{dimension},
-    declLine{declLine}, offset{offset} , axisWidths{axisWidths} ,sizeofLocals{sizeofLocals} {}
+    declLine{declLine}, offset{offset} , axisWidths{axisWidths} , functionProto{functionProto},sizeofLocals{sizeofLocals} {}
 
     std::string getName(void) { return this->name; }
 

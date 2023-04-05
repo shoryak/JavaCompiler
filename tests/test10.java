@@ -5,8 +5,12 @@ class method1 {
     }
    
     public static void main(String[] args) {
-     
-        Fifa(10,3);
+        Fifa(10,3);  
         
+    }
+    int functiontest(int x, int y){
+        int a = 1 ;
+        float c = 10;
+        Fifa(a,c);
     }
 }

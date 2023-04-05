@@ -14,9 +14,9 @@ public class Main {
 	  }
 	
 	  public static void main(String[] args) {
-		Main obj = new Main();
-		obj.Public__Method(10,10);
-  
+		String init = "Testcase";
+		Main obj = new Main(init);
+		obj.Public__Method(10,10);  
 		
 	  }
   

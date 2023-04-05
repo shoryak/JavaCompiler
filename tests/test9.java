@@ -18,14 +18,11 @@ class checkthis
       int z = 3;
       float a = 2;
   
-    //   double largest = (x > y) ? ((z > z) ? y : y) : ((x <= a) ? a : x);
-      
       System.out.println("ternary");
 	}
 	
 	int func(int a, int b)
 	{
-	    // checkthis c = new checkthis(200);
 		checkthis c;
 	    diskfn();
 	    c.diskfn();
@@ -38,8 +35,7 @@ class Main
     public static void main()
     {
 		checkthis object = new checkthis(100);
-		// checkthis object;
-		object.func();
+		object.func(1 , 5);
 
     }
 }

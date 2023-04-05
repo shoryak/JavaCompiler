@@ -1,6 +1,6 @@
 /* Testcase 3 */ 
 // testcase 3
-class Main {
+class testcase3 {
 	int a;
 	char b;
 

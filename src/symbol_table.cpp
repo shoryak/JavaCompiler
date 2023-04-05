@@ -29,7 +29,7 @@ void SymbolTableEntry::print()
     std::cerr << "localOffset: " << sizeofLocals << '\n';
     std::cerr << std::dec;
   
-    if(type == "$func"){
+    // if(type == "$func"){
         std::cerr << "Number of Arguments "<< functionProto.numArgs<< '\n';
         std::cerr << "Types of Arguments \n";
         int pos = 1;
@@ -37,7 +37,8 @@ void SymbolTableEntry::print()
             std::cerr<< "Type "<<pos <<"   "<< tp<< '\n';
             pos++;
         }
-    }
+         std::cerr << "ReturnDim "<<functionProto.returnDim<<"\n";
+    // }
     if(dimension > 0){
         for(auto dim : axisWidths){
             std::cerr<< dim<<" ";

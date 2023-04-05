@@ -423,10 +423,14 @@ void methodTypeCheck(Node* node)
             }
         }
         std::cerr<<methodName<<" Methodname\n";
-        SymbolTableEntry* stEntry = node->nearSymbolTable->lookup(methodName);
+        SymbolTable* ST = node->nearSymbolTable;
+        
+        SymbolTableEntry* stEntry = ST->lookup(methodName);
+        
+       
         // std::cerr<<stEntry->getName()<<"\n";
         // node->nearSymbolTable->print();
-        // stEntry->print();
+        stEntry->print();
         if(stEntry)
         {
             
@@ -437,22 +441,22 @@ void methodTypeCheck(Node* node)
             if(nArgs !=  fp.numArgs)
             {
                 std::cerr<<nArgs<<" "<<fp.numArgs<<"\n"; 
-            //    std::string err = "Incorrect number of Arguments in" + methodName +" Invoked on line " + std::to_string(node->lineNumber);
+            //    std::string err = "Incorrect number of Arguments in " + methodName +" Invoked on line " + std::to_string(node->lineNumber);
             //     yyerror(err.c_str()); 
             }
             else
             {
                 int indArg=0;
                 std::vector<std::string > types;
-                // for(int i=0;i<args.size(); i++){
-                //     auto argEntry = node->nearSymbolTable->lookup(args[i]);
-                //     if(argEntry == nullptr){
-                //         // error
-                //     }
-                //     else{
-                //         types.push_back(argEntry->getType());
-                //     }
-                // }
+                for(int i=0;i<args.size(); i++){
+                    auto argEntry = node->nearSymbolTable->lookup(args[i]);
+                    if(argEntry == nullptr){
+                        // error
+                    }
+                    else{
+                        types.push_back(argEntry->getType());
+                    }
+                }
                 for(int i =0; i<args.size();i++){
                     
                     if(setTypeCheckType1( args[i] ) > setTypeCheckType1 (fp.argTypes[i])){
@@ -467,7 +471,7 @@ void methodTypeCheck(Node* node)
             std::string err = "Undeclared function " + methodName +" Invoked on line " + std::to_string(node->lineNumber);
             yyerror(err.c_str());
         }
-        std::cerr<<methodName<<" "<<node->typeForExpr<<"\n";
+        // std::cerr<<methodName<<" "<<node->typeForExpr<<"\n";
         }
     }
     
@@ -544,6 +548,7 @@ void createST(Node* node)
         std::vector<Node*> children = node->children;
         std::string name = "";        //modifiers_returntype_functionname
         struct funcproto fproto;
+        fproto.returnDim = 0;
         std::string type;
         for(auto x: children)
         {
@@ -620,10 +625,14 @@ void createST(Node* node)
                                 }
                             }
                             fproto.numArgs++;
-                            std::cerr<<"This us tarcking "<<typeParam<<" "<<name<<" "<<nDimsParam<<"\n";
+                            std::cerr<<"This us tarcking "<<typeParam<<" "<<name<<" "<<nDimsParam<<" " <<fproto.argTypes.size() <<"\n";
                             fproto.argTypes.push_back(typeParam);
                             fproto.argDims.push_back(nDimsParam);
                         }
+                    }
+                    if(y->namelexeme == "UnannArrayType"){
+                        fproto.returnDim = y->children[1]->children.size();
+        
                     }
                 }
             }
@@ -637,7 +646,7 @@ void createST(Node* node)
               
             // error;
         }
-        std::cerr<<"sizeofLocals "<<name<<" "<<localOffset<<"\n";
+        std::cerr<<"sizeofLocals "<<name<<" "<<localOffset<<" "<< fproto.argTypes.size()<<"\n";
         SymbolTableEntry* stEntry = new SymbolTableEntry(name, fproto.returnType, -1, -1, decLine, 0, fproto , localOffset);
         node->lineNumber = decLine;
         currSymTable->insert(stEntry);
@@ -1229,6 +1238,7 @@ void createST(Node* node)
                     {
                         funcName = methodHeaderChildNode->children[0]->children[0]->namelexeme;
                     }
+                    
                 }
         }
         auto funcEntry = currSymTable->lookup(funcName);
@@ -1725,25 +1735,6 @@ void three_AC(Node *node){
                 Arguments = child;
         }
 
-        // std::string nameStr = "";
-        // Node* par
-        // int isStatic = 0;
-        // std::string tempStr="";
-        // for(int i=0; i < nameStr.size(); i++)
-        // {
-        //     if(nameStr[i] != ' ')
-        //     {
-        //         tempStr.push_back(nameStr[i]);
-        //     }
-        //     else{
-        //         if(tempStr=="static"){
-        //             isStatic = 1;
-        //             break;
-        //         }
-        //         tempStr="";
-        //     }
-        // }
-
         // Constructor Invocation
         if(node->parent->namelexeme == "UnqualifiedClassInstanceCreationExpression"){            
             for(auto codechild : node->children)
@@ -1771,10 +1762,6 @@ void three_AC(Node *node){
 
             int totalPopSize = 0;
 
-            quad I1 = generate(qid("push", NULL), objTemp, emptyQid, emptyQid, -1);
-            node->code.push_back(I1);
-            totalPopSize += 8;
-
             if(Arguments)
             {
                 assert(functionPrototype.argTypes.size() == Arguments->children.size());
@@ -1793,6 +1780,11 @@ void three_AC(Node *node){
                     argNum++;
                 }
             }
+
+            // Constructor is never static
+            quad I1 = generate(qid("push", NULL), objTemp, emptyQid, emptyQid, -1);
+            node->code.push_back(I1);
+            totalPopSize += 8;
 
             // no space for return value for constructor
             
@@ -1883,13 +1875,9 @@ void three_AC(Node *node){
                 auto funcEntry = methodSymbolTable[objClassName + "." + funcName]->lookup(funcName);
                 assert(funcEntry);
                 auto functionPrototype = funcEntry->getFuncProto();
-                
-                int totalPopSize = 0;
 
-                quad I1 = generate(qid("push", NULL), dot->children[0]->node_tmp, emptyQid, emptyQid, -1);
-                node->code.push_back(I1);
-                totalPopSize += 8;
- 
+                int totalPopSize = 0;                
+
                 if(Arguments)
                 {
                     std::cerr<<functionPrototype.argTypes.size()<<" "<<Arguments->children.size()<<"\n";
@@ -1910,7 +1898,15 @@ void three_AC(Node *node){
                     }
                 }
 
+                // obj.func() is never static
+                quad I1 = generate(qid("push", NULL), dot->children[0]->node_tmp, emptyQid, emptyQid, -1);
+                node->code.push_back(I1);
+                totalPopSize += 8;
+
+                std::cerr << "RETURN VALUE TYPE of " << funcName << " IS " << functionPrototype.returnType << '\n';
+                std::cerr << "RETURN VALUE DIMENSION of " << funcName << " IS " << functionPrototype.returnDim << '\n';
                 int returnValSize = (functionPrototype.returnDim > 0 ? 8: setOffset(functionPrototype.returnType));
+                std::cerr << "RETURN VALUE SIZE of " << funcName << " IS " << returnValSize << '\n';
 
                 // space for return value 
                 quad returnValSpace = generate(qid("-",NULL) , qid("$sp", NULL) , qid(std::to_string(returnValSize), NULL), qid("$sp", NULL) , -1);
@@ -1939,6 +1935,8 @@ void three_AC(Node *node){
 
         else
         {
+            // handle func()
+
             int totalPopSize = 0;
 
             node->node_tmp = newtemp("returnValue", node->nearSymbolTable);
@@ -1955,9 +1953,24 @@ void three_AC(Node *node){
             assert(funcEntry);
             auto functionPrototype = funcEntry->getFuncProto();
 
-            quad I1 = generate(qid("push", NULL), qid("this", NULL), emptyQid, emptyQid, -1);
-            node->code.push_back(I1);
-            totalPopSize += 8;
+            int isStatic = 0;
+            std::string fullFuncName = funcEntry->getName();
+            std::string tempStr="";
+            for(int i=0; i < fullFuncName.size(); i++)
+            {
+                if(fullFuncName[i] != ' ')
+                    tempStr.push_back(fullFuncName[i]);
+                else
+                {
+                    if(tempStr == "static")
+                    {
+                        isStatic = 1;
+                        break;
+                    }
+                    tempStr = "";
+                }
+            }
+            std::cerr << "FUNCTION " << fullFuncName << " IS STATIC? " << isStatic << '\n';
 
             if(Arguments)
             {
@@ -1976,6 +1989,14 @@ void three_AC(Node *node){
 
                     argNum++; 
                 }
+            }
+
+            // Pass first object address as first argument if non-static
+            if(!isStatic)
+            {
+                quad I1 = generate(qid("push", NULL), qid("this", NULL), emptyQid, emptyQid, -1);
+                node->code.push_back(I1);
+                totalPopSize += 8;
             }
 
             int returnValSize = (functionPrototype.returnDim > 0 ? 8: setOffset(functionPrototype.returnType));
@@ -2552,7 +2573,7 @@ CompilationUnit:    OrdinaryCompilationUnit
                         currSymTable->insert(stEntry);
                         createST(root);
                         SymTableCSVDump();
-                        globalSymTable->__printAll();
+                        // globalSymTable->__printAll();
                         three_AC(root);
                         // globalSymTable = $$->symTable;
                        
