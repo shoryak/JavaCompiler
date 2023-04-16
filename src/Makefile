@@ -1,17 +1,19 @@
 CC = g++
 CFLAGS = -g -std=c++2a -Wall
-OBJS = lexer.o parser.o symbol_table.o 3ac.o main.o
+OBJS = lexer.o parser.o symbol_table.o 3ac.o main.o 
 TEST_OBJS = lexer.o parser.o symbol_table.o 3ac.o test.o
 
 # Source files
 LEXER_SRC = lexer.l
 PARSER_SRC = parser.y
 3AC_SRC = 3ac.cpp
+CODEGEN_SRC = codegen.cpp
 
 # Executible files for different stage outputs
 ASTGEN_EXEC = ASTGen.out
 3ACGEN_EXEC = 3ACGen.out
 TEST_EXEC = test.out
+CODEGEN_EXEC = codegen.out
 
 BIN = ../bin
 ROOT = ..

@@ -1,7 +1,7 @@
 #include "3ac.h"
 #include <vector>
 #include <string>
-#include<fstream>
+#include <fstream>
 
 std::vector<quad> code;
 
@@ -157,5 +157,6 @@ void print3AC1(std::vector<quad> code, std::string fileName){
     }
     tac_file1<< "\n";
     tac_file1.close();
+
 }
 
