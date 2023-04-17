@@ -2108,6 +2108,15 @@ void three_AC(Node *node){
         
         // beginFunc statement
 
+
+        // push current base base pointer
+        quad storeBasePointer = generate(qid("push",NULL) , qid("$bp", NULL) , emptyQid, emptyQid , -1);
+        node->code.push_back(storeBasePointer);
+
+        // move $bp to current $sp
+        quad base2stack = generate(qid("",NULL) , qid("$sp", NULL) , emptyQid, qid("$bp", NULL) , -1);
+        node->code.push_back(base2stack);
+
         std::string nameStr = funcEntry->getName();
         int isStatic = 0;
         std::string tempStr="";
@@ -2129,11 +2138,11 @@ void three_AC(Node *node){
         // removing the space for return value and return address manually created 
         // int rv_initial = 8;
         // if(header) rv_initial += setOffset(header->children[0]->namelexeme);
-        int rv_initial = 0;
+        int rv_initial = 8;
 
         if(!isStatic)
         {
-            quad I1 =  generate(qid("MOVE-8", NULL) , qid("%"+ std::to_string(rv_initial) +"(rsp)",NULL), emptyQid, qid("this",NULL) , -1);
+            quad I1 =  generate(qid("MOVE-8", NULL) , qid("%"+ std::to_string(rv_initial) +"(rbp)",NULL), emptyQid, qid("this",NULL) , -1);
             node->code.push_back(I1);
 
         }
@@ -2151,14 +2160,11 @@ void three_AC(Node *node){
                 entries.back()->print();
             }
             
-            int rv_= 0;
+            int rv_= 8;
             // if(header) rv_ += setOffset(header->children[0]->namelexeme);
             if(!isStatic) rv_ +=8;
             for(int i = paramNumber - 1; i >= 0; i--)
             {
-                // auto t1 = newtemp("param" , node->nearSymbolTable);
-                //quad I1 = generate(qid("PopParam",NULL), emptyQid, emptyQid, t1,-1 s);
-          
                 std::vector<Node*>formalParam = FormalParameterList->children[i]->children;
                 std::string type1 = "";
       
@@ -2183,7 +2189,7 @@ void three_AC(Node *node){
                     }
                 }
 
-                quad I1 =  generate(qid("MOVE-" + std::to_string(setOffset(type1)) , NULL) , qid("%"+ std::to_string(rv_) +"(rsp)",NULL) , emptyQid, qid(paramNames[i], entries[i])  , -1);
+                quad I1 =  generate(qid("MOVE-" + std::to_string(setOffset(type1)) , NULL) , qid("%"+ std::to_string(rv_) +"(rbp)",NULL) , emptyQid, qid(paramNames[i], entries[i])  , -1);
                 // std::cerr<<"___ "<<type1<<" "<<rv_<<"\n";
                 rv_ += setOffset(type1);
                 // std::cerr<<"___ "<<type1<<" "<<rv_<<"\n";
@@ -2192,13 +2198,6 @@ void three_AC(Node *node){
                 // node->code.push_back(I2);
             }
         }
-        // push current base base pointer
-        quad storeBasePointer = generate(qid("push",NULL) , qid("$bp", NULL) , emptyQid, emptyQid , -1);
-        node->code.push_back(storeBasePointer);
-
-        // move $bp to current $sp
-        quad base2stack = generate(qid("",NULL) , qid("$sp", NULL) , emptyQid, qid("$bp", NULL) , -1);
-        node->code.push_back(base2stack);
 
         // give space for local variables which can be accessed from their offsets in stored in symbol table
         int sizeofLocals = funcEntry->getSizeofLocals();
