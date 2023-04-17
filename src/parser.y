@@ -2320,7 +2320,12 @@ void three_AC(Node *node){
     else if(node->children.size() ==0 && (node->value[0] == 'I' || node->value[0] =='L')){
         if(node->value[0]=='I'){
         auto entry = node->nearSymbolTable->lookup(node->namelexeme);
-        node->node_tmp = qid(node->namelexeme , entry);
+        std::string type = "";
+        if(entry){
+        type = entry->getType();
+        type += "-";
+        }
+        node->node_tmp = qid( type + node->namelexeme  , entry);
         if(entry != NULL){
         entry->print();
         }
