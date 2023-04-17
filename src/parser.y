@@ -2107,15 +2107,18 @@ void three_AC(Node *node){
 
         
         // beginFunc statement
+        quad BeginFunc = generate(qid("BEGINFUNC",NULL) , emptyQid , emptyQid, emptyQid , -1);
+        node->code.push_back(BeginFunc);
 
 
         // push current base base pointer
-        quad storeBasePointer = generate(qid("push",NULL) , qid("$bp", NULL) , emptyQid, emptyQid , -1);
-        node->code.push_back(storeBasePointer);
+        // quad storeBasePointer = generate(qid("push",NULL) , qid("$bp", NULL) , emptyQid, emptyQid , -1);
+        // node->code.push_back(storeBasePointer);
 
         // move $bp to current $sp
-        quad base2stack = generate(qid("",NULL) , qid("$sp", NULL) , emptyQid, qid("$bp", NULL) , -1);
-        node->code.push_back(base2stack);
+        // quad base2stack = generate(qid("",NULL) , qid("$sp", NULL) , emptyQid, qid("$bp", NULL) , -1);
+        // node->code.push_back(base2stack);
+
 
         std::string nameStr = funcEntry->getName();
         int isStatic = 0;
@@ -2210,22 +2213,26 @@ void three_AC(Node *node){
         
         codeInsert(node, block->code);
 
+        // ENDFUNCTION EPILOGUE
+        quad EndFunc = generate(qid("ENDFUNC",NULL) , emptyQid , emptyQid, emptyQid , -1);
+        node->code.push_back(EndFunc);
+
         // popping local variables and saved registers and temporaries off the stack
-        quad stack2base = generate(qid("",NULL) , qid("$bp", NULL) , emptyQid, qid("$sp", NULL) , -1);
-        node->code.push_back(stack2base);
+        // quad stack2base = generate(qid("",NULL) , qid("$bp", NULL) , emptyQid, qid("$sp", NULL) , -1);
+        // node->code.push_back(stack2base);
 
         // restore the base pointer 
-        quad restoreBase = generate(qid("",NULL) , qid("*($sp)", NULL) , emptyQid, qid("$bp", NULL) , -1);
-        node->code.push_back(restoreBase);
+        // quad restoreBase = generate(qid("",NULL) , qid("*($sp)", NULL) , emptyQid, qid("$bp", NULL) , -1);
+        // node->code.push_back(restoreBase);
 
         // pop $bp
 
-        quad popBasePointer = generate(qid("pop",NULL) , qid("8", NULL) , emptyQid, emptyQid , -1);
-        node->code.push_back(popBasePointer);
+        // quad popBasePointer = generate(qid("pop",NULL) , qid("8", NULL) , emptyQid, emptyQid , -1);
+        // node->code.push_back(popBasePointer);
 
         // ret instruction
-        quad ret = generate(qid("ret",NULL) , qid("", NULL) , emptyQid, emptyQid , -1);
-        node->code.push_back(ret);
+        // quad ret = generate(qid("ret",NULL) , qid("", NULL) , emptyQid, emptyQid , -1);
+        // node->code.push_back(ret);
 
         // Dump 3AC code into file
         std::string fileName = className + "." + funcName + ".3ac";
