@@ -1924,7 +1924,7 @@ void three_AC(Node *node){
                 node->code.push_back(I2);
 
                 // retrieving return value from frame
-                quad returnVal = generate(qid("", NULL), qid("*($sp + 8)", NULL), qid("", NULL), node->node_tmp, -1);
+                quad returnVal = generate(qid("RETURNVALUE", NULL), qid("", NULL), qid("", NULL), node->node_tmp, -1);
                 node->code.push_back(returnVal);
 
                 // pop everything to restore stack after function call
@@ -2015,7 +2015,7 @@ void three_AC(Node *node){
             node->code.push_back(I2);
 
             // retrieving return value from frame
-            quad returnVal = generate(qid("", NULL), qid("*($sp + 8)", NULL), qid("", NULL), node->node_tmp, -1);
+            quad returnVal = generate(qid("RETURNVALUE", NULL), qid("", NULL), qid("", NULL), node->node_tmp, -1);
             node->code.push_back(returnVal);
 
             // pop everything to restore stack after function call
@@ -2208,10 +2208,14 @@ void three_AC(Node *node){
         node->code.push_back(localSpace);
 
         // give space for saved registers (num_of_callee_saved_registers assumed 9)
-        quad registerSpace = generate(qid("-",NULL) , qid("$sp", NULL) , qid("72", NULL), qid("$sp", NULL) , -1);
-        node->code.push_back(registerSpace);
+        quad calleeRegisterSpace = generate(qid("PUSHCALLEEREGS",NULL) , emptyQid , emptyQid , emptyQid , -1);
+        node->code.push_back(calleeRegisterSpace);
         
         codeInsert(node, block->code);
+        
+        // restore saved registers (num_of_callee_saved_registers assumed 9)
+        calleeRegisterSpace = generate(qid("POPCALLEEREGS",NULL) , emptyQid , emptyQid , emptyQid , -1);
+        node->code.push_back(calleeRegisterSpace);
 
         // ENDFUNCTION EPILOGUE
         quad EndFunc = generate(qid("ENDFUNC",NULL) , emptyQid , emptyQid, emptyQid , -1);
@@ -2276,7 +2280,7 @@ void three_AC(Node *node){
     }
     else if(nodeName == "ReturnStatement"){
         codeInsert(node , node->children[0]->code);
-        quad I1 = generate(qid("", NULL) , node->children[0]->node_tmp , emptyQid, qid("*(bp + 16)",NULL) ,-1);
+        quad I1 = generate(qid("RETURN", NULL) , node->children[0]->node_tmp , emptyQid, qid("%rax",NULL) ,-1);
         node->code.push_back(I1);
     }
     else if(nodeName == "CastExpression"){
