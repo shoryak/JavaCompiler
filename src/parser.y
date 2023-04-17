@@ -248,7 +248,7 @@ void setSymTables2(Node* node , SymbolTable* currSymbolTable){
 }
 
 int setOffset(std::string type){
-    std:cerr<<"Type "<<type<<"\n";
+    // std:cerr<<"Type "<<type<<"\n";
     if(type=="int") return 4;
     else if(type=="short") return 2;
     else if(type=="char"){
@@ -371,7 +371,7 @@ void methodTypeCheck(Node* node)
                
             }
             else{
-                std::cerr<<"huhu\n";
+                
                 auto obj = node->children[0]->children[0]->children[0]->namelexeme;
                 auto stEntry = node->nearSymbolTable->lookup(obj);
                 if(!stEntry){
@@ -380,8 +380,8 @@ void methodTypeCheck(Node* node)
                 }
                 else{
                     auto className = node->nearSymbolTable->lookup(obj)->getType();
-                    std::cerr<<className<<"a\n";
-                    std::cerr<<methodName<<"a\n";
+                    // std::cerr<<className<<"a\n";
+                    // std::cerr<<methodName<<"a\n";
                     node->typeForExpr = className;
                     if(methodsForClass[className].find(methodName) == methodsForClass[className].end()){
                         std::string s = "Undeclared function for class " + className + " in line number " + std::to_string(node->lineNumber);
@@ -406,7 +406,7 @@ void methodTypeCheck(Node* node)
                     while(leaf->children.size())
                         leaf = leaf->children[0];
                     
-                    std::cerr<<leaf->namelexeme<<"\n";
+                    // std::cerr<<leaf->namelexeme<<"\n";
                     if(leaf->value[0] == 'I' && leaf->value[1] == 'd' ){
                         auto entry  = node->nearSymbolTable->lookup(leaf->namelexeme);
                         args.push_back(entry->getType());
@@ -417,12 +417,12 @@ void methodTypeCheck(Node* node)
                     else if(leaf->value[0] == 'L' && leaf->value[1] == 'i' ){
                         // methodName += "_" + leaf->type + "_" + std::to_string(leaf->numDims);
                         args.push_back(leaf->type);
-                        std::cerr<<leaf->value[0]<<" "<< leaf->value[1]<<" "<<leaf->namelexeme <<"\n";
+                        // std::cerr<<leaf->value[0]<<" "<< leaf->value[1]<<" "<<leaf->namelexeme <<"\n";
                     }
                 }
             }
         }
-        std::cerr<<methodName<<" Methodname\n";
+        // std::cerr<<methodName<<" Methodname\n";
         SymbolTable* ST = node->nearSymbolTable;
         
         SymbolTableEntry* stEntry = ST->lookup(methodName);
@@ -440,7 +440,7 @@ void methodTypeCheck(Node* node)
             }
             if(nArgs !=  fp.numArgs)
             {
-                std::cerr<<nArgs<<" "<<fp.numArgs<<"\n"; 
+                // std::cerr<<nArgs<<" "<<fp.numArgs<<"\n"; 
             //    std::string err = "Incorrect number of Arguments in " + methodName +" Invoked on line " + std::to_string(node->lineNumber);
             //     yyerror(err.c_str()); 
             }
@@ -562,7 +562,7 @@ void createST(Node* node)
             }
             else if(x->namelexeme == "MethodHeader")
             {   
-                std::cerr<<"MethodHeader"<<" "<<std::string(x->children[0]->namelexeme)<<"\n";
+                // std::cerr<<"MethodHeader"<<" "<<std::string(x->children[0]->namelexeme)<<"\n";
                 if(name != "") name += " ";                
                 name += std::string(x->children[0]->namelexeme);
 
@@ -625,7 +625,7 @@ void createST(Node* node)
                                 }
                             }
                             fproto.numArgs++;
-                            std::cerr<<"This us tarcking "<<typeParam<<" "<<name<<" "<<nDimsParam<<" " <<fproto.argTypes.size() <<"\n";
+                          
                             fproto.argTypes.push_back(typeParam);
                             fproto.argDims.push_back(nDimsParam);
                         }
@@ -641,17 +641,17 @@ void createST(Node* node)
             name.pop_back();
         }
         if(currSymTable->lookup(name+type)){
-            std::cerr<<name+type<<"\n";
+            // std::cerr<<name+type<<"\n";
             yyerror("Redeclaration of function");
               
             // error;
         }
-        std::cerr<<"sizeofLocals "<<name<<" "<<localOffset<<" "<< fproto.argTypes.size()<<"\n";
+        // std::cerr<<"sizeofLocals "<<name<<" "<<localOffset<<" "<< fproto.argTypes.size()<<"\n";
         SymbolTableEntry* stEntry = new SymbolTableEntry(name, fproto.returnType, -1, -1, decLine, 0, fproto , localOffset);
         node->lineNumber = decLine;
         currSymTable->insert(stEntry);
-        std::cerr<<currentClass<<"a\n";
-        std::cerr<<currentFuncName<<"a\n";
+        // std::cerr<<currentClass<<"a\n";
+        // std::cerr<<currentFuncName<<"a\n";
         methodsForClass[currentClass].insert(currentFuncName);
         newScope = 1;
         useCurlyForNewScope = 0;
@@ -796,7 +796,7 @@ void createST(Node* node)
                 fieldStructData.offset = oldfieldOffset;
                 fieldsForClass[currentClass].insert(fieldData);
                 classFieldData[currentClass +"_" + fieldData] = fieldStructData;
-                std::cerr << "Inserting: " << currentClass + "_" + fieldData << '\n';
+                // std::cerr << "Inserting: " << currentClass + "_" + fieldData << '\n';
                 currSymTable->insert(stEntry);
 
                 //3 AC
@@ -830,7 +830,7 @@ void createST(Node* node)
                 fieldStructData.offset = oldfieldOffset;
                 fieldsForClass[currentClass].insert(fieldData);
                 classFieldData[currentClass +"_" + fieldData] = fieldStructData;
-                std::cerr << "Inserting: " << currentClass + "_" + fieldData << '\n';
+                // std::cerr << "Inserting: " << currentClass + "_" + fieldData << '\n';
                 currSymTable->insert(stEntry);
                 //3 AC
                 y->position = qid( y->children[0]->children[0]->namelexeme, stEntry);
@@ -899,8 +899,8 @@ void createST(Node* node)
                         typeForOffset = "pointer";
                     }
                     localOffset += setOffset(typeForOffset);
-                    std::cerr<<"Lexeme "<<y->children[0]->children[0]->children[0]->namelexeme<<"\n";
-                    std::cerr<<"localOffset "<<localOffset<<"\n";
+                    // std::cerr<<"Lexeme "<<y->children[0]->children[0]->children[0]->namelexeme<<"\n";
+                    // std::cerr<<"localOffset "<<localOffset<<"\n";
                     SymbolTableEntry* stEntry = new SymbolTableEntry(name + y->children[0]->children[0]->children[0]->namelexeme, type, -1, nDims, y->children[0]->children[0]->children[0]->lineNumber, localOffset, axisWidths);
                     currSymTable->insert(stEntry);
 
@@ -929,8 +929,8 @@ void createST(Node* node)
                     }
                     localOffset += setOffset(typeForOffset);
 
-                    std::cerr<<"Lexeme "<<y->children[0]->children[0]->namelexeme<<"\n";
-                    std::cerr<<"localOffset "<<localOffset<<"\n";
+                    // std::cerr<<"Lexeme "<<y->children[0]->children[0]->namelexeme<<"\n";
+                    // std::cerr<<"localOffset "<<localOffset<<"\n";
                     SymbolTableEntry* stEntry = new SymbolTableEntry(name + y->children[0]->children[0]->namelexeme, type, -1, nDims, y->children[0]->children[0]->lineNumber, localOffset);
                     currSymTable->insert(stEntry);
 
@@ -1010,7 +1010,7 @@ void createST(Node* node)
                                 }
                             }
                             fproto.numArgs++;
-                            std::cerr<<"XYZ\n";
+                            
                             fproto.argTypes.push_back(typeParam);
                             fproto.argDims.push_back(nDimsParam);
                 }
@@ -1020,17 +1020,17 @@ void createST(Node* node)
       while(name.size() && name.back()==' '){
             name.pop_back();
         }
-        std::cerr<<"HURRAY"<<"\n";
+       
         if(currSymTable->lookup(name+type) !=NULL){
             auto entry  = currSymTable->lookup(name+type);
 
-             std::cerr<<name+type<<" "<< entry->getName()<< "\n";
-              std::cerr<<name+type<<" "<< entry->getType()<< "\n";
+            //  std::cerr<<name+type<<" "<< entry->getName()<< "\n";
+            //   std::cerr<<name+type<<" "<< entry->getType()<< "\n";
             yyerror("Redeclaration of function");
            
             // error;
         }
-        std::cerr<<"XYZ "<<fproto.numArgs<<" "<<currentFuncName<<"\n";
+        // std::cerr<<"XYZ "<<fproto.numArgs<<" "<<currentFuncName<<"\n";
         SymbolTableEntry* stEntry = new SymbolTableEntry(currentFuncName, currentClass, -1, -1, decLine, 0, fproto);
         currSymTable->insert(stEntry);
 
@@ -1253,15 +1253,15 @@ void createST(Node* node)
         std::string fieldClass = leftFieldPrefixNode->typeForExpr;
         std::string key = fieldClass + "_" + rightField;
         
-        std::cerr << key << '\n';
+        // std::cerr << key << '\n';
         if(classFieldData.find(key) == classFieldData.end() && fieldClass != "$package" )
         {
-            std::cerr<<key<<"\n";
+            // std::cerr<<key<<"\n";
             std::string errorMessage = std::string("Member ") + rightField + " of class " + fieldClass + " not found on line " + std::to_string(rightFieldNode->children[0]->lineNumber);
             yyerror(errorMessage.c_str());
         }
         field fieldStructData = classFieldData[key];
-        std::cerr << "Modifier: " << fieldStructData.modifier << '\n';
+        // std::cerr << "Modifier: " << fieldStructData.modifier << '\n';
         if(fieldStructData.modifier == "private" && currentClass != fieldClass)
         {
             std::string errorMessage = rightField + " has private access in " + fieldClass + " in line " + std::to_string(rightFieldNode->lineNumber);
@@ -1311,7 +1311,7 @@ void binary3AC(Node* node, std::string op)
     }
     codeInsert(node, node->children[0]->code);
     codeInsert(node, node->children[1]->code);
-    std::cerr<< node->namelexeme <<" "<< node->typeForExpr <<" "<< node->children[0]->typeForExpr << " "<< node->children[1]->typeForExpr << "\n";
+    // std::cerr<< node->namelexeme <<" "<< node->typeForExpr <<" "<< node->children[0]->typeForExpr << " "<< node->children[1]->typeForExpr << "\n";
     qid left = node->children[0]->node_tmp;
     qid right  = node->children[1]->node_tmp;
     bool flag = node->children[0]->typeForExpr != "";
@@ -1674,7 +1674,7 @@ void three_AC(Node *node){
             leaf= leaf->children[0];
             disleaf++;
         }
-        std::cerr<<leaf->namelexeme<<"\n";
+        // std::cerr<<leaf->namelexeme<<"\n";
         auto stEntry = leaf->nearSymbolTable->lookup(leaf->namelexeme);
         if(stEntry){
             int offset;
@@ -1880,7 +1880,7 @@ void three_AC(Node *node){
 
                 if(Arguments)
                 {
-                    std::cerr<<functionPrototype.argTypes.size()<<" "<<Arguments->children.size()<<"\n";
+                    // std::cerr<<functionPrototype.argTypes.size()<<" "<<Arguments->children.size()<<"\n";
                     assert(functionPrototype.argTypes.size() == Arguments->children.size());
                     assert(functionPrototype.argDims.size() == Arguments->children.size());
                     int argNum = 0;
@@ -2126,32 +2126,37 @@ void three_AC(Node *node){
             }
         }
 
-        int rv_initial = 8;
-        if(header) rv_initial += setOffset(header->children[0]->namelexeme);
+        // removing the space for return value and return address manually created 
+        // int rv_initial = 8;
+        // if(header) rv_initial += setOffset(header->children[0]->namelexeme);
+        int rv_initial = 0;
 
         if(!isStatic)
         {
-            quad I1 =  generate(emptyQid , qid("*($sp + " + std::to_string(rv_initial)+")",NULL), emptyQid, qid("this",NULL) , -1);
+            quad I1 =  generate(qid("MOVE-8", NULL) , qid("%"+ std::to_string(rv_initial) +"(rsp)",NULL), emptyQid, qid("this",NULL) , -1);
             node->code.push_back(I1);
 
         }
 
         if(FormalParameterList)
         {
-            std::cerr<<FormalParameterList->value<<"\n";
+            // std::cerr<<FormalParameterList->value<<"\n";
             int paramNumber = FormalParameterList->children.size();
             std::vector<std::string> paramNames; 
+            std::vector<SymbolTableEntry*> entries;
             for(auto param  : FormalParameterList->children){
                 auto Id = param->children.back();
                 paramNames.push_back(Id->children[0]->children[0]->namelexeme);
+                entries.push_back(param->nearSymbolTable->lookup(paramNames.back()));
+                entries.back()->print();
             }
             
-            int rv_= 8;
-            if(header) rv_ += setOffset(header->children[0]->namelexeme);
+            int rv_= 0;
+            // if(header) rv_ += setOffset(header->children[0]->namelexeme);
             if(!isStatic) rv_ +=8;
             for(int i = paramNumber - 1; i >= 0; i--)
             {
-                auto t1 = newtemp("param" , node->nearSymbolTable);
+                // auto t1 = newtemp("param" , node->nearSymbolTable);
                 //quad I1 = generate(qid("PopParam",NULL), emptyQid, emptyQid, t1,-1 s);
           
                 std::vector<Node*>formalParam = FormalParameterList->children[i]->children;
@@ -2178,13 +2183,13 @@ void three_AC(Node *node){
                     }
                 }
 
-                quad I1 =  generate(qid("*($sp + "+ std::to_string(rv_)+ ")",NULL) , emptyQid , emptyQid, t1 , -1);
-                std::cerr<<"___ "<<type1<<" "<<rv_<<"\n";
+                quad I1 =  generate(qid("MOVE-" + std::to_string(setOffset(type1)) , NULL) , qid("%"+ std::to_string(rv_) +"(rsp)",NULL) , emptyQid, qid(paramNames[i], entries[i])  , -1);
+                // std::cerr<<"___ "<<type1<<" "<<rv_<<"\n";
                 rv_ += setOffset(type1);
-                std::cerr<<"___ "<<type1<<" "<<rv_<<"\n";
-                quad I2 = generate(emptyQid , t1, emptyQid , qid(paramNames[i], NULL) , -1 );
+                // std::cerr<<"___ "<<type1<<" "<<rv_<<"\n";
+                // quad I2 = generate(emptyQid , t1, emptyQid , qid(paramNames[i], entries[i]) , -1 );
                 node->code.push_back(I1);
-                node->code.push_back(I2);
+                // node->code.push_back(I2);
             }
         }
         // push current base base pointer
@@ -2225,7 +2230,7 @@ void three_AC(Node *node){
 
         // Dump 3AC code into file
         std::string fileName = className + "." + funcName + ".3ac";
-        std::cerr << fileName << ' ' << node->code.size() << ' ' << '\n';
+        // std::cerr << fileName << ' ' << node->code.size() << ' ' << '\n';
         print3AC1(node->code, fileName);
         node->code.clear();
 
@@ -2303,7 +2308,19 @@ void three_AC(Node *node){
     //     // print3AC(node->code);
     // }
     else if(node->children.size() ==0 && (node->value[0] == 'I' || node->value[0] =='L')){
-        node->node_tmp = qid(node->namelexeme , NULL);
+        if(node->value[0]=='I'){
+        auto entry = node->nearSymbolTable->lookup(node->namelexeme);
+        node->node_tmp = qid(node->namelexeme , entry);
+        if(entry != NULL){
+        entry->print();
+        }
+        else{
+            std::cerr<< node->namelexeme<<"\n";
+        }
+        }
+        else{
+             node->node_tmp = qid(node->namelexeme , NULL);
+        }
     }
     
     
@@ -2318,7 +2335,7 @@ void three_AC(Node *node){
         }
         if(nodeName == "Then"){
     
-            std::cerr<<node->namelexeme<<" child " <<node->code.size()<<"\n";
+            // std::cerr<<node->namelexeme<<" child " <<node->code.size()<<"\n";
             // print3AC1(child->code);
         }
        
@@ -2573,7 +2590,7 @@ CompilationUnit:    OrdinaryCompilationUnit
                         stEntry = new SymbolTableEntry("out", "$package" , 0 , 0 , 0 , 0);
                         currSymTable->insert(stEntry);
                         createST(root);
-                        SymTableCSVDump();
+                        // SymTableCSVDump();
                         // globalSymTable->__printAll();
                         three_AC(root);
                         // globalSymTable = $$->symTable;

@@ -211,7 +211,6 @@ class X86 {
 
 		cout<<"\n\n\n\n\n\n\nBEGINNING ASM PART\n\n\n\n\n\n\n";
 		ofstream my_function_dump("./bin/output.s");
-
 		
 
 	}
