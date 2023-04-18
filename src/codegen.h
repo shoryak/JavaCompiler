@@ -1,23 +1,30 @@
 #ifndef CODEGEN_H
 #define CODEGEN_H
 
+#include "3ac.h"
+#include <map>
+#include <string>
+#include <vector>
+#include <utility>
+#include <set>
+
 class Registers
 {
 public:
     // < regName , < VariableName , lastTimeUsed >>
-	std::map<string, pair<string, int>> regs;
+	std::map<std::string, pair<std::string, int>> regs;
     // stores all the argumentRegisters
-	std::vector<string> argumentRegs ;
+	std::vector<std::string> argumentRegs;
     // stores the caller saved registers
-    std::vector<string> callerSaved ;
+    std::vector<std::string> callerSaved ;
     // stores the calle saved registers
-	std::vector<string> calleeSaved ;
+	std::vector<std::string> calleeSaved ;
     // < RegName, placeHolder for lastByte>
-	std::map<string, string> lastByte;
+	std::map<std::string, std::string> lastByte;
     
 	std::string rip, rbp;
     // < variableName , < regName , memoryLocation >>
-	std::map<string, pair<string, string>> locations;
+	std::map<std::string, pair<std::string, std::string>> locations;
     
     int timestamp; 
 
@@ -50,6 +57,7 @@ class X86
 	X86(std::vector<quad> _tacCode);
 	void codeGen(void);
 	std::vector<std::string> tac2x86(quad instruction);
+    std::string getMemLocation(std::string , bool);
 };
 
 #endif

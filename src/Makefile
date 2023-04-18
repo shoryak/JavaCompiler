@@ -1,6 +1,6 @@
 CC = g++
 CFLAGS = -g -std=c++2a -Wall
-OBJS = lexer.o parser.o symbol_table.o 3ac.o main.o 
+OBJS = lexer.o parser.o symbol_table.o 3ac.o codegen.o main.o
 TEST_OBJS = lexer.o parser.o symbol_table.o 3ac.o test.o
 
 # Source files
@@ -13,7 +13,6 @@ CODEGEN_SRC = codegen.cpp
 ASTGEN_EXEC = ASTGen.out
 3ACGEN_EXEC = 3ACGen.out
 TEST_EXEC = test.out
-CODEGEN_EXEC = codegen.out
 
 BIN = ../bin
 ROOT = ..
@@ -42,6 +41,9 @@ parser.o:		parser.tab.c
 parser.tab.c token.h:	$(PARSER_SRC)
 						bison -dvt $(PARSER_SRC)
 						cmp -s parser.tab.h token.h || cp parser.tab.h token.h
+
+codegen.o:		$(CODEGEN_SRC)
+				$(CC) $(CFLAGS) -c $(CODEGEN_SRC) -o codegen.o
 
 3ac.o:			$(3AC_SRC)
 				$(CC) $(CFLAGS) -c $(3AC_SRC) -o 3ac.o

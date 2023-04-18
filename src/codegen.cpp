@@ -1,10 +1,4 @@
 #include "codegen.h"
-#include "3ac.h"
-#include <map>
-#include <string>
-#include <vector>
-#include <utility>
-#include <set>
 
 inline int64_t rnd(int l,int r)
 {
@@ -60,7 +54,7 @@ std::vector<std::string> Registers::writeBack(std::vector<std::string> writeRegs
 		}
 	}
 	
-	for(auto wreg : writeRegs){
+	for(auto wreg: writeRegs){
 		if(regs[wreg].first!=""){
 			// loc stores memory location of the variable inside wreg
 			std::string loc = locations[regs[wreg].first].second;
@@ -201,6 +195,10 @@ void X86::codeGen()
 	
 }
 
+std::string X86::getMemLocation(std::string varName , bool istemp){
+    // if(locations.find())
+}
+
 std::vector<std::string> X86::tac2x86(quad instruction)
 {
 	std::vector<std::string> code;
@@ -289,12 +287,21 @@ std::vector<std::string> X86::tac2x86(quad instruction)
     // allocmem
     else if(oper == "" && instruction.argument1.first == "$allocmem")
 	{
-		// ???
+		std::string bytes = "$" + std::stol(instruction.argument2.first);
+		std::string addBytesArgLine = "movq " + bytes + ", %rdi"; // put bytes into %rdi
+		std::string heapAllocLine = "call malloc";
+
+		// store allocated address in %rax to result
+		std::string assignLine = "movq %rax, memoryloc";
+
+		code.push_back(addBytesArgLine);
+		code.push_back(heapAllocLine);
+		code.push_back(assignLine);
     }
 	// assignment
 	else if(oper == "")
 	{
-
+		// std::string assignLine = ;
 	}
     
 	return code;

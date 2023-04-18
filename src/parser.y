@@ -7,6 +7,7 @@
 #include <cassert>
 #include <algorithm>
 #include "symbol_table.h"
+ #include "codegen.h"
 #include "3ac.h"
 int lines = 0;
 int yyparse();
@@ -2329,7 +2330,7 @@ void three_AC(Node *node){
         type = entry->getType();
         type += "-";
         }
-        node->node_tmp = qid( type + node->namelexeme  , entry);
+        node->node_tmp = qid( node->namelexeme  , entry);
         if(entry != NULL){
         entry->print();
         }
@@ -2529,7 +2530,7 @@ void typecheck(Node *node)
     #include <vector>
     #include <cstdio>
     #include <cstring>
-    #include "codegen.cpp"
+   
     struct Node;
     Node* createNode(const char* value, std::vector<Node*> children);
     Node* createNode(const char* value);
