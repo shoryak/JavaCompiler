@@ -53,6 +53,7 @@ std::unordered_map<std::string, SymbolTable*> methodSymbolTable;
 std::map<std::string , std::set<std::string > > methodsForClass;
 std::map<std::string , std::set<std::string>  > fieldsForClass;
 std::map<std::string , field > classFieldData;
+std::vector<quad> tacCode;
 
 struct Node
 {
@@ -1752,7 +1753,7 @@ void three_AC(Node *node){
             auto classEntry = globalSymTable->lookup(className);
             int objSize = classEntry->getSize();
             
-            quad allocMem = generate(emptyQid, qid("allocmem", NULL), qid(std::to_string(objSize), NULL), objTemp, -1);
+            quad allocMem = generate(emptyQid, qid("$allocmem", NULL), qid(std::to_string(objSize), NULL), objTemp, -1);
             node->code.push_back(allocMem);
 
             // get function type signature
@@ -2242,6 +2243,9 @@ void three_AC(Node *node){
         std::string fileName = className + "." + funcName + ".3ac";
         // std::cerr << fileName << ' ' << node->code.size() << ' ' << '\n';
         print3AC1(node->code, fileName);
+        for(auto ins : node->code){
+            tacCode.push_back(ins);
+        }
         node->code.clear();
 
 
@@ -2274,7 +2278,7 @@ void three_AC(Node *node){
             node->code.push_back(I1);
         }
         auto x = newtemp("final" , node->nearSymbolTable);
-        I1 =  generate(emptyQid , qid("allocmem",NULL) , node->node_tmp , x , -1);
+        I1 =  generate(emptyQid, qid("$allocmem", NULL), node->node_tmp, x, -1);
         node->node_tmp = x;
         node->code.push_back(I1);
     }
@@ -2609,7 +2613,8 @@ CompilationUnit:    OrdinaryCompilationUnit
                         // globalSymTable->__printAll();
                         three_AC(root);
                         // globalSymTable = $$->symTable;
-                       
+                        X86* x86 = new X86(tacCode);
+                        x86->codeGen();
                         // print3AC();
                         
                     }

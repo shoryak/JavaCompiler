@@ -7,7 +7,7 @@ std::vector<quad> code;
 
 int counter = 0;
 int printAC= 0;
-std::ofstream tac_file , tac_file1;
+std::ofstream tac_file, tac_file1;
 
 quad generate(qid op, qid arg1, qid arg2, qid res, int idx)
 {
@@ -69,7 +69,8 @@ void print3AC1(std::vector<quad> code, std::string fileName){
             tac_file1 << codeLine.oper.first << " "<<codeLine.argument1.first << " goto " << codeLine.argument2.first;
             tac_file1 << "\n";
         }
-        else if(codeLine.oper.first == "Ternary"){
+        else if(codeLine.oper.first == "Ternary")
+        {
             tac_file1<<"    "<<" ";
             tac_file1 << codeLine.oper.first << " "<<codeLine.argument1.first << " goto " << codeLine.argument2.first;
             tac_file1 << "\n";
