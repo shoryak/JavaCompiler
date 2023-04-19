@@ -44,22 +44,42 @@ public:
 
 class X86
 {
-    public:
+public:
     // stores the final x86 code
-    std::vector<string> x86;
+    std::vector<std::string> x86;
     // input 3AC code to be converted to x86
     std::vector<quad> tacCode;
     // Instance of the registers class to generate x86
     Registers registers;
     // to store constants to be added in the data section
-    std::vector<string> constants;
+    std::vector<std::string> constants;
     // offset to assign temporary a memory address
     int tempoffset;
+
+	std::map<int, char> sizeSuffix{{1, 'b'}, {2, 'd'}, {4, 'w'}, {8, 'q'}};
+	std::map<std::string, std::string> operToInstrALU {
+		{"+", "add"},
+		{"-", "sub"},
+		{"*", "mult"},
+		{"/", "div"},
+		{"&", "and"},
+		{"|", "or"},
+		{"^", "xor"}
+	};
+	std::map<int, std::string> widthToReg {
+		{1, "cl"},
+		{2, "cx"},
+		{4, "ecx"},
+		{8, "rcx"}
+	};
 
 	X86(std::vector<quad> _tacCode);
 	void codeGen(void);
 	std::vector<std::string> tac2x86(quad instruction);
-    std::string getMemLocation(qid , bool , vector<string>&);
+    std::string getMemLocation(qid, bool, std::vector<std::string>&);
+	std::string getLoadInstr(std::string address, int width); // width = 1,2,4 ot 8
+	std::string getStoreInstr(std::string address, int width); // width = 1,2,4 ot 8
+	std::string getALUInstr(std::string address, std::string oper, int width);
 };
 
 #endif

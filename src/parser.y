@@ -1506,7 +1506,7 @@ void three_AC(Node *node){
         node->code.push_back(ifThenQuad);
         // std::cerr<<thenNode->namelexeme<< "HURRAY \n";
         // std::cerr<<condition->namelexeme<< "HURRAY \n";
-        // print3AC1(thenNode->code);
+        // `thenNode->code);
         codeInsert(node, thenNode->code);
         node->code.push_back(generate(qid(label, NULL), emptyQid , emptyQid, emptyQid  , -1));
 

@@ -173,17 +173,17 @@ void X86::codeGen()
 	std::cerr << "tacCode Size: " << tacCode.size() << "\n";
 	for(auto instruction: tacCode)
 	{
-		auto code = tac2x86(instruction); 
-		for(auto line : code){
+		auto code = tac2x86(instruction);
+		for(auto line: code)
+		{
 			x86.push_back(line);
 		}
 	}
 	
-
-	
 	x86.push_back("");
 	x86.push_back(".data");
-	for(string s: constants){
+	for(string s: constants)
+	{
 		x86.push_back(s);
 	}
 
@@ -193,14 +193,15 @@ void X86::codeGen()
 	}
 	// cout<<"\n\n\n\n\n\n\nBEGINNING ASM PART\n\n\n\n\n\n\n";
 	// ofstream my_function_dump("./bin/output.s");
-	
 }
 
-std::string X86::getMemLocation(qid var , bool istemp, vector<string> &code){
+std::string X86::getMemLocation(qid var, bool istemp, std::vector<std::string>&code)
+{
     // if(locations.find())
-    auto entry =  var.second;
-    std::cerr<< var.first<<"\n";
-    if(entry == NULL){
+    auto entry = var.second;
+    std::cerr << var.first << "\n";
+    if(entry == NULL)
+	{
         return "$" + var.first;
     }
     assert(entry);
@@ -209,12 +210,14 @@ std::string X86::getMemLocation(qid var , bool istemp, vector<string> &code){
     std::cerr<< varPrint<<"\n";
 
     // memory location already assigned
-    if(registers.locations.find(varPrint) != registers.locations.end()){
+    if(registers.locations.find(varPrint) != registers.locations.end())
         return registers.locations[varPrint].second;
-    }
+	
     // encountering temporary or variable first time in code
-    else{
-        if(istemp){
+    else
+	{
+        if(istemp)
+		{
             tempoffset += 8;
             std::string spaceTemp= "\tsub $8, %rsp";
             code.push_back(spaceTemp);
@@ -222,7 +225,8 @@ std::string X86::getMemLocation(qid var , bool istemp, vector<string> &code){
             registers.locations[varPrint].second = memLoc;
             return memLoc;
         }
-        else{
+        else
+		{
             int offset = entry->getOffset();
             std::string memLoc = "-" + std::to_string(offset) + "(%rbp)";
             registers.locations[varPrint].second = memLoc;
@@ -231,10 +235,54 @@ std::string X86::getMemLocation(qid var , bool istemp, vector<string> &code){
     }
 }
 
+std::string X86::getLoadInstr(std::string location, int width)
+{
+	assert(sizeSuffix.find(width) != sizeSuffix.end());
+	assert(widthToReg.find(width) != widthToReg.end());
+
+	char suf = sizeSuffix[width];
+	std::string loadInstr = "\tmov";
+	loadInstr.push_back(suf);
+	loadInstr += " " + location + " " + widthToReg[width];
+	
+	return loadInstr;
+}
+
+std::string X86::getStoreInstr(std::string location, int width)
+{
+	assert(sizeSuffix.find(width) != sizeSuffix.end());
+	assert(widthToReg.find(width) != widthToReg.end());
+
+	char suf = sizeSuffix[width];
+	std::string storeInstr = "\tmov";
+	storeInstr.push_back(suf);
+	storeInstr += " " + widthToReg[width] + " " + location;
+	
+	return storeInstr;
+}
+
+std::string X86::getALUInstr(std::string location, std::string oper, int width)
+{
+	assert(sizeSuffix.find(width) != sizeSuffix.end());
+	assert(widthToReg.find(width) != widthToReg.end());
+	assert(operToInstrALU.find(oper) != operToInstrALU.end());
+
+	char suf = sizeSuffix[width];
+	std::string ALUInstr = "\t" + operToInstrALU[oper];
+	ALUInstr.push_back(suf);
+	ALUInstr += " " + location + " " + widthToReg[width];
+
+	return ALUInstr;
+}
+
 std::vector<std::string> X86::tac2x86(quad instruction)
 {
 	std::vector<std::string> code;
 	std::string oper = instruction.oper.first;
+	std::set<std::string> ALUOps {
+		"+", "-", "*", "/", "%",
+		"&", "|", "^", "~"
+	};
     // conditionals --------------------------------------------------------------
 	if(oper == "IfFalse")
 	{
@@ -266,9 +314,10 @@ std::vector<std::string> X86::tac2x86(quad instruction)
         std::string jmpLine = "\tjmp " + instruction.argument1.first;
         code.push_back(jmpLine);
 	}
-    else if(oper.substr(0, 2) == "$L")
+    else if(oper.substr(0, 2) == "$L" || oper[0] == '#')
 	{
-        std::string label = oper + ":";
+		int labelLength = oper.size();
+        std::string label = oper.substr(1, labelLength - 1) + ":";
         code.push_back(label);
     }
 	else if(oper == "CALL")
@@ -285,52 +334,52 @@ std::vector<std::string> X86::tac2x86(quad instruction)
     // -- need to assign memorylocation to result if not yet assigned in case of temporary
     // -- need to create the fingerprint with symboltableentry pointer before storing memlocation (not necessary if 
     // we access symbolentry each time for offset !!)
-    else if(oper == "+")
+    else if(ALUOps.find(oper) != ALUOps.end())
 	{
         std::string arg1 = instruction.argument1.first;
+		int argWidth1 = instruction.argument1.second->getSize();
+
         std::string arg2 = instruction.argument2.first;
+		int argWidth2 = instruction.argument2.second->getSize();
+
         std::string res  = instruction.result.first;
-        bool istemp = false;
-        if(arg1[0] == '$'){
-            istemp = true;
-        }
-        std::string memarg1 = getMemLocation( instruction.argument1 , istemp , code);
-        istemp = false;
-        if(arg2[0] == '$'){
-            istemp = true;
-        }
-        std::string memarg2 = getMemLocation( instruction.argument2 , istemp , code);
-        istemp = false;
-        if(res[0] == '$'){
-            istemp = true;
-        }
-        std::string memres = getMemLocation( instruction.argument2 , istemp , code);
-        // move arg1
-        std::string movarg1 = "\tmov " + memarg1 + ", reg1";
-        std::string movarg2 = "\tmov " + memarg2 + ", reg2";
-        std::string addIns = "\tadd reg2, reg1";
-        std::string movres = "\tmov reg1," + memres;
+		int resWidth = instruction.result.second->getSize();
+		
+		assert(argWidth1 == resWidth && argWidth2 == resWidth);
+
+        bool istemp = arg1[0] == '$';
+        std::string memarg1 = getMemLocation(instruction.argument1, istemp, code);
+        istemp = arg2[0] == '$';
+        std::string memarg2 = getMemLocation(instruction.argument2, istemp, code);
+        istemp = res[0] == '$';
+        std::string memres = getMemLocation(instruction.result, istemp, code);
+
+        std::string movarg1 = getLoadInstr(memarg1, argWidth1);
+        std::string addIns = getALUInstr(memarg2, oper, argWidth2);
+        std::string movres = getStoreInstr(memres, resWidth);
         code.push_back(movarg1);
-        code.push_back(movarg2);
         code.push_back(addIns);
         code.push_back(movres);
-
-    }
-    else if(oper == "-")
+	}
+	else if(oper == "<")
 	{
-
-    }
-    else if(oper == "*")
-	{
-        
-    }
-	else if(oper == "/")
+		
+	}
+	else if(oper == ">")
 	{
 
 	}
-	else if(oper == "%")
+	else if(oper == "==")
 	{
-		
+
+	}
+	else if(oper == "!=")
+	{
+
+	}
+	else if(oper.substr(0, 5) == "CAST_")
+	{
+
 	}
     // allocmem
     else if(oper == "" && instruction.argument1.first == "$allocmem")
