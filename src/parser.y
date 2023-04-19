@@ -107,7 +107,7 @@ struct Node
 
 /*  For 3AC generation  */
     qid position;
-    vector<quad> code;
+    std::vector<quad> code;
 
 /*  List of next instructions which can be jumped to    */
     std::vector<int> nextList;
@@ -534,7 +534,7 @@ void createST(Node* node)
             std::string s = "Redeclaration of class in line number " + std::to_string(node->children[n-2]->lineNumber);
             yyerror(s.c_str());
         }
-        SymbolTableEntry* stEntry = new SymbolTableEntry( name, "class" , -1 , -1 , node->children[n-2]->lineNumber , 0 );
+        SymbolTableEntry* stEntry = new SymbolTableEntry(name, "class", -1, -1, node->children[n-2]->lineNumber, 0);
         currSymTable->insert(stEntry);
 
         // 3AC 
@@ -649,7 +649,7 @@ void createST(Node* node)
             // error;
         }
         // std::cerr<<"sizeofLocals "<<name<<" "<<localOffset<<" "<< fproto.argTypes.size()<<"\n";
-        SymbolTableEntry* stEntry = new SymbolTableEntry(name, fproto.returnType, -1, -1, decLine, 0, fproto , localOffset);
+        SymbolTableEntry* stEntry = new SymbolTableEntry(name, fproto.returnType, -1, -1, decLine, 0, fproto, localOffset);
         node->lineNumber = decLine;
         currSymTable->insert(stEntry);
         // std::cerr<<currentClass<<"a\n";

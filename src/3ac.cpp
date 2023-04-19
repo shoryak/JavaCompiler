@@ -1,6 +1,7 @@
 #include "3ac.h"
 #include <vector>
 #include <string>
+#include <map>
 #include <fstream>
 
 std::vector<quad> code;
@@ -45,8 +46,29 @@ qid newtempstar(std::string type, SymbolTable* currSymTable)
     return qid(tmp, currSymTable->lookup(tmp));
 }
 
+int width(qid operand)
+{
+    if(operand.first[0] == '$') return 8; // temporary
+    else if(operand.second)
+    {
+        // variable
+        std::string type = operand.second->getType();
+        std::map<std::string, int> integralTypeToWidth {
+            {"byte", 1},
+            {"char", 1},
+            {"short", 2},
+            {"int", 4},
+            {"long", 8}
+        };
+        assert(integralTypeToWidth.find(type) != integralTypeToWidth.end());
+        int width = integralTypeToWidth[type];
+        return width;
+    }
+    else return 8; // constant
+}
 
-void print3AC1(std::vector<quad> code, std::string fileName){
+void print3AC1(std::vector<quad> code, std::string fileName)
+{
     qid emptyQid = qid("", NULL);
 
     tac_file1.open(fileName);

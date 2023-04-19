@@ -12,7 +12,7 @@ class Registers
 {
 public:
     // < regName , < VariableName , lastTimeUsed >>
-	std::map<std::string, pair<std::string, int>> regs;
+	std::map<std::string, std::pair<std::string, int>> regs;
     // stores all the argumentRegisters
 	std::vector<std::string> argumentRegs;
     // stores the caller saved registers
@@ -24,7 +24,7 @@ public:
     
 	std::string rip, rbp;
     // < variableName , < regName , memoryLocation >>
-	std::map<std::string, pair<std::string, std::string>> locations;
+	std::map<std::string, std::pair<std::string, std::string>> locations;
     
     int timestamp; 
 
@@ -56,7 +56,7 @@ public:
     // offset to assign temporary a memory address
     int tempoffset;
 
-	std::map<int, char> sizeSuffix{{1, 'b'}, {2, 'd'}, {4, 'w'}, {8, 'q'}};
+	std::map<int, char> sizeSuffix{{1, 'b'}, {2, 'w'}, {4, 'l'}, {8, 'q'}};
 	std::map<std::string, std::string> operToInstrALU {
 		{"+", "add"},
 		{"-", "sub"},
@@ -74,20 +74,28 @@ public:
 		{"==", "sete"},
 		{"!=", "setne"}
 	};
-	std::map<int, std::string> widthToReg {
-		{1, "cl"},
-		{2, "cx"},
-		{4, "ecx"},
-		{8, "rcx"}
+	std::vector<std::map<int, std::string>> widthToReg {
+		{
+			{1, "cl"},
+			{2, "cx"},
+			{4, "ecx"},
+			{8, "rcx"}
+		},
+		{
+			{1, "dl"},
+			{2, "dx"},
+			{4, "edx"},
+			{8, "rdx"}
+		}
 	};
 
 	X86(std::vector<quad> _tacCode);
 	void codeGen(void);
 	std::vector<std::string> tac2x86(quad instruction);
     std::string getMemLocation(qid var, std::vector<std::string>& code);
-	std::string getLoadInstr(std::string address, int width); // width = 1,2,4 ot 8
-	std::string getStoreInstr(std::string address, int width); // width = 1,2,4 ot 8
-	std::string getALUInstr(std::string address, std::string oper, int width);
+	std::string getLoadInstr(std::string address, int width, int regNum); // width = 1,2,4 or 8
+	std::string getStoreInstr(std::string address, int width, int regNum); // width = 1,2,4 or 8
+	std::string getALUInstr(std::string oper);
 };
 
 #endif

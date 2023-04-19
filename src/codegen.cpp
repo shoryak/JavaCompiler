@@ -1,4 +1,5 @@
 #include "codegen.h"
+#include "3ac.h"
 
 inline int64_t rnd(int l,int r)
 {
@@ -8,7 +9,7 @@ inline int64_t rnd(int l,int r)
 Registers::Registers()
 {
 	timestamp=0;
-	std::vector<string> vec_regs = {"%rbx","%r10","%r11", "%r12", "%r13", "%r14", "%r15"};
+	std::vector<std::string> vec_regs = {"%rbx","%r10","%r11", "%r12", "%r13", "%r14", "%r15"};
 	for(auto x: vec_regs)
 	{
 		regs[x]={"",0};
@@ -18,8 +19,8 @@ Registers::Registers()
 	callerSaved = {};
 	calleeSaved = {};
 
-	std::vector<string> vecregs = {"%rax","%rbx", "%rcx", "%rdx" , "%r8", "%r9", "%r10", "%r11", "%r12", "%r13", "%r14", "%r15" };
-	std::vector<string> vals = {"%al", "%bl", "%cl", "%dl", "%r8b", "%r9b", "%r10b", "%r11b", "%r12b", "%r13b", "%r14b", "%r15b" };
+	std::vector<std::string> vecregs = {"%rax","%rbx", "%rcx", "%rdx" , "%r8", "%r9", "%r10", "%r11", "%r12", "%r13", "%r14", "%r15" };
+	std::vector<std::string> vals = {"%al", "%bl", "%cl", "%dl", "%r8b", "%r9b", "%r10b", "%r11b", "%r12b", "%r13b", "%r14b", "%r15b" };
 	
 	for(int i=0; i < vecregs.size(); i++)
 	{
@@ -31,7 +32,7 @@ Registers::Registers()
 std::string Registers::selectReg(void)
 {
 	int threshold = 1e9+6;
-	string reg;
+	std::string reg;
 	for(auto tempreg :regs)
 	{
 		if(tempreg.second.second <= threshold)
@@ -45,7 +46,7 @@ std::string Registers::selectReg(void)
 
 std::vector<std::string> Registers::writeBack(std::vector<std::string> writeRegs = {}, bool flush = true)
 {
-	vector<string> instructions;
+	std::vector<std::string> instructions;
 
 	// inserting all registers into writeRegisters if nothing is passed
 	if(!writeRegs.size()){
@@ -114,9 +115,9 @@ std::pair<std::string, std::vector<std::string>> Registers::getRegister(std::str
 	}
 
 	// now the case if no register contains the variables value
-	string reg = selectReg();
+	std::string reg = selectReg();
 	// returns the instructions to writeback the register before assigning it to VarName
-	std::vector<string> instructionlist = writeBack({reg});
+	std::vector<std::string> instructionlist = writeBack({reg});
 
 	// assign the selected register to contain varName
 	regs[reg]={varName, ++timestamp};
@@ -182,7 +183,7 @@ void X86::codeGen()
 	
 	x86.push_back("");
 	x86.push_back(".data");
-	for(string s: constants)
+	for(std::string s: constants)
 	{
 		x86.push_back(s);
 	}
@@ -234,43 +235,31 @@ std::string X86::getMemLocation(qid var, std::vector<std::string>&code)
     }
 }
 
-std::string X86::getLoadInstr(std::string location, int width)
+std::string X86::getLoadInstr(std::string location, int width, int regNum)
 {
 	assert(sizeSuffix.find(width) != sizeSuffix.end());
-	assert(widthToReg.find(width) != widthToReg.end());
+	assert(0 <= regNum && regNum <= 1);
+	assert(widthToReg[regNum].find(width) != widthToReg[regNum].end());
 
-	char suf = sizeSuffix[width];
-	std::string loadInstr = "\tmov";
-	loadInstr.push_back(suf);
-	loadInstr += " " + location + " " + widthToReg[width];
-	
+	std::string suf; suf.push_back(sizeSuffix[width]);
+	std::string loadInstr = "\tmov" + suf + " " + location + ", " + widthToReg[regNum][width];
 	return loadInstr;
 }
 
-std::string X86::getStoreInstr(std::string location, int width)
+std::string X86::getStoreInstr(std::string location, int width, int regNum)
 {
 	assert(sizeSuffix.find(width) != sizeSuffix.end());
-	assert(widthToReg.find(width) != widthToReg.end());
+	assert(0 <= regNum && regNum <= 1);
+	assert(widthToReg[regNum].find(width) != widthToReg[regNum].end());
 
-	char suf = sizeSuffix[width];
-	std::string storeInstr = "\tmov";
-	storeInstr.push_back(suf);
-	storeInstr += " " + widthToReg[width] + " " + location;
-	
+	std::string suf; suf.push_back(sizeSuffix[width]);
+	std::string storeInstr = "\tmov" + suf + " " + widthToReg[regNum][width] + ", " + location;
 	return storeInstr;
 }
 
-std::string X86::getALUInstr(std::string location, std::string oper, int width)
+std::string X86::getALUInstr(std::string oper)
 {
-	assert(sizeSuffix.find(width) != sizeSuffix.end());
-	assert(widthToReg.find(width) != widthToReg.end());
-	assert(operToInstrALU.find(oper) != operToInstrALU.end());
-
-	char suf = sizeSuffix[width];
-	std::string ALUInstr = "\t" + operToInstrALU[oper];
-	ALUInstr.push_back(suf);
-	ALUInstr += " " + location + " " + widthToReg[width];
-
+	std::string ALUInstr = "\t" + operToInstrALU[oper] + "q  %rcx, %rdx";
 	return ALUInstr;
 }
 
@@ -337,94 +326,78 @@ std::vector<std::string> X86::tac2x86(quad instruction)
     // -- need to assign memorylocation to result if not yet assigned in case of temporary
     // -- need to create the fingerprint with symboltableentry pointer before storing memlocation (not necessary if 
     // we access symbolentry each time for offset !!)
-    else if(ALUOps.find(oper) != ALUOps.end())
+    
+	else if(ALUOps.find(oper) != ALUOps.end())
 	{
-		assert(instruction.argument1.second);
-		int argWidth1 = instruction.argument1.second->getSize();
-
-		assert(instruction.argument2.second);
-		int argWidth2 = instruction.argument2.second->getSize();
-
-		int resWidth = instruction.result.second->getSize();
+		int argWidth1 = width(instruction.argument1);
+		int argWidth2 = width(instruction.argument2);
+		int resWidth = width(instruction.result);
 		
-		assert(argWidth1 == resWidth && argWidth2 == resWidth);
+        std::string memArg1 = getMemLocation(instruction.argument1, code);
+        std::string memArg2 = getMemLocation(instruction.argument2, code);
+        std::string memRes = getMemLocation(instruction.result, code);
 
-        std::string memarg1 = getMemLocation(instruction.argument1, code);
-        std::string memarg2 = getMemLocation(instruction.argument2, code);
-        std::string memres = getMemLocation(instruction.result, code);
-
-        code.push_back(getLoadInstr(memarg1, argWidth1));
-        code.push_back(getALUInstr(memarg2, oper, argWidth2));
-        code.push_back(getStoreInstr(memres, resWidth));
+        code.push_back(getLoadInstr(memArg1, argWidth1, 0));
+		code.push_back(getLoadInstr(memArg2, argWidth2, 1));
+        code.push_back(getALUInstr(oper));
+        code.push_back(getStoreInstr(memRes, resWidth, 1));
 	}
+
 	else if(relOps.find(oper) != relOps.end())
 	{
-		assert(instruction.argument1.second);
-		int argWidth1 = instruction.argument1.second->getSize();
-		assert(instruction.argument2.second);
-		int argWidth2 = instruction.argument2.second->getSize();
-		assert(instruction.result.second);
-		int resWidth = instruction.result.second->getSize();
-
-		assert(argWidth1 == argWidth2);
-		assert(sizeSuffix.find(resWidth) != sizeSuffix.end());
-		assert(widthToReg.find(resWidth) != widthToReg.end());
-		assert(operToInstrSet.find(oper) != operToInstrSet.end());
-		char suf = sizeSuffix[resWidth];
+		int argWidth1 = width(instruction.argument1);
+		int argWidth2 = width(instruction.argument2);
+		int resWidth = width(instruction.result);
 
 		std::string memArg1 = getMemLocation(instruction.argument1, code);
 		std::string memArg2 = getMemLocation(instruction.argument2, code);
 		std::string memRes = getMemLocation(instruction.result, code);
 
-		code.push_back(getLoadInstr(memArg1, argWidth1));
-		std::string compareInstr = "\tcmp";
-		compareInstr.push_back(suf);
-		compareInstr += " " + widthToReg[argWidth1] + ", " + memArg2;
+		assert(operToInstrSet.find(oper) != operToInstrSet.end());
+
+		code.push_back(getLoadInstr(memArg1, argWidth1, 0));
+		code.push_back(getLoadInstr(memArg2, argWidth2, 1));
+		std::string compareInstr = "\tcmpq %rcx, %rdx";
 		code.push_back(compareInstr);
 		code.push_back("\t" + operToInstrSet[oper] + " %cl");
-		std::string moveToLargeRegInstr = "\tmovzb";
-		moveToLargeRegInstr.push_back(sizeSuffix[resWidth]);
-		moveToLargeRegInstr += " %cl, " + widthToReg[resWidth];
+		std::string moveToLargeRegInstr = "\tmovzbq %cl, %rcx";
 		code.push_back(moveToLargeRegInstr);
-		code.push_back(getStoreInstr(memRes, resWidth));
+		code.push_back(getStoreInstr(memRes, resWidth, 0));
 	}
 	else if(oper.substr(0, 5) == "CAST_")
 	{
 		
 	}
+
     // allocmem
     else if(oper == "" && instruction.argument1.first == "$allocmem")
 	{
-		std::string bytes = "$" + std::stol(instruction.argument2.first);
+		std::string bytes = "$" + instruction.argument2.first;
 		std::string addBytesArgLine = "\tmovq " + bytes + ", %rdi"; // put bytes into %rdi
 		std::string heapAllocLine = "\tcall malloc";
 
 		// store allocated address in %rax to result
-		std::string assignLine = "\tmovq %rax, memoryloc";
+		std::string memRes = getMemLocation(instruction.result, code);
+		std::string assignLine = "\tmovq %rax, " + memRes;
 
 		code.push_back(addBytesArgLine);
 		code.push_back(heapAllocLine);
 		code.push_back(assignLine);
     }
+	
 	// assignment
     else if(oper == "")
 	{
-		std::string arg = instruction.argument1.first;
-		assert(instruction.argument1.second);
-		int argWidth = instruction.argument1.second->getSize();
+		int argWidth = width(instruction.argument1);
+		int resWidth = width(instruction.result);
 
-		std::string res = instruction.result.first;
-		assert(instruction.result.second);
-		int resWidth = instruction.result.second->getSize();
+		std::string memArg = getMemLocation(instruction.argument1, code);
+		std::string memRes = getMemLocation(instruction.result, code);
 
-		assert(argWidth == resWidth);
-
-		std::string memarg = getMemLocation(instruction.argument1, code);
-		std::string memres = getMemLocation(instruction.result, code);
-
-		code.push_back(getLoadInstr(memarg, argWidth));
-		code.push_back(getStoreInstr(memres, resWidth));
+		code.push_back(getLoadInstr(memArg, argWidth, 0));
+		code.push_back(getStoreInstr(memRes, resWidth, 0));
     }
+
     // functions and methodcalls
 	else if(oper[0] == '#')
 	{
@@ -528,7 +501,7 @@ std::vector<std::string> X86::tac2x86(quad instruction)
 		code.push_back(str2);
 
 	}
-	else if(oper == "CALL" && )
+	else if(oper == "CALL")
 	{
 		std::string str1 = "\tpush %rcx";
 		std::string str2 = "\tpush %rax";
