@@ -144,6 +144,7 @@ std::pair<std::string, std::vector<std::string>> Registers::getRegister(std::str
 
 X86::X86(std::vector<quad> _tacCode)
 {
+    tempoffset = 0;
 	tacCode = _tacCode;
 	Registers *regs = new Registers();
 	registers = *regs;
@@ -195,8 +196,39 @@ void X86::codeGen()
 	
 }
 
-std::string X86::getMemLocation(std::string varName , bool istemp){
+std::string X86::getMemLocation(qid var , bool istemp, vector<string> &code){
     // if(locations.find())
+    auto entry =  var.second;
+    std::cerr<< var.first<<"\n";
+    if(entry == NULL){
+        return "$" + var.first;
+    }
+    assert(entry);
+
+    std::string varPrint = var.first + std::to_string(reinterpret_cast<long long>(entry));
+    std::cerr<< varPrint<<"\n";
+
+    // memory location already assigned
+    if(registers.locations.find(varPrint) != registers.locations.end()){
+        return registers.locations[varPrint].second;
+    }
+    // encountering temporary or variable first time in code
+    else{
+        if(istemp){
+            tempoffset += 8;
+            std::string spaceTemp= "\tsub $8, %rsp";
+            code.push_back(spaceTemp);
+            std::string memLoc = "-" + std::to_string(tempoffset) + "(%rbp)";
+            registers.locations[varPrint].second = memLoc;
+            return memLoc;
+        }
+        else{
+            int offset = entry->getOffset();
+            std::string memLoc = "-" + std::to_string(offset) + "(%rbp)";
+            registers.locations[varPrint].second = memLoc;
+            return memLoc;
+        }
+    }
 }
 
 std::vector<std::string> X86::tac2x86(quad instruction)
@@ -257,11 +289,27 @@ std::vector<std::string> X86::tac2x86(quad instruction)
 	{
         std::string arg1 = instruction.argument1.first;
         std::string arg2 = instruction.argument2.first;
+        std::string res  = instruction.result.first;
+        bool istemp = false;
+        if(arg1[0] == '$'){
+            istemp = true;
+        }
+        std::string memarg1 = getMemLocation( instruction.argument1 , istemp , code);
+        istemp = false;
+        if(arg2[0] == '$'){
+            istemp = true;
+        }
+        std::string memarg2 = getMemLocation( instruction.argument2 , istemp , code);
+        istemp = false;
+        if(res[0] == '$'){
+            istemp = true;
+        }
+        std::string memres = getMemLocation( instruction.argument2 , istemp , code);
         // move arg1
-        std::string movarg1 = "\tmov memory1, reg1";
-        std::string movarg2 = "\tmov memory2, reg2";
+        std::string movarg1 = "\tmov " + memarg1 + ", reg1";
+        std::string movarg2 = "\tmov " + memarg2 + ", reg2";
         std::string addIns = "\tadd reg2, reg1";
-        std::string movres = "\tmov reg1, memoryres";
+        std::string movres = "\tmov reg1," + memres;
         code.push_back(movarg1);
         code.push_back(movarg2);
         code.push_back(addIns);
@@ -288,11 +336,11 @@ std::vector<std::string> X86::tac2x86(quad instruction)
     else if(oper == "" && instruction.argument1.first == "$allocmem")
 	{
 		std::string bytes = "$" + std::stol(instruction.argument2.first);
-		std::string addBytesArgLine = "movq " + bytes + ", %rdi"; // put bytes into %rdi
-		std::string heapAllocLine = "call malloc";
+		std::string addBytesArgLine = "\tmovq " + bytes + ", %rdi"; // put bytes into %rdi
+		std::string heapAllocLine = "\tcall malloc";
 
 		// store allocated address in %rax to result
-		std::string assignLine = "movq %rax, memoryloc";
+		std::string assignLine = "\tmovq %rax, memoryloc";
 
 		code.push_back(addBytesArgLine);
 		code.push_back(heapAllocLine);

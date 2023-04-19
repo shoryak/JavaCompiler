@@ -100,6 +100,7 @@ public:
     
     void print(void);
     void _addToCSV(std::ofstream& ofs);
+    int getOffset(void){ return this->offset; };
 };
 
 class SymbolTable {

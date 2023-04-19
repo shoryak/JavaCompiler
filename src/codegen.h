@@ -53,11 +53,13 @@ class X86
     Registers registers;
     // to store constants to be added in the data section
     std::vector<string> constants;
+    // offset to assign temporary a memory address
+    int tempoffset;
 
 	X86(std::vector<quad> _tacCode);
 	void codeGen(void);
 	std::vector<std::string> tac2x86(quad instruction);
-    std::string getMemLocation(std::string , bool);
+    std::string getMemLocation(qid , bool , vector<string>&);
 };
 
 #endif
