@@ -66,6 +66,14 @@ public:
 		{"|", "or"},
 		{"^", "xor"}
 	};
+	std::map<std::string, std::string> operToInstrSet {
+		{"<", "setl"},
+		{"<=", "setle"},
+		{">", "setg"},
+		{">=", "setge"},
+		{"==", "sete"},
+		{"!=", "setne"}
+	};
 	std::map<int, std::string> widthToReg {
 		{1, "cl"},
 		{2, "cx"},
@@ -76,7 +84,7 @@ public:
 	X86(std::vector<quad> _tacCode);
 	void codeGen(void);
 	std::vector<std::string> tac2x86(quad instruction);
-    std::string getMemLocation(qid, bool, std::vector<std::string>&);
+    std::string getMemLocation(qid var, std::vector<std::string>& code);
 	std::string getLoadInstr(std::string address, int width); // width = 1,2,4 ot 8
 	std::string getStoreInstr(std::string address, int width); // width = 1,2,4 ot 8
 	std::string getALUInstr(std::string address, std::string oper, int width);

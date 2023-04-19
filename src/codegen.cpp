@@ -195,18 +195,14 @@ void X86::codeGen()
 	// ofstream my_function_dump("./bin/output.s");
 }
 
-std::string X86::getMemLocation(qid var, bool istemp, std::vector<std::string>&code)
+std::string X86::getMemLocation(qid var, std::vector<std::string>&code)
 {
-    // if(locations.find())
-    bool isPointer = false;
-    if(var.first[0] == '*'){
-        isPointer = true;
-    }
+	bool istemp = var.first[0] == '$';
+    bool isPointer = var.first[0] == '*';
+
     auto entry =  var.second;
     std::cerr<< var.first<<"\n";
-    if(entry == NULL){
-        return "$" + var.first;
-    }
+    if(!entry) return "$" + var.first;
     assert(entry);
 
     std::string varPrint = var.first + std::to_string(reinterpret_cast<long long>(entry));
@@ -284,7 +280,11 @@ std::vector<std::string> X86::tac2x86(quad instruction)
 	std::string oper = instruction.oper.first;
 	std::set<std::string> ALUOps {
 		"+", "-", "*", "/", "%",
-		"&", "|", "^", "~"
+		"&", "|", "^", "~" ,
+		">>" , "<<", ">>>"
+	};
+	std::set<std::string> relOps {
+		"<", ">", "<=", ">=", "==", "!="
 	};
     // conditionals --------------------------------------------------------------
 	if(oper == "IfFalse")
@@ -339,52 +339,58 @@ std::vector<std::string> X86::tac2x86(quad instruction)
     // we access symbolentry each time for offset !!)
     else if(ALUOps.find(oper) != ALUOps.end())
 	{
-        std::string arg1 = instruction.argument1.first;
 		assert(instruction.argument1.second);
 		int argWidth1 = instruction.argument1.second->getSize();
 
-        std::string arg2 = instruction.argument2.first;
 		assert(instruction.argument2.second);
 		int argWidth2 = instruction.argument2.second->getSize();
 
-        std::string res  = instruction.result.first;
 		int resWidth = instruction.result.second->getSize();
 		
 		assert(argWidth1 == resWidth && argWidth2 == resWidth);
 
-        bool istemp = arg1[0] == '$';
-        std::string memarg1 = getMemLocation(instruction.argument1, istemp, code);
-        istemp = arg2[0] == '$';
-        std::string memarg2 = getMemLocation(instruction.argument2, istemp, code);
-        istemp = res[0] == '$';
-        std::string memres = getMemLocation(instruction.result, istemp, code);
+        std::string memarg1 = getMemLocation(instruction.argument1, code);
+        std::string memarg2 = getMemLocation(instruction.argument2, code);
+        std::string memres = getMemLocation(instruction.result, code);
 
-        std::string movarg1 = getLoadInstr(memarg1, argWidth1);
-        std::string addIns = getALUInstr(memarg2, oper, argWidth2);
-        std::string movres = getStoreInstr(memres, resWidth);
-        code.push_back(movarg1);
-        code.push_back(addIns);
-        code.push_back(movres);
+        code.push_back(getLoadInstr(memarg1, argWidth1));
+        code.push_back(getALUInstr(memarg2, oper, argWidth2));
+        code.push_back(getStoreInstr(memres, resWidth));
 	}
-	else if(oper == "<")
+	else if(relOps.find(oper) != relOps.end())
 	{
-		
-	}
-	else if(oper == ">")
-	{
+		assert(instruction.argument1.second);
+		int argWidth1 = instruction.argument1.second->getSize();
+		assert(instruction.argument2.second);
+		int argWidth2 = instruction.argument2.second->getSize();
+		assert(instruction.result.second);
+		int resWidth = instruction.result.second->getSize();
 
-	}
-	else if(oper == "==")
-	{
+		assert(argWidth1 == argWidth2);
+		assert(sizeSuffix.find(resWidth) != sizeSuffix.end());
+		assert(widthToReg.find(resWidth) != widthToReg.end());
+		assert(operToInstrSet.find(oper) != operToInstrSet.end());
+		char suf = sizeSuffix[resWidth];
 
-	}
-	else if(oper == "!=")
-	{
+		std::string memArg1 = getMemLocation(instruction.argument1, code);
+		std::string memArg2 = getMemLocation(instruction.argument2, code);
+		std::string memRes = getMemLocation(instruction.result, code);
 
+		code.push_back(getLoadInstr(memArg1, argWidth1));
+		std::string compareInstr = "\tcmp";
+		compareInstr.push_back(suf);
+		compareInstr += " " + widthToReg[argWidth1] + ", " + memArg2;
+		code.push_back(compareInstr);
+		code.push_back("\t" + operToInstrSet[oper] + " %cl");
+		std::string moveToLargeRegInstr = "\tmovzb";
+		moveToLargeRegInstr.push_back(sizeSuffix[resWidth]);
+		moveToLargeRegInstr += " %cl, " + widthToReg[resWidth];
+		code.push_back(moveToLargeRegInstr);
+		code.push_back(getStoreInstr(memRes, resWidth));
 	}
 	else if(oper.substr(0, 5) == "CAST_")
 	{
-
+		
 	}
     // allocmem
     else if(oper == "" && instruction.argument1.first == "$allocmem")
@@ -401,8 +407,23 @@ std::vector<std::string> X86::tac2x86(quad instruction)
 		code.push_back(assignLine);
     }
 	// assignment
-    else if(oper == ""){
+    else if(oper == "")
+	{
+		std::string arg = instruction.argument1.first;
+		assert(instruction.argument1.second);
+		int argWidth = instruction.argument1.second->getSize();
 
+		std::string res = instruction.result.first;
+		assert(instruction.result.second);
+		int resWidth = instruction.result.second->getSize();
+
+		assert(argWidth == resWidth);
+
+		std::string memarg = getMemLocation(instruction.argument1, code);
+		std::string memres = getMemLocation(instruction.result, code);
+
+		code.push_back(getLoadInstr(memarg, argWidth));
+		code.push_back(getStoreInstr(memres, resWidth));
     }
     // functions and methodcalls
 	else if(oper[0] == '#')
@@ -411,28 +432,32 @@ std::vector<std::string> X86::tac2x86(quad instruction)
         code.push_back(funcName);
 		// std::string assignLine = ;
 	}
-    else if(oper == "BEGINFUNC"){
+    else if(oper == "BEGINFUNC")
+	{
         std::string pushrbp = "\tpush %rbp";
-        std::string bp2sp = "\tmov %rsp,%rbp";
+        std::string bp2sp = "\tmov %rsp, %rbp";
         code.push_back(pushrbp);
         code.push_back(bp2sp);
     }
-    else if(oper == "ENDFUNC"){
-         std::string sp2bp = "\tmov %rbp,%rsp";
+    else if(oper == "ENDFUNC")
+	{
+         std::string sp2bp = "\tmov %rbp, %rsp";
          std::string restorerbp = "\tpop %rbp";
          std::string ret = "\tret";
          code.push_back(sp2bp);
          code.push_back(restorerbp);
          code.push_back(ret);
     }
-    else if(oper == "LOCALVARIABLESPACE"){
+    else if(oper == "LOCALVARIABLESPACE")
+	{
         std::string comment = "\t# Space for local variables";
         std::string localSpace = "\tsub $"+ instruction.argument1.first + ", %rsp";
         tempoffset= stoi(instruction.argument1.first);
         code.push_back(comment);
         code.push_back(localSpace);
     }
-    else if(oper == "pusharg"){
+    else if(oper == "pusharg")
+	{
         std::string comment = "\t#PushArg ";
         std::string argSpace = "\tsub $"+ instruction.argument2.first + ", %rsp";
         std::string movArg = "\tmov " + instruction.argument1.first + ", 0(%rsp)";
@@ -440,18 +465,76 @@ std::vector<std::string> X86::tac2x86(quad instruction)
         code.push_back(argSpace);
         code.push_back(movArg);
     }
-    else if(oper == "poparg"){
+    else if(oper == "poparg")
+	{
         std::string argPrint = instruction.result.first + std::to_string(reinterpret_cast<long long>(instruction.result.second));
         registers.locations[argPrint].second = instruction.argument1.first+ "(%rbp)";
         std::string comment = "\t#PopArg " + registers.locations[argPrint].second  ;
         code.push_back(comment);
     }
-    else if(oper == "pop"){
+    else if(oper == "pop")
+	{
         std::string comment = "\t#PopStack " + instruction.argument1.first  ;
         std::string popStack = "\tadd $"+ instruction.argument1.first + ", %rsp";
         code.push_back(comment);
         code.push_back(popStack);
     }
+	else if(oper == ">>")
+	{
+		std::string tempname1 = instruction.argument1.first;
+		std::string memlocation1 = registers.locations[tempname1].second;
+
+		std::string tempname2 = instruction.argument2.first;
+		std::string memlocation2 = registers.locations[tempname2].second;
+
+		std::string str0 =  "\tmov %rcx, " + tempname2;
+		std::string str1 = std::string() + "\tmov " + "%rax " + memlocation1;
+		std::string str2 = std::string() + "\tsar " + "%rax" + ", %cl";
+
+		code.push_back(str0);
+		code.push_back(str1);
+		code.push_back(str2);
+	}
+	else if(oper == "<<")
+	{
+		std::string tempname1 = instruction.argument1.first;
+		std::string memlocation1 = registers.locations[tempname1].second;
+
+		std::string tempname2 = instruction.argument2.first;
+		std::string memlocation2 = registers.locations[tempname2].second;
+
+		std::string str0 = "\tmov %rcx, " + tempname2;
+		std::string str1 = std::string() + "\tmov " + "%rax " + memlocation1;
+		std::string str2 = std::string() + "\tshl " + "%rax" + ", %cl";
+
+		code.push_back(str0);
+		code.push_back(str1);
+		code.push_back(str2);
+	}
+	else if(oper == ">>>")
+	{	
+		std::string tempname1 = instruction.argument1.first;
+		std::string memlocation1 = registers.locations[tempname1].second;
+
+		std::string tempname2 = instruction.argument2.first;
+		std::string memlocation2 = registers.locations[tempname2].second;
+
+		std::string str0 = "\tmov %rcx, " + tempname2;
+		std::string str1 = std::string() + "\tmov " + "%rax " + memlocation1;
+		std::string str2 = std::string() + "\tshr " + "%rax" + ", %cl";
+
+		code.push_back(str0);
+		code.push_back(str1);
+		code.push_back(str2);
+
+	}
+	else if(oper == "CALL" && )
+	{
+		std::string str1 = "\tpush %rcx";
+		std::string str2 = "\tpush %rax";
+		code.push_back(str1);
+		code.push_back(str2);
+	}
     
 	return code;
 } 
