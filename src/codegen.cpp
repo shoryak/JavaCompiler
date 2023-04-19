@@ -198,10 +198,13 @@ void X86::codeGen()
 std::string X86::getMemLocation(qid var, bool istemp, std::vector<std::string>&code)
 {
     // if(locations.find())
-    auto entry = var.second;
-    std::cerr << var.first << "\n";
-    if(entry == NULL)
-	{
+    bool isPointer = false;
+    if(var.first[0] == '*'){
+        isPointer = true;
+    }
+    auto entry =  var.second;
+    std::cerr<< var.first<<"\n";
+    if(entry == NULL){
         return "$" + var.first;
     }
     assert(entry);
@@ -337,9 +340,11 @@ std::vector<std::string> X86::tac2x86(quad instruction)
     else if(ALUOps.find(oper) != ALUOps.end())
 	{
         std::string arg1 = instruction.argument1.first;
+		assert(instruction.argument1.second);
 		int argWidth1 = instruction.argument1.second->getSize();
 
         std::string arg2 = instruction.argument2.first;
+		assert(instruction.argument2.second);
 		int argWidth2 = instruction.argument2.second->getSize();
 
         std::string res  = instruction.result.first;
@@ -396,10 +401,57 @@ std::vector<std::string> X86::tac2x86(quad instruction)
 		code.push_back(assignLine);
     }
 	// assignment
-	else if(oper == "")
+    else if(oper == ""){
+
+    }
+    // functions and methodcalls
+	else if(oper[0] == '#')
 	{
+        std::string funcName = "\n\n" + oper.substr(1,oper.length()) + ":";
+        code.push_back(funcName);
 		// std::string assignLine = ;
 	}
+    else if(oper == "BEGINFUNC"){
+        std::string pushrbp = "\tpush %rbp";
+        std::string bp2sp = "\tmov %rsp,%rbp";
+        code.push_back(pushrbp);
+        code.push_back(bp2sp);
+    }
+    else if(oper == "ENDFUNC"){
+         std::string sp2bp = "\tmov %rbp,%rsp";
+         std::string restorerbp = "\tpop %rbp";
+         std::string ret = "\tret";
+         code.push_back(sp2bp);
+         code.push_back(restorerbp);
+         code.push_back(ret);
+    }
+    else if(oper == "LOCALVARIABLESPACE"){
+        std::string comment = "\t# Space for local variables";
+        std::string localSpace = "\tsub $"+ instruction.argument1.first + ", %rsp";
+        tempoffset= stoi(instruction.argument1.first);
+        code.push_back(comment);
+        code.push_back(localSpace);
+    }
+    else if(oper == "pusharg"){
+        std::string comment = "\t#PushArg ";
+        std::string argSpace = "\tsub $"+ instruction.argument2.first + ", %rsp";
+        std::string movArg = "\tmov " + instruction.argument1.first + ", 0(%rsp)";
+        code.push_back(comment);
+        code.push_back(argSpace);
+        code.push_back(movArg);
+    }
+    else if(oper == "poparg"){
+        std::string argPrint = instruction.result.first + std::to_string(reinterpret_cast<long long>(instruction.result.second));
+        registers.locations[argPrint].second = instruction.argument1.first+ "(%rbp)";
+        std::string comment = "\t#PopArg " + registers.locations[argPrint].second  ;
+        code.push_back(comment);
+    }
+    else if(oper == "pop"){
+        std::string comment = "\t#PopStack " + instruction.argument1.first  ;
+        std::string popStack = "\tadd $"+ instruction.argument1.first + ", %rsp";
+        code.push_back(comment);
+        code.push_back(popStack);
+    }
     
 	return code;
 } 
