@@ -1771,15 +1771,15 @@ void three_AC(Node *node){
                 int argNum = 0;
                 for(auto child: Arguments->children)
                 {
-                    quad I1 = generate(qid("push", NULL), child->node_tmp, emptyQid, emptyQid, -1);
-                    node->code.push_back(I1);
-
                     std::string argType = functionPrototype.argTypes[argNum];
                     int argDim = functionPrototype.argDims[argNum];
                     
                     totalPopSize += (argDim > 0 ? 8: setOffset(argType));
 
                     argNum++;
+                    std::string sizeArg = std::to_string(argDim > 0 ? 8: setOffset(argType));
+                    quad I1 = generate(qid("pusharg", NULL), child->node_tmp, qid( sizeArg, NULL ), emptyQid, -1);
+                    node->code.push_back(I1);
                 }
             }
 
@@ -1888,15 +1888,15 @@ void three_AC(Node *node){
                     int argNum = 0;
                     for(auto child: Arguments->children)
                     {
-                        quad I1 = generate(qid("push", NULL), child->node_tmp, emptyQid, emptyQid, -1);
-                        node->code.push_back(I1);
-
                         std::string argType = functionPrototype.argTypes[argNum];
                         int argDim = functionPrototype.argDims[argNum];
-
+                        
                         totalPopSize += (argDim > 0 ? 8: setOffset(argType));
 
                         argNum++;
+                        std::string sizeArg = std::to_string(argDim > 0 ? 8: setOffset(argType));
+                        quad I1 = generate(qid("pusharg", NULL), child->node_tmp, qid( sizeArg, NULL ), emptyQid, -1);
+                        node->code.push_back(I1);
                     }
                 }
 
@@ -1981,15 +1981,15 @@ void three_AC(Node *node){
                 int argNum = 0;
                 for(auto child: Arguments->children)
                 {
-                    quad I1 = generate(qid("push", NULL), child->node_tmp, emptyQid, emptyQid, -1);
-                    node->code.push_back(I1);
-
                     std::string argType = functionPrototype.argTypes[argNum];
                     int argDim = functionPrototype.argDims[argNum];
-
+                    
                     totalPopSize += (argDim > 0 ? 8: setOffset(argType));
 
-                    argNum++; 
+                    argNum++;
+                    std::string sizeArg = std::to_string(argDim > 0 ? 8: setOffset(argType));
+                    quad I1 = generate(qid("pusharg", NULL), child->node_tmp, qid( sizeArg, NULL ), emptyQid, -1);
+                    node->code.push_back(I1);
                 }
             }
 
@@ -2041,12 +2041,12 @@ void three_AC(Node *node){
             std::string objname = leftleaf->namelexeme;
             node->node_tmp = newtemp("dot", node->nearSymbolTable);
             quad I1 = generate(qid("", NULL), qid(objname, NULL), emptyQid,node->node_tmp, -1);
-            string temp = "";
-            for(auto ch : node->node_tmp.first){
-                if(ch!='*'){
-                    temp.push_back(ch);
-                }
-            }
+            // string temp = "";
+            // for(auto ch : node->node_tmp.first){
+            //     if(ch!='*'){
+            //         temp.push_back(ch);
+            //     }
+            // }
 
             std::string objClassName;
             if(objname == "this")
@@ -2067,7 +2067,7 @@ void three_AC(Node *node){
             auto fieldStructData = classFieldData[objClassName + "_" + fieldName];
             int offset = fieldStructData.offset;
 
-            quad I2 = generate(qid("+",NULL), qid(temp,NULL), qid(std::to_string(offset), NULL), qid(temp,NULL),-1);
+            quad I2 = generate(qid("+",NULL), node->node_tmp, qid(std::to_string(offset), NULL), node->node_tmp,-1);
             node->code.push_back(I1);
             node->code.push_back(I2);
             // print3AC1(node->code);
@@ -2143,11 +2143,11 @@ void three_AC(Node *node){
         // removing the space for return value and return address manually created 
         // int rv_initial = 8;
         // if(header) rv_initial += setOffset(header->children[0]->namelexeme);
-        int rv_initial = 8;
+        int rv_initial = 16; // return address + rbp
 
         if(!isStatic)
         {
-            quad I1 =  generate(qid("MOVE-8", NULL) , qid("%"+ std::to_string(rv_initial) +"(rbp)",NULL), emptyQid, qid("this",NULL) , -1);
+            quad I1 =  generate(qid("poparg", NULL) , qid(std::to_string(rv_initial) ,NULL), emptyQid, qid("this",NULL) , -1);
             node->code.push_back(I1);
 
         }
@@ -2162,10 +2162,11 @@ void three_AC(Node *node){
                 auto Id = param->children.back();
                 paramNames.push_back(Id->children[0]->children[0]->namelexeme);
                 entries.push_back(param->nearSymbolTable->lookup(paramNames.back()));
+                // std::cerr<< "parameterEntry##"<<"\n";
                 entries.back()->print();
             }
             
-            int rv_= 8;
+            int rv_= 16;
             // if(header) rv_ += setOffset(header->children[0]->namelexeme);
             if(!isStatic) rv_ +=8;
             for(int i = paramNumber - 1; i >= 0; i--)
@@ -2194,7 +2195,7 @@ void three_AC(Node *node){
                     }
                 }
 
-                quad I1 =  generate(qid("MOVE-" + std::to_string(setOffset(type1)) , NULL) , qid("%"+ std::to_string(rv_) +"(rbp)",NULL) , emptyQid, qid(paramNames[i], entries[i])  , -1);
+                quad I1 =  generate(qid("poparg" , NULL) , qid(std::to_string(rv_),NULL) , emptyQid, qid(paramNames[i], entries[i])  , -1);
                 // std::cerr<<"___ "<<type1<<" "<<rv_<<"\n";
                 rv_ += setOffset(type1);
                 // std::cerr<<"___ "<<type1<<" "<<rv_<<"\n";
@@ -2206,7 +2207,7 @@ void three_AC(Node *node){
 
         // give space for local variables which can be accessed from their offsets in stored in symbol table
         int sizeofLocals = funcEntry->getSizeofLocals();
-        quad localSpace = generate(qid("-",NULL) , qid("$sp", NULL) , qid(std::to_string(sizeofLocals), NULL), qid("$sp", NULL) , -1);
+        quad localSpace = generate(qid("LOCALVARIABLESPACE",NULL) ,  qid(std::to_string(sizeofLocals), NULL), emptyQid ,emptyQid , -1);
         node->code.push_back(localSpace);
 
         // give space for saved registers (num_of_callee_saved_registers assumed 9)
