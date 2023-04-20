@@ -1302,7 +1302,7 @@ void unary3AC(Node* node, std::string op)
 {
     node->node_tmp = newtemp(node->typeForExpr, node->nearSymbolTable);
     quad instruction = generate(qid(op, NULL), emptyQid, node->children[0]->node_tmp, node->node_tmp, -1);
-    // codeInsert(node,node->code);
+    codeInsert(node,node->children[0]->code);
     node->code.push_back(instruction);
     // print3AC(node->code);
 }
@@ -1408,7 +1408,7 @@ void three_AC(Node *node){
     std::vector<std::string> opsBinary, opsUnary;
     std::vector<std::vector<std::string>> opsBinaryAll{arithmeticOpsBinary, bitwiseOpsBinary, logicalOpsBinary, relationalOpsBinary};
     std::vector<std::vector<std::string>> opsUnaryAll{arithmeticOpsUnary, bitwiseOpsUnary, logicalOpsUnary};
-    std::vector<std::string> operAndAssign{"+=", "-=", "*=", "/=", "&="};
+    std::vector<std::string> operAndAssign{"+=", "-=", "*=", "/=", "%=", "&="};
 
     for(auto opsList: opsBinaryAll)
         opsBinary.insert(opsBinary.end(), opsList.begin(), opsList.end());
@@ -1483,9 +1483,9 @@ void three_AC(Node *node){
         std::string oper;
         oper.push_back(nodeName[0]);
         node->node_tmp = newtemp(node->children[0]->typeForExpr, node->nearSymbolTable);
-        generate(qid(oper, NULL), node->children[0]->node_tmp, node->children[1]->node_tmp, node->node_tmp, -1);
+        node->code.push_back(generate(qid(oper, NULL), node->children[0]->node_tmp, node->children[1]->node_tmp, node->node_tmp, -1));
         //node->children[0]->node_tmp = newtemp(node->children[0]->children[0]->typeForExpr, node->nearSymbolTable);
-        generate(emptyQid, node->node_tmp, emptyQid, node->children[0]->node_tmp, -1);
+        node->code.push_back(generate(emptyQid, node->node_tmp, emptyQid, node->children[0]->node_tmp, -1));
     } 
     
     else if(nodeName == "PreIncrementExpression")

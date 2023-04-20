@@ -64,7 +64,7 @@ public:
 		{"/", "div"},
 		{"&", "and"},
 		{"|", "or"},
-		{"^", "xor"}
+		{"^", "xor"},
 	};
 	std::map<std::string, std::string> operToInstrSet {
 		{"<", "setl"},
@@ -101,6 +101,14 @@ public:
 			{4, "%eax"},
 			{8, "%rax"}
 		}
+        ,
+        {
+			{1, "%bl"},
+			{2, "%bx"},
+			{4, "%ebx"},
+			{8, "%rbx"}
+		}
+
 
 
 	};

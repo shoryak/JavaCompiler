@@ -60,6 +60,7 @@ int width(qid operand)
         std::string type = operand.second->getType();
         std::map<std::string, int> integralTypeToWidth {
             {"byte", 1},
+            {"boolean" , 1},
             {"char", 1},
             {"short", 2},
             {"int", 4},

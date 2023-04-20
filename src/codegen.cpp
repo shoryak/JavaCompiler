@@ -157,17 +157,6 @@ void X86::codeGen()
 	x86.push_back(".globl main");
 	x86.push_back("");
 	x86.push_back(".bss");
-	// for(auto x:sym_tab){
-	// 	vector<string> temp = split(x.ff,'-');
-	// 	if(temp.size()==2 && temp[0]=="0"){
-	// 		if(dynamic_cast<FunctionType*>(x.ss) != NULL || temp[1]=="printf" || temp[1]=="scanf"){
-	// 			continue;
-	// 		}
-	// 		x86.push_back(temp[1]+":");
-	// 		x86.push_back("\t.space "+ to_string(x.ss->getSize()));
-	// 		r.locs[x.ff] = {"","(" + temp[1] + ")"};
-	// 	}
-	// }
 	
 	x86.push_back("");
 	x86.push_back(".text");
@@ -188,6 +177,8 @@ void X86::codeGen()
     constants.push_back(print0);
     std::string print1 = "print1:\n\t .asciz \"%ld\\n\" ";
     constants.push_back(print1);
+    std::string print2 = "print2:\n\t .asciz \"%d\\n\" ";
+    constants.push_back(print2);
 	for(std::string s: constants)
 	{
 		x86.push_back(s);
@@ -214,6 +205,7 @@ std::string X86::getMemLocation(qid var, std::vector<std::string>&code)
 
     auto entry =  var.second;
     std::cerr<< var.first<<"\n";
+    if(var.first == "" ) var.first = "0";
     if(!entry) return "$" + var.first;
     assert(entry);
 
@@ -251,7 +243,7 @@ std::string X86::getMemLocation(qid var, std::vector<std::string>&code)
 std::string X86::getLoadInstr(std::string location, int width, int regNum)
 {
 	assert(sizeSuffix.find(width) != sizeSuffix.end());
-	assert(0 <= regNum && regNum <= 3);
+	assert(0 <= regNum && regNum <= 4);
 	assert(widthToReg[regNum].find(width) != widthToReg[regNum].end());
 
 	std::string suf; suf.push_back(sizeSuffix[width]);
@@ -262,7 +254,7 @@ std::string X86::getLoadInstr(std::string location, int width, int regNum)
 std::string X86::getStoreInstr(std::string location, int width, int regNum)
 {
 	assert(sizeSuffix.find(width) != sizeSuffix.end());
-	assert(0 <= regNum && regNum <= 3);
+	assert(0 <= regNum && regNum <= 4);
 	assert(widthToReg[regNum].find(width) != widthToReg[regNum].end());
 
 	std::string suf; suf.push_back(sizeSuffix[width]);
@@ -272,7 +264,11 @@ std::string X86::getStoreInstr(std::string location, int width, int regNum)
 
 std::string X86::getALUInstr(std::string oper)
 {
+
 	std::string ALUInstr = "\t" + operToInstrALU[oper] + "q  %rcx, %rdx";
+    // if(oper == "-"){
+    //     ALUInstr = "\t" + operToInstrALU[oper] + "q  %rdx, %rcx";
+    // }
 	return ALUInstr;
 }
 
@@ -281,9 +277,8 @@ std::vector<std::string> X86::tac2x86(quad instruction)
 	std::vector<std::string> code;
 	std::string oper = instruction.oper.first;
 	std::set<std::string> ALUOps {
-		"+", "-", "*", "/", "%",
+		"+", "-", "*",
 		"&", "|", "^", "~" ,
-		">>" , "<<", ">>>"
 	};
 	std::set<std::string> relOps {
 		"<", ">", "<=", ">=", "==", "!="
@@ -342,6 +337,7 @@ std::vector<std::string> X86::tac2x86(quad instruction)
     
 	else if(ALUOps.find(oper) != ALUOps.end())
 	{
+        std::cerr<<oper<<"\n";
 		int argWidth1 = width(instruction.argument1);
 		int argWidth2 = width(instruction.argument2);
 		int resWidth = width(instruction.result);
@@ -350,8 +346,8 @@ std::vector<std::string> X86::tac2x86(quad instruction)
         std::string memArg2 = getMemLocation(instruction.argument2, code);
         std::string memRes = getMemLocation(instruction.result, code);
 
-        code.push_back(getLoadInstr(memArg1, argWidth1, 0));
-		code.push_back(getLoadInstr(memArg2, argWidth2, 1));
+        code.push_back(getLoadInstr(memArg2, argWidth1, 0));
+		code.push_back(getLoadInstr(memArg1, argWidth2, 1));
         code.push_back(getALUInstr(oper));
         code.push_back(getStoreInstr(memRes, resWidth, 1));
 	}
@@ -379,6 +375,16 @@ std::vector<std::string> X86::tac2x86(quad instruction)
 	}
 	else if(oper.substr(0, 5) == "CAST_")
 	{
+        if(oper == "CAST_boolean"){
+            // int argWidth = width(instruction.argument1);
+            // int resWidth = width(instruction.result);
+
+            // std::string memArg = getMemLocation(instruction.argument1, code);
+            // std::string memRes = getMemLocation(instruction.result, code);
+
+            // code.push_back(getLoadInstr(memArg, argWidth, 0));
+            // code.push_back(getStoreInstr(memRes, resWidth, 0));
+        }
 		
 		int argWidth = width(instruction.argument1);
 		int resWidth = width(instruction.result);
@@ -389,7 +395,31 @@ std::vector<std::string> X86::tac2x86(quad instruction)
 		code.push_back(getLoadInstr(memArg, argWidth, 0));
 		code.push_back(getStoreInstr(memRes, resWidth, 0));
 	}
+    else if(oper == "/" || oper == "%"){
+        // mov rax, 123456789012345678 ; load dividend into RAX
+        // mov rbx, 9876543210 ; load divisor into RBX
+        // idiv rbx ; divide RDX:RAX by RBX
+        int argWidth1 = width(instruction.argument1);
+		int argWidth2 = width(instruction.argument2);
+		int resWidth = width(instruction.result);
+		
+        std::string memArg1 = getMemLocation(instruction.argument1, code);
+        std::string memArg2 = getMemLocation(instruction.argument2, code);
+        std::string memRes = getMemLocation(instruction.result, code);
+        code.push_back("\n\t#Division code");
+        code.push_back("\tmov $0 ,%rdx");
+        code.push_back(getLoadInstr(memArg1, argWidth1,3));
+        code.push_back(getLoadInstr(memArg2, argWidth2,4));
+        std::string div = "\tidiv %rbx" ;
+        code.push_back(div);
+        if(oper == "/"){
+            code.push_back(getStoreInstr(memRes, resWidth,3));
+        }
+        else if(oper == "%"){
+            code.push_back(getStoreInstr(memRes, resWidth,1));
+        }
 
+    }
     // allocmem
     else if(oper == "" && instruction.argument1.first == "$allocmem")
 	{
@@ -479,51 +509,71 @@ std::vector<std::string> X86::tac2x86(quad instruction)
     }
 	else if(oper == ">>")
 	{
-		std::string tempname1 = instruction.argument1.first;
-		std::string memlocation1 = registers.locations[tempname1].second;
+		int argWidth1 = width(instruction.argument1);
+		int argWidth2 = width(instruction.argument2);
+		int resWidth = width(instruction.result);
+		
+        std::string memArg1 = getMemLocation(instruction.argument1, code);
+        std::string memArg2 = getMemLocation(instruction.argument2, code);
+        std::string memRes = getMemLocation(instruction.result, code);
+		
 
-		std::string tempname2 = instruction.argument2.first;
-		std::string memlocation2 = registers.locations[tempname2].second;
-
-		std::string str0 =  "\tmov %rcx, " + tempname2;
-		std::string str1 = std::string() + "\tmov " + "%rax " + memlocation1;
-		std::string str2 = std::string() + "\tsar " + "%rax" + ", %cl";
-
-		code.push_back(str0);
-		code.push_back(str1);
+        code.push_back("\n\t#Shift");
+        code.push_back(getLoadInstr(memArg2, 1 ,0));
+        code.push_back(getLoadInstr(memArg1, argWidth1,1));
+        std::string str2 = std::string() + "\tsar %cl, %rdx" ;
 		code.push_back(str2);
+        code.push_back(getStoreInstr(memRes, resWidth,1));
+
+		
+		
 	}
 	else if(oper == "<<")
 	{
-		std::string tempname1 = instruction.argument1.first;
-		std::string memlocation1 = registers.locations[tempname1].second;
+		// std::string tempname1 = instruction.argument1.first;
+		// std::string memlocation1 = registers.locations[tempname1].second;
 
-		std::string tempname2 = instruction.argument2.first;
-		std::string memlocation2 = registers.locations[tempname2].second;
+		// std::string tempname2 = instruction.argument2.first;
+		// std::string memlocation2 = registers.locations[tempname2].second;
 
-		std::string str0 = "\tmov %rcx, " + tempname2;
-		std::string str1 = std::string() + "\tmov " + "%rax " + memlocation1;
-		std::string str2 = std::string() + "\tshl " + "%rax" + ", %cl";
+		// std::string str0 = "\tmov %rcx, " + tempname2;
+		// std::string str1 = std::string() + "\tmov " + "%rax " + memlocation1;
+		
 
-		code.push_back(str0);
-		code.push_back(str1);
+		int argWidth1 = width(instruction.argument1);
+		int argWidth2 = width(instruction.argument2);
+		int resWidth = width(instruction.result);
+		
+        std::string memArg1 = getMemLocation(instruction.argument1, code);
+        std::string memArg2 = getMemLocation(instruction.argument2, code);
+        std::string memRes = getMemLocation(instruction.result, code);
+		
+
+        code.push_back("\n\t#Shift");
+        code.push_back(getLoadInstr(memArg2, 1 ,0));
+        code.push_back(getLoadInstr(memArg1, argWidth1,1));
+        std::string str2 = std::string() + "\tsal %cl, %rdx" ;
 		code.push_back(str2);
+        code.push_back(getStoreInstr(memRes, resWidth,1));
+
 	}
 	else if(oper == ">>>")
 	{	
-		std::string tempname1 = instruction.argument1.first;
-		std::string memlocation1 = registers.locations[tempname1].second;
+		int argWidth1 = width(instruction.argument1);
+		int argWidth2 = width(instruction.argument2);
+		int resWidth = width(instruction.result);
+		
+        std::string memArg1 = getMemLocation(instruction.argument1, code);
+        std::string memArg2 = getMemLocation(instruction.argument2, code);
+        std::string memRes = getMemLocation(instruction.result, code);
+		
 
-		std::string tempname2 = instruction.argument2.first;
-		std::string memlocation2 = registers.locations[tempname2].second;
-
-		std::string str0 = "\tmov %rcx, " + tempname2;
-		std::string str1 = std::string() + "\tmov " + "%rax " + memlocation1;
-		std::string str2 = std::string() + "\tshr " + "%rax" + ", %cl";
-
-		code.push_back(str0);
-		code.push_back(str1);
+        code.push_back("\n\t#Shift");
+        code.push_back(getLoadInstr(memArg2, 1 ,0));
+        code.push_back(getLoadInstr(memArg1, argWidth1,1));
+        std::string str2 = std::string() + "\tshr %cl, %rdx" ;
 		code.push_back(str2);
+        code.push_back(getStoreInstr(memRes, resWidth,1));
 
 	}
 	else if(oper == "PRINTCALL")
@@ -544,10 +594,15 @@ std::vector<std::string> X86::tac2x86(quad instruction)
             code.push_back(call);
         }
         else if(instruction.argument1.first == "1"){
-            std::string movins = "\tmov $print1, %rdi";
+            std::string printversion = "$print1";
+            
             int argWidth = width(instruction.argument2);
+            if(argWidth == 4){
+                printversion = "$print2";
+            }
             std::string memArg = getMemLocation(instruction.argument2 , code);
            
+            std::string movins = "\tmov " + printversion+ ", %rdi";
             std::string clearAl = "\txor %rax, %rax";
             std::string call = "\tcall printf";
             code.push_back(movins);
