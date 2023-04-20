@@ -256,6 +256,7 @@ int setOffset(std::string type){
     else if(type=="char"){
         return 2;
     }
+    else if(type == "byte") return 1;
     else if(type=="long") return 8;
     else if(type=="float") return 4;
     else if(type=="double") return 8;
@@ -296,7 +297,7 @@ int setTypeCheckType(std::string type)
     // 0->char , 1-> numerical , 2-> boolean , 3->String , 4-> null , 5 -> other
     if(type=="int" || type== "float" || type=="short" || type == "long" || type == "double")
         return 1;
-    else if(type == "char") return 1; // char and numerical type are compatible 
+    else if(type == "char" || type == "byte") return 1; // char and numerical type are compatible 
     else if(type == "String") return 3;
     else if(type == "boolean") return 2;
     else if (type == "null") return 4;
@@ -308,7 +309,8 @@ int setTypeCheckType1(std::string type)
     // if(type=="byte" || type=="short" || type=="char" || type=="int" || type=="long" || type == "float" || type == "double"){
     //     return 0;
     // }
-    if(type=="short" || type=="char") return 2;
+    if(type == "byte") return 1;
+    else if(type=="short" || type=="char") return 2;
     // else if(type=="char"){
     //     return 3;
     // }

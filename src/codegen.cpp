@@ -186,7 +186,7 @@ void X86::codeGen()
 	x86.push_back(".data");
     std::string print0 = "print0:\n\t .asciz \"\\n\" ";
     constants.push_back(print0);
-    std::string print1 = "print1:\n\t .asciz \"%d\\n\" ";
+    std::string print1 = "print1:\n\t .asciz \"%ld\\n\" ";
     constants.push_back(print1);
 	for(std::string s: constants)
 	{
@@ -380,6 +380,14 @@ std::vector<std::string> X86::tac2x86(quad instruction)
 	else if(oper.substr(0, 5) == "CAST_")
 	{
 		
+		int argWidth = width(instruction.argument1);
+		int resWidth = width(instruction.result);
+
+		std::string memArg = getMemLocation(instruction.argument1, code);
+		std::string memRes = getMemLocation(instruction.result, code);
+
+		code.push_back(getLoadInstr(memArg, argWidth, 0));
+		code.push_back(getStoreInstr(memRes, resWidth, 0));
 	}
 
     // allocmem

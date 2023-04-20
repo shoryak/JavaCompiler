@@ -236,7 +236,7 @@ Literals {DecimalIntegerLiteral}|{HexIntegerLiteral}|{OctalIntegerLiteral}|{Floa
     return StringLiteral;
 }
 
-{DecimalIntegerLiteral}|{HexIntegerLiteral}|{OctalIntegerLiteral}|{BinaryIntegerLiteral} { yylval.node = FixedNode(LITERAL_PREFIX, yytext, LITERAL_SUFFIX,"int"); return IntegerLiteral; }
+{DecimalIntegerLiteral}|{HexIntegerLiteral}|{OctalIntegerLiteral}|{BinaryIntegerLiteral} { yylval.node = FixedNode(LITERAL_PREFIX, yytext, LITERAL_SUFFIX,"byte"); return IntegerLiteral; }
 {FloatingPointLiteral} { yylval.node = FixedNode(LITERAL_PREFIX, yytext,LITERAL_SUFFIX ,"float"); return FloatingPointLiteral; }
 {BooleanLiteral} { yylval.node = FixedNode(LITERAL_PREFIX, yytext, LITERAL_SUFFIX,"boolean"); return BooleanLiteral; }
 {CharLiteral} { yylval.node = FixedNode(LITERAL_PREFIX, yytext, LITERAL_SUFFIX,"char"); return CharacterLiteral; }
