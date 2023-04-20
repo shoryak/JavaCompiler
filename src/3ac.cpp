@@ -48,7 +48,8 @@ qid newtempstar(std::string type, SymbolTable* currSymTable)
 
 int width(qid operand)
 {
-    if(operand.first[0] == '$'){
+    if(operand.first[0] == '$')
+    {
           std::string type = operand.second->getType();
           std::cerr<<  "______________\n"+operand.first<<"\n";
           std::cerr<<"type " + type<<"\n";
@@ -59,6 +60,7 @@ int width(qid operand)
         // variable
         std::string type = operand.second->getType();
         std::map<std::string, int> integralTypeToWidth {
+            {"boolean", 1},
             {"byte", 1},
             {"char", 1},
             {"short", 2},
