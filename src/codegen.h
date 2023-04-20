@@ -60,7 +60,7 @@ public:
 	std::map<std::string, std::string> operToInstrALU {
 		{"+", "add"},
 		{"-", "sub"},
-		{"*", "mult"},
+		{"*", "imul"},
 		{"/", "div"},
 		{"&", "and"},
 		{"|", "or"},
