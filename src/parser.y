@@ -7,10 +7,11 @@
 #include <cassert>
 #include <algorithm>
 #include "symbol_table.h"
- #include "codegen.h"
+#include "codegen.h"
 #include "3ac.h"
 int lines = 0;
 int yyparse();
+
 extern "C"
 {        
     extern int linenum;
@@ -1292,8 +1293,9 @@ void createST(Node* node)
     
 }
 
-void codeInsert(Node* node, std::vector<quad> & code ){
-    node->code.insert(node->code.end() , code.begin(), code.end());
+void codeInsert(Node* node, std::vector<quad>& code)
+{
+    node->code.insert(node->code.end(), code.begin(), code.end());
     code.clear();
 }
 
@@ -1497,57 +1499,49 @@ void three_AC(Node *node){
     else if(nodeName == "PostDecrementExpression")
         postOperation3AC(node, "-");
     
-    else if(nodeName == "IfThenStatement"){
+    else if(nodeName == "IfThenStatement")
+    {
         Node* condition = node->children[0];
-        Node*  thenNode = node->children[1];
+        Node* thenNode = node->children[1];
         labelCounter++;
         std::string label = "$L" + std::to_string(labelCounter);
-        quad ifThenQuad = generate(qid("IfFalse", NULL),  condition->node_tmp , qid(label, NULL), emptyQid  , -1);
+        quad ifThenQuad = generate(qid("IfFalse", NULL), condition->node_tmp, qid(label, NULL), emptyQid, -1);
         node->code = condition->code; 
         
         node->code.push_back(ifThenQuad);
-        // std::cerr<<thenNode->namelexeme<< "HURRAY \n";
-        // std::cerr<<condition->namelexeme<< "HURRAY \n";
-        // `thenNode->code);
         codeInsert(node, thenNode->code);
-        node->code.push_back(generate(qid(label, NULL), emptyQid , emptyQid, emptyQid  , -1));
-
-        // print3AC1(node->code);
+        node->code.push_back(generate(qid(label, NULL), emptyQid, emptyQid, emptyQid, -1));
     }
 
     else if(nodeName == "IfThenElseStatement" || nodeName == "IfThenElseStatementNoShortIf"){
         Node* condition = node->children[0];
-        Node*  thenNode = node->children[1];
+        Node* thenNode = node->children[1];
         Node* elseNode = node->children[2];
         labelCounter++;
         std::string l1 = "$L" + std::to_string(labelCounter);
         labelCounter++;
         std::string l2 = "$L" + std::to_string(labelCounter);
-        labelCounter++;
-        std::string l3 = "$L" + std::to_string(labelCounter);
-        
-        quad ifThenQuad = generate(qid("IfTrue", NULL),  condition->node_tmp , qid(l1, NULL), emptyQid  , -1);
-        quad elseQuad = generate(qid("Else", NULL),  emptyQid, qid(l2, NULL), emptyQid  , -1);
+
+        quad elseQuad = generate(qid("IfFalse", NULL), condition->node_tmp, qid(l1, NULL), emptyQid, -1);
+        quad gotoL2 = generate(qid("$goto", NULL), qid(l2, NULL), emptyQid, emptyQid, -1);
         quad L1 = generate(qid(l1, NULL), emptyQid, emptyQid, emptyQid, -1);
         quad L2 = generate(qid(l2, NULL), emptyQid, emptyQid, emptyQid, -1);
-        quad L3 = generate(qid(l3, NULL), emptyQid, emptyQid, emptyQid, -1);
-        quad gotol3 = generate(qid( "$goto " + l3, NULL), emptyQid, emptyQid, emptyQid, -1);
-        node->code = condition->code;
-        node->code.push_back(ifThenQuad);
-        node->code.push_back(elseQuad);
-        node->code.push_back(L1);
-        codeInsert(node, thenNode->code);
-        node->code.push_back(gotol3);
-        node->code.push_back(L2);
-        codeInsert(node, elseNode->code);
-        node->code.push_back(L3);
         
+        node->code = condition->code;
+        node->code.push_back(elseQuad);
+        codeInsert(node, thenNode->code);
+        node->code.push_back(gotoL2);
+        node->code.push_back(L1);
+        codeInsert(node, elseNode->code);
+        node->code.push_back(L2);        
     }
 
-    else if(nodeName == "Ternary"){
+    else if(nodeName == "Ternary")
+    {
         Node* condition = node->children[0];
-        Node*  thenNode = node->children[1];
+        Node* thenNode = node->children[1];
         Node* elseNode = node->children[2];
+
         labelCounter++;
         std::string l1 = "$L" + std::to_string(labelCounter);
         labelCounter++;
@@ -1555,121 +1549,127 @@ void three_AC(Node *node){
         labelCounter++;
         std::string l3 = "$L" + std::to_string(labelCounter);
         
-        quad ifThenQuad = generate(qid("IfTrue", NULL),  condition->node_tmp , qid(l1, NULL), emptyQid  , -1);
-        quad elseQuad = generate(qid("Else", NULL),  emptyQid, qid(l2, NULL), emptyQid  , -1);
+        quad ifThenQuad = generate(qid("IfFalse", NULL), condition->node_tmp, qid(l1, NULL), emptyQid, -1);
         quad L1 = generate(qid(l1, NULL), emptyQid, emptyQid, emptyQid, -1);
         quad L2 = generate(qid(l2, NULL), emptyQid, emptyQid, emptyQid, -1);
-        quad L3 = generate(qid(l3, NULL), emptyQid, emptyQid, emptyQid, -1);
-        quad gotol3 = generate(qid( "$goto " + l3, NULL), emptyQid, emptyQid, emptyQid, -1);
+        quad gotoL2 = generate(qid("$goto", NULL), qid(l2, NULL), emptyQid, emptyQid, -1);
+
         node->code = condition->code;
         node->code.push_back(ifThenQuad);
-        node->code.push_back(elseQuad);
-        node->code.push_back(L1);
         codeInsert(node, thenNode->code);
-        node->code.push_back(gotol3);
-        node->code.push_back(L2);
+        node->code.push_back(gotoL2);
+        node->code.push_back(L1);
         codeInsert(node, elseNode->code);
-        node->code.push_back(L3);
-        // print3AC(node->code);
+        node->code.push_back(L2);
     }
 
-    
-
-    else if(nodeName == "For"){
-        Node* ForInit, *ForExpression , *ForUpdate , *ForBody;
-        for(auto child : node->children){
-                if(child->namelexeme == "ForInit"){
+    else if(nodeName == "For")
+    {
+        Node *ForInit = NULL, *ForExpression = NULL, *ForUpdate = NULL, *ForBody = NULL;
+        for(auto child: node->children)
+        {
+                if(child->namelexeme == "ForInit")
+                {
                     ForInit = child;
                 } 
-                if(child->namelexeme == "ForExpression"){
+                if(child->namelexeme == "ForExpression")
+                {
                     ForExpression = child;
                 } 
-                if(child->namelexeme == "ForUpdate"){
+                if(child->namelexeme == "ForUpdate")
+                {
                     ForUpdate = child;
                 } 
-                if(child->namelexeme == "Block" || child->namelexeme == "="){
+                if(child->namelexeme == "Block" || child->namelexeme == "=")
+                {
                     ForBody = child;
                 } 
-               
         }
-        if(ForInit){
-            codeInsert(node, ForInit->code);
-        }
+        
+        if(ForInit) codeInsert(node, ForInit->code);
+
         labelCounter++;
-        std::string beginFor = "$L" + std::to_string(labelCounter);
+        std::string beginForLabelName = "$L" + std::to_string(labelCounter);
         labelCounter++;
-        std::string endFor = "$L" + std::to_string(labelCounter);
-        quad beginFOR = generate(qid(beginFor, NULL), emptyQid, emptyQid, emptyQid, -1);
-        quad endFOR = generate(qid(endFor, NULL), emptyQid, emptyQid, emptyQid, -1);
-        node->code.push_back(beginFOR);
-        if(ForExpression){
+        std::string endForLabelName = "$L" + std::to_string(labelCounter);
+
+        quad beginForLabel = generate(qid(beginForLabelName, NULL), emptyQid, emptyQid, emptyQid, -1);
+        quad endForLabel = generate(qid(endForLabelName, NULL), emptyQid, emptyQid, emptyQid, -1);
+
+        node->code.push_back(beginForLabel);
+
+        if(ForExpression)
+        {
             codeInsert(node, ForExpression->code);
-            quad ifThenQuad = generate(qid("IfFalse", NULL),  ForExpression->node_tmp , qid(endFor, NULL), emptyQid  , -1);
-            node->code.push_back(ifThenQuad);
-            // print3AC(node->code);
+            quad forCond = generate(qid("IfFalse", NULL), ForExpression->node_tmp, qid(endForLabelName, NULL), emptyQid, -1);
+            node->code.push_back(forCond);
         }
-        if(ForBody){
-             codeInsert(node, ForBody->code);
-        }
-        if(ForUpdate){
-             codeInsert(node, ForUpdate->code);
-        }
-        quad gotoBeginFor = generate(qid( "$goto " + beginFor, NULL), emptyQid, emptyQid, emptyQid, -1);
-        quad gotoEndFor = generate(qid( "$goto " + endFor, NULL), emptyQid, emptyQid, emptyQid, -1);
+        if(ForBody) codeInsert(node, ForBody->code);
+        if(ForUpdate) codeInsert(node, ForUpdate->code);
+
+        quad gotoBeginFor = generate(qid("$goto", NULL), qid(beginForLabelName, NULL), emptyQid, emptyQid, -1);
+        quad gotoEndFor = generate(qid("$goto", NULL), qid(endForLabelName, NULL), emptyQid, emptyQid, -1);
+
         node->code.push_back(gotoBeginFor);
-        node->code.push_back(endFOR);
-        for(int ind = 0; ind < node->code.size() ; ind++){
-            if(node->code[ind].oper.first == "BREAK"){
+        node->code.push_back(endForLabel);
+
+        for(int ind = 0; ind < node->code.size(); ind++)
+        {
+            if(node->code[ind].oper.first == "BREAK")
+            {
                 node->code[ind] = gotoEndFor;
             }
-            if(node->code[ind].oper.first == "CONTINUE"){
+            if(node->code[ind].oper.first == "CONTINUE")
+            {
                 node->code[ind] = gotoBeginFor;
             }
         }
-        // print3AC(node->code);
-        // print3AC1(node->code);
-
-        
     }
-    else if(nodeName == "While"){
-        Node* WhileExpression = NULL ,* WhileBody = NULL;
-        for(auto child : node->children){
-            if(child->namelexeme == "WhileExpression"){
-                WhileExpression  = child;
+    else if(nodeName == "While")
+    {
+        Node *WhileExpression = NULL, *WhileBody = NULL;
+        for(auto child: node->children)
+        {
+            if(child->namelexeme == "WhileExpression")
+            {
+                WhileExpression = child;
             }
-            if(child->namelexeme == "WhileBody" || child->namelexeme == "="){
-                WhileBody  = child;
+            if(child->namelexeme == "WhileBody" || child->namelexeme == "=")
+            {
+                WhileBody = child;
             }
-        } 
-        labelCounter++;
-        std::string beginWhile = "$L" + std::to_string(labelCounter);
-        labelCounter++;
-        std::string endWhile = "$L" + std::to_string(labelCounter);
-        quad whileBegin = generate(qid(beginWhile, NULL), emptyQid, emptyQid, emptyQid, -1);
-        quad whileEnd = generate(qid(endWhile, NULL), emptyQid, emptyQid, emptyQid, -1);
-        quad gotoBeginWhile = generate(qid( "$goto " + beginWhile, NULL), emptyQid, emptyQid, emptyQid, -1);
-        quad gotoEndWhile = generate(qid( "$goto " + endWhile, NULL), emptyQid, emptyQid, emptyQid, -1);
-        node->code.push_back(whileBegin);
-        if(WhileExpression){
-            codeInsert(node, WhileExpression->code);
-            quad ifThenQuad = generate(qid("IfFalse", NULL),  WhileExpression->node_tmp , qid(endWhile, NULL), emptyQid  , -1);
-            node->code.push_back(ifThenQuad);
         }
-        if(WhileBody){
-            codeInsert(node, WhileBody->code);
-        }
-        node->code.push_back(gotoBeginWhile);
-        node->code.push_back(whileEnd);
+        assert(WhileExpression); assert(WhileBody);
 
-        for(int ind = 0; ind < node->code.size() ; ind++){
-            if(node->code[ind].oper.first == "BREAK"){
+        labelCounter++;
+        std::string beginWhileLabelName = "$L" + std::to_string(labelCounter);
+        labelCounter++;
+        std::string endWhileLabelName = "$L" + std::to_string(labelCounter);
+
+        quad beginWhileLabel = generate(qid(beginWhileLabelName, NULL), emptyQid, emptyQid, emptyQid, -1);
+        quad endWhileLabel = generate(qid(endWhileLabelName, NULL), emptyQid, emptyQid, emptyQid, -1);
+        quad gotoBeginWhile = generate(qid("$goto", NULL), qid(beginWhileLabelName, NULL), emptyQid, emptyQid, -1);
+        quad condGotoEndWhile = generate(qid("IfFalse", NULL), WhileExpression->node_tmp, qid(endWhileLabelName, NULL), emptyQid, -1);
+        quad gotoEndWhile = generate(qid("$goto", NULL), qid(endWhileLabelName, NULL), emptyQid, emptyQid, -1);
+
+        node->code.push_back(beginWhileLabel);
+        codeInsert(node, WhileExpression->code);
+        node->code.push_back(condGotoEndWhile);
+        codeInsert(node, WhileBody->code);
+        node->code.push_back(gotoBeginWhile);
+        node->code.push_back(endWhileLabel);
+
+        for(int ind = 0; ind < node->code.size() ; ind++)
+        {
+            if(node->code[ind].oper.first == "BREAK")
+            {
                 node->code[ind] = gotoEndWhile;
             }
-            if(node->code[ind].oper.first == "CONTINUE"){
+            if(node->code[ind].oper.first == "CONTINUE")
+            {
                 node->code[ind] = gotoBeginWhile;
             }
         }
-        // print3AC(node->code);
     }
     else if(nodeName == "[ ]" && node->children.size() >0){
         Node* leaf = node;
@@ -1678,7 +1678,6 @@ void three_AC(Node *node){
             leaf= leaf->children[0];
             disleaf++;
         }
-        // std::cerr<<leaf->namelexeme<<"\n";
         auto stEntry = leaf->nearSymbolTable->lookup(leaf->namelexeme);
         if(stEntry){
             int offset;

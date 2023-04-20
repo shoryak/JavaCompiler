@@ -1,6 +1,6 @@
 #include "codegen.h"
-#include<fstream>
 #include "3ac.h"
+#include <fstream>
 
 inline int64_t rnd(int l,int r)
 {
@@ -140,7 +140,7 @@ std::pair<std::string, std::vector<std::string>> Registers::getRegister(std::str
 	}
 
 	// return the register and instructions required to get it 
-	return {reg,instructionlist};
+	return {reg, instructionlist};
 
 }
 
@@ -174,28 +174,24 @@ void X86::codeGen()
 	x86.push_back("");
 	x86.push_back(".data");
     std::string print0 = "print0:\n\t .asciz \"\\n\" ";
-    constants.push_back(print0);
     std::string print1 = "print1:\n\t .asciz \"%ld\\n\" ";
+	std::string trueConst = "true:\n\t .quad 1";
+	std::string falseConst = "false:\n\t .quad 0";
+    constants.push_back(print0);
     constants.push_back(print1);
     std::string print2 = "print2:\n\t .asciz \"%d\\n\" ";
     constants.push_back(print2);
+	constants.push_back(trueConst);
+	constants.push_back(falseConst);
 	for(std::string s: constants)
-	{
 		x86.push_back(s);
-	}
-    std::ofstream x86dump("../bin/output.s");
-    for(auto val:x86)
-    {
-        x86dump<<val<<"\n";
-    
-    }
+	
+    std::ofstream x86dump("output.s");
+    for(auto val: x86)
+    	x86dump << val << "\n";
 
 	for(auto ins: x86)
-	{
-		std::cerr << ins << "\n";
-	}
-	// cout<<"\n\n\n\n\n\n\nBEGINNING ASM PART\n\n\n\n\n\n\n";
-	// ofstream my_function_dump("./bin/output.s");
+		std::cout << ins << '\n';
 }
 
 std::string X86::getMemLocation(qid var, std::vector<std::string>&code)
@@ -286,32 +282,27 @@ std::vector<std::string> X86::tac2x86(quad instruction)
     // conditionals --------------------------------------------------------------
 	if(oper == "IfFalse")
 	{
-		// temporary to registers
-		std::string tempname = instruction.argument1.first;
-		std::string memlocation = registers.locations[tempname].second;
-		std::string codeLine = "\tmov reg1," + memlocation;
-		// if tempval !=0 , flag set for true else flag variable
-		std::string cmpLine = "\tcmp reg1, $0";
-		std::string branchLine = "\tjne " + instruction.argument2.first;
-		code.push_back(cmpLine);
-		code.push_back(branchLine);
-	}
-	else if(oper == "IfTrue")
-	{
-		std::string tempname = instruction.argument1.first;
-		std::string memlocation = registers.locations[tempname].second;
-		std::string codeLine = "\tmov reg1" + memlocation;
-	}
-	else if(oper == "Else")
-	{
-		std::string tempname = instruction.argument1.first;
-		std::string memlocation = registers.locations[tempname].second;
-		std::string codeLine = "\tmov reg1" + memlocation;
+		int argWidth = width(instruction.argument1);
+		std::string memArg = getMemLocation(instruction.argument1, code);
+
+		int jumpLabelSize = instruction.argument2.first.size();
+		std::string jumpLabel = instruction.argument2.first.substr(1, jumpLabelSize-1);
+
+		code.push_back(getLoadInstr(memArg, argWidth, 0));
+		std::string zeroReg = "\txorq %rdx, %rdx";
+		std::string compareInstr = "\tcmpq %rcx, %rdx";
+		std::string branchInstr = "\tje " + jumpLabel;
+
+		code.push_back(zeroReg);
+		code.push_back(compareInstr);
+		code.push_back(branchInstr);
 	}
     // jmps and labels -------------------------------------------------------
-	else if(oper.substr(0, 5) == "$goto")
+	else if(oper == "$goto")
 	{
-        std::string jmpLine = "\tjmp " + instruction.argument1.first;
+		int jumpLabelLength = instruction.argument1.first.size();
+		std::string jumpLabel = instruction.argument1.first.substr(1, jumpLabelLength-1);
+        std::string jmpLine = "\tjmp " + jumpLabel;
         code.push_back(jmpLine);
 	}
     else if(oper.substr(0, 2) == "$L" || oper[0] == '#')
@@ -346,8 +337,8 @@ std::vector<std::string> X86::tac2x86(quad instruction)
         std::string memArg2 = getMemLocation(instruction.argument2, code);
         std::string memRes = getMemLocation(instruction.result, code);
 
-        code.push_back(getLoadInstr(memArg2, argWidth1, 0));
-		code.push_back(getLoadInstr(memArg1, argWidth2, 1));
+        code.push_back(getLoadInstr(memArg2, argWidth2, 0));
+		code.push_back(getLoadInstr(memArg1, argWidth1, 1));
         code.push_back(getALUInstr(oper));
         code.push_back(getStoreInstr(memRes, resWidth, 1));
 	}
@@ -364,8 +355,8 @@ std::vector<std::string> X86::tac2x86(quad instruction)
 
 		assert(operToInstrSet.find(oper) != operToInstrSet.end());
 
-		code.push_back(getLoadInstr(memArg1, argWidth1, 0));
-		code.push_back(getLoadInstr(memArg2, argWidth2, 1));
+		code.push_back(getLoadInstr(memArg1, argWidth1, 1));
+		code.push_back(getLoadInstr(memArg2, argWidth2, 0));
 		std::string compareInstr = "\tcmpq %rcx, %rdx";
 		code.push_back(compareInstr);
 		code.push_back("\t" + operToInstrSet[oper] + " %cl");
@@ -585,7 +576,8 @@ std::vector<std::string> X86::tac2x86(quad instruction)
 		code.push_back(str1);
 		code.push_back(str2);
         // std::cerr<< "*****" + instruction.argument1.first<<"\n";
-        if(instruction.argument1.first == "0"){
+        if(instruction.argument1.first == "0")
+		{
             std::string movins = "\tmov $print0, %rdi";
             std::string clearAl = "\txor %rax, %rax";
             std::string call = "\tcall printf";
@@ -606,7 +598,7 @@ std::vector<std::string> X86::tac2x86(quad instruction)
             std::string clearAl = "\txor %rax, %rax";
             std::string call = "\tcall printf";
             code.push_back(movins);
-            code.push_back(getLoadInstr(memArg, argWidth ,2));
+            code.push_back(getLoadInstr(memArg, argWidth, 2));
             code.push_back(clearAl);
             code.push_back(call);
         } 
@@ -617,12 +609,16 @@ std::vector<std::string> X86::tac2x86(quad instruction)
 		code.push_back(str2);
 
 	}
-    else if(oper == "RETURN"){
+    
+	else if(oper == "RETURN")
+	{
         std::string memArg = getMemLocation(instruction.argument1, code);
         int argWidth = width(instruction.argument1);
         code.push_back(getLoadInstr(memArg, argWidth,3));
     }
-    else if(oper == "RETURNVALUE"){
+    
+	else if(oper == "RETURNVALUE")
+	{
         std::string memArg = getMemLocation(instruction.result, code);
         int argWidth = width(instruction.result);
         code.push_back(getStoreInstr(memArg, argWidth,3));
