@@ -76,17 +76,25 @@ public:
 	};
 	std::vector<std::map<int, std::string>> widthToReg {
 		{
-			{1, "cl"},
-			{2, "cx"},
-			{4, "ecx"},
-			{8, "rcx"}
+			{1, "%cl"},
+			{2, "%cx"},
+			{4, "%ecx"},
+			{8, "%rcx"}
 		},
 		{
-			{1, "dl"},
-			{2, "dx"},
-			{4, "edx"},
-			{8, "rdx"}
+			{1, "%dl"},
+			{2, "%dx"},
+			{4, "%edx"},
+			{8, "%rdx"}
 		}
+        ,
+        {
+			{1, "%sil"},
+			{2, "%si"},
+			{4, "%esi"},
+			{8, "%rsi"}
+		}
+
 	};
 
 	X86(std::vector<quad> _tacCode);

@@ -1,4 +1,5 @@
 #include "codegen.h"
+#include<fstream>
 #include "3ac.h"
 
 inline int64_t rnd(int l,int r)
@@ -183,10 +184,20 @@ void X86::codeGen()
 	
 	x86.push_back("");
 	x86.push_back(".data");
+    std::string print0 = "print0:\n\t .asciz \"\\n\" ";
+    constants.push_back(print0);
+    std::string print1 = "print1:\n\t .asciz \"%d\\n\" ";
+    constants.push_back(print1);
 	for(std::string s: constants)
 	{
 		x86.push_back(s);
 	}
+    std::ofstream x86dump("../bin/output.s");
+    for(auto val:x86)
+    {
+        x86dump<<val<<"\n";
+    
+    }
 
 	for(auto ins: x86)
 	{
@@ -219,7 +230,9 @@ std::string X86::getMemLocation(qid var, std::vector<std::string>&code)
         if(istemp)
 		{
             tempoffset += 8;
+            std::string comment = "\t#space for "+var.first ;
             std::string spaceTemp= "\tsub $8, %rsp";
+            code.push_back(comment);
             code.push_back(spaceTemp);
             std::string memLoc = "-" + std::to_string(tempoffset) + "(%rbp)";
             registers.locations[varPrint].second = memLoc;
@@ -238,7 +251,7 @@ std::string X86::getMemLocation(qid var, std::vector<std::string>&code)
 std::string X86::getLoadInstr(std::string location, int width, int regNum)
 {
 	assert(sizeSuffix.find(width) != sizeSuffix.end());
-	assert(0 <= regNum && regNum <= 1);
+	assert(0 <= regNum && regNum <= 2);
 	assert(widthToReg[regNum].find(width) != widthToReg[regNum].end());
 
 	std::string suf; suf.push_back(sizeSuffix[width]);
@@ -249,7 +262,7 @@ std::string X86::getLoadInstr(std::string location, int width, int regNum)
 std::string X86::getStoreInstr(std::string location, int width, int regNum)
 {
 	assert(sizeSuffix.find(width) != sizeSuffix.end());
-	assert(0 <= regNum && regNum <= 1);
+	assert(0 <= regNum && regNum <= 2);
 	assert(widthToReg[regNum].find(width) != widthToReg[regNum].end());
 
 	std::string suf; suf.push_back(sizeSuffix[width]);
@@ -423,7 +436,7 @@ std::vector<std::string> X86::tac2x86(quad instruction)
     }
     else if(oper == "LOCALVARIABLESPACE")
 	{
-        std::string comment = "\t# Space for local variables";
+        std::string comment = "\t#local varSpace";
         std::string localSpace = "\tsub $"+ instruction.argument1.first + ", %rsp";
         tempoffset= stoi(instruction.argument1.first);
         code.push_back(comment);
@@ -433,10 +446,14 @@ std::vector<std::string> X86::tac2x86(quad instruction)
 	{
         std::string comment = "\t#PushArg ";
         std::string argSpace = "\tsub $"+ instruction.argument2.first + ", %rsp";
-        std::string movArg = "\tmov " + instruction.argument1.first + ", 0(%rsp)";
+        
+        std::string memLoc = getMemLocation(instruction.argument1 , code);
+        auto movArgtoreg = getLoadInstr(memLoc , stoi(instruction.argument2.first) , 0);
+        auto movRegtolocation = getStoreInstr("0(%rsp)" , stoi(instruction.argument2.first) , 0 );
         code.push_back(comment);
         code.push_back(argSpace);
-        code.push_back(movArg);
+        code.push_back(movArgtoreg);
+        code.push_back(movRegtolocation);
     }
     else if(oper == "poparg")
 	{
@@ -501,12 +518,41 @@ std::vector<std::string> X86::tac2x86(quad instruction)
 		code.push_back(str2);
 
 	}
-	else if(oper == "CALL")
+	else if(oper == "PRINTCALL")
 	{
+        std::string comment = "\t#printcall";
 		std::string str1 = "\tpush %rcx";
 		std::string str2 = "\tpush %rax";
+        code.push_back(comment);
 		code.push_back(str1);
 		code.push_back(str2);
+        // std::cerr<< "*****" + instruction.argument1.first<<"\n";
+        if(instruction.argument1.first == "0"){
+            std::string movins = "\tmov $print0, %rdi";
+            std::string clearAl = "\txor %rax, %rax";
+            std::string call = "\tcall printf";
+            code.push_back(movins);
+            code.push_back(clearAl);
+            code.push_back(call);
+        }
+        else if(instruction.argument1.first == "1"){
+            std::string movins = "\tmov $print1, %rdi";
+            int argWidth = width(instruction.argument2);
+            std::string memArg = getMemLocation(instruction.argument2 , code);
+           
+            std::string clearAl = "\txor %rax, %rax";
+            std::string call = "\tcall printf";
+            code.push_back(movins);
+            code.push_back(getLoadInstr(memArg, argWidth ,2));
+            code.push_back(clearAl);
+            code.push_back(call);
+        } 
+
+        str1 = "\tpop %rax";
+		str2 = "\tpop %rcx";
+        code.push_back(str1);
+		code.push_back(str2);
+
 	}
     
 	return code;

@@ -1816,8 +1816,12 @@ void three_AC(Node *node){
                     // handle System.out.println
 
                     int totalPopSize = 0;
-
-                    if(Arguments->children.size() > 1)
+                    if(Arguments == NULL){
+                        int numArg = 0;
+                        quad I2 = generate(qid("PRINTCALL", NULL), qid(std::to_string(numArg), NULL), emptyQid, emptyQid, -1);
+                        node->code.push_back(I2);
+                    }
+                    else if(Arguments->children.size() > 1)
                     {
                         //error incorrect number of arguments in println
                         std::string s = "Incorrect number of arguments in println " + std::to_string(node->children[0]->children[1]->children[0]->lineNumber);
@@ -1827,20 +1831,21 @@ void three_AC(Node *node){
                     {
                         for(auto codechild : node->children)
                             codeInsert(node, codechild->code);
-
+                        
+                        int numArg = 0;
+                        qid argTemp = emptyQid;
                         if(Arguments)
                         {
+                            numArg = 1;
                             auto argumentNode = Arguments->children[0];
-                            quad I1 = generate(qid("push", NULL) , argumentNode->node_tmp, emptyQid, emptyQid, -1);
-                            node->code.push_back(I1);
-                            totalPopSize += 8;
+                            argTemp = argumentNode->node_tmp;
                         }
 
-                        quad I2 = generate(qid("CALL", NULL), qid("println", NULL), emptyQid, emptyQid, -1);
+                        quad I2 = generate(qid("PRINTCALL", NULL), qid(std::to_string(numArg), NULL), argTemp, emptyQid, -1);
                         node->code.push_back(I2);
 
-                        quad I3 = generate(qid("pop", NULL), qid(std::to_string(totalPopSize), NULL), emptyQid, emptyQid, -1);
-                        node->code.push_back(I3);
+                        // quad I3 = generate(qid("pop", NULL), qid(std::to_string(totalPopSize), NULL), emptyQid, emptyQid, -1);
+                        // node->code.push_back(I3);
                     }
                 }
                 else
@@ -1941,7 +1946,7 @@ void three_AC(Node *node){
 
             int totalPopSize = 0;
 
-            node->node_tmp = newtemp("returnValue", node->nearSymbolTable);
+            // node->node_tmp = newtemp("returnValue", node->nearSymbolTable);
             for(auto codechild: node->children)
                 codeInsert(node, codechild->code);
             
@@ -1954,7 +1959,7 @@ void three_AC(Node *node){
             auto funcEntry = methodSymbolTable[className + "." + funcName]->lookup(funcName);
             assert(funcEntry);
             auto functionPrototype = funcEntry->getFuncProto();
-
+            node->node_tmp = newtemp(functionPrototype.returnType, node->nearSymbolTable);
             int isStatic = 0;
             std::string fullFuncName = funcEntry->getName();
             std::string tempStr="";
@@ -2039,14 +2044,7 @@ void three_AC(Node *node){
                 fieldNameNode = fieldNameNode->children[0];
             }
             std::string objname = leftleaf->namelexeme;
-            node->node_tmp = newtemp("dot", node->nearSymbolTable);
-            quad I1 = generate(qid("", NULL), qid(objname, NULL), emptyQid,node->node_tmp, -1);
-            // string temp = "";
-            // for(auto ch : node->node_tmp.first){
-            //     if(ch!='*'){
-            //         temp.push_back(ch);
-            //     }
-            // }
+           
 
             std::string objClassName;
             if(objname == "this")
@@ -2063,10 +2061,14 @@ void three_AC(Node *node){
                 assert(objEntry);
                 objClassName = objEntry->getType();
             }
+
             std::string fieldName = fieldNameNode->namelexeme;
             auto fieldStructData = classFieldData[objClassName + "_" + fieldName];
             int offset = fieldStructData.offset;
-
+            
+            node->node_tmp = newtemp(fieldStructData.type, node->nearSymbolTable);
+            quad I1 = generate(qid("", NULL), qid(objname, NULL), emptyQid,node->node_tmp, -1);
+            
             quad I2 = generate(qid("+",NULL), node->node_tmp, qid(std::to_string(offset), NULL), node->node_tmp,-1);
             node->code.push_back(I1);
             node->code.push_back(I2);
@@ -2279,7 +2281,7 @@ void three_AC(Node *node){
             quad I1 = generate(qid("*",NULL), qid(width , NULL), node->node_tmp , node->node_tmp , -1);
             node->code.push_back(I1);
         }
-        auto x = newtemp("final" , node->nearSymbolTable);
+        auto x = newtemp( node->typeForExpr, node->nearSymbolTable);
         I1 =  generate(emptyQid, qid("$allocmem", NULL), node->node_tmp, x, -1);
         node->node_tmp = x;
         node->code.push_back(I1);
