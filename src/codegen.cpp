@@ -251,7 +251,7 @@ std::string X86::getMemLocation(qid var, std::vector<std::string>&code)
 std::string X86::getLoadInstr(std::string location, int width, int regNum)
 {
 	assert(sizeSuffix.find(width) != sizeSuffix.end());
-	assert(0 <= regNum && regNum <= 2);
+	assert(0 <= regNum && regNum <= 3);
 	assert(widthToReg[regNum].find(width) != widthToReg[regNum].end());
 
 	std::string suf; suf.push_back(sizeSuffix[width]);
@@ -262,7 +262,7 @@ std::string X86::getLoadInstr(std::string location, int width, int regNum)
 std::string X86::getStoreInstr(std::string location, int width, int regNum)
 {
 	assert(sizeSuffix.find(width) != sizeSuffix.end());
-	assert(0 <= regNum && regNum <= 2);
+	assert(0 <= regNum && regNum <= 3);
 	assert(widthToReg[regNum].find(width) != widthToReg[regNum].end());
 
 	std::string suf; suf.push_back(sizeSuffix[width]);
@@ -554,6 +554,16 @@ std::vector<std::string> X86::tac2x86(quad instruction)
 		code.push_back(str2);
 
 	}
+    else if(oper == "RETURN"){
+        std::string memArg = getMemLocation(instruction.argument1, code);
+        int argWidth = width(instruction.argument1);
+        code.push_back(getLoadInstr(memArg, argWidth,3));
+    }
+    else if(oper == "RETURNVALUE"){
+        std::string memArg = getMemLocation(instruction.result, code);
+        int argWidth = width(instruction.result);
+        code.push_back(getStoreInstr(memArg, argWidth,3));
+    }
     
 	return code;
 } 

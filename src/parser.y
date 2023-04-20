@@ -1930,13 +1930,14 @@ void three_AC(Node *node){
                 quad I2 = generate(qid("CALL", NULL), dot->children[1]->node_tmp, emptyQid, emptyQid, -1);
                 node->code.push_back(I2);
 
-                // retrieving return value from frame
-                quad returnVal = generate(qid("RETURNVALUE", NULL), qid("", NULL), qid("", NULL), node->node_tmp, -1);
-                node->code.push_back(returnVal);
 
                 // pop everything to restore stack after function call
                 quad I3 = generate(qid("pop", NULL), qid(std::to_string(totalPopSize), NULL), emptyQid, emptyQid, -1);
                 node->code.push_back(I3);
+
+                // retrieving return value from frame
+                quad returnVal = generate(qid("RETURNVALUE", NULL), qid("", NULL), qid("", NULL), node->node_tmp, -1);
+                node->code.push_back(returnVal);
             }
         }
 
@@ -2021,13 +2022,13 @@ void three_AC(Node *node){
             quad I2 = generate(qid("CALL", NULL), qid(node->children[0]->children[0]->namelexeme, NULL), emptyQid, node->node_tmp, -1);
             node->code.push_back(I2);
 
-            // retrieving return value from frame
-            quad returnVal = generate(qid("RETURNVALUE", NULL), qid("", NULL), qid("", NULL), node->node_tmp, -1);
-            node->code.push_back(returnVal);
-
             // pop everything to restore stack after function call
             quad I3 = generate(qid("pop", NULL), qid(std::to_string(totalPopSize), NULL), emptyQid, emptyQid, -1);
             node->code.push_back(I3);
+
+            // retrieving return value from frame
+            quad returnVal = generate(qid("RETURNVALUE", NULL), qid("", NULL), qid("", NULL), node->node_tmp, -1);
+            node->code.push_back(returnVal);
         }
     }
 
