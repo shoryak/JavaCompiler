@@ -191,7 +191,7 @@ void X86::codeGen()
     	x86dump << val << "\n";
 
 	for(auto ins: x86)
-		std::cout << ins << '\n';
+		std::cerr << ins << '\n';
 }
 
 std::string X86::getMemLocation(qid var, std::vector<std::string>&code)
@@ -274,7 +274,7 @@ std::vector<std::string> X86::tac2x86(quad instruction)
 	std::string oper = instruction.oper.first;
 	std::set<std::string> ALUOps {
 		"+", "-", "*",
-		"&", "|", "^", "~" ,
+		"&", "|", "^", 
 	};
 	std::set<std::string> relOps {
 		"<", ">", "<=", ">=", "==", "!="
@@ -623,6 +623,17 @@ std::vector<std::string> X86::tac2x86(quad instruction)
         int argWidth = width(instruction.result);
         code.push_back(getStoreInstr(memArg, argWidth,3));
     }
+
+	else if(oper=="~"){
+		std::string memArg = getMemLocation(instruction.argument2, code);
+		int argWidth = width(instruction.argument2);
+        std::string memRes = getMemLocation(instruction.result,code);
+        int resWidth = width(instruction.result);
+		code.push_back(getLoadInstr(memArg, argWidth,3));
+		std::string str = std::string()+ "\tnot "+"%rax";
+		code.push_back(str);
+        code.push_back(getStoreInstr(memRes, resWidth,3));
+	}
     
 	return code;
 } 
