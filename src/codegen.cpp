@@ -382,26 +382,36 @@ std::vector<std::string> X86::tac2x86(quad instruction)
 	}
 	else if(oper.substr(0, 5) == "CAST_")
 	{
-        if(oper == "CAST_boolean"){
-            // int argWidth = width(instruction.argument1);
-            // int resWidth = width(instruction.result);
+        if(oper == "CAST_boolean")
+		{
+			int argWidth = width(instruction.argument1);
+			int resWidth = width(instruction.result);
 
-            // std::string memArg = getMemLocation(instruction.argument1, code);
-            // std::string memRes = getMemLocation(instruction.result, code);
+			std::string memArg = getMemLocation(instruction.argument1, code);
+			std::string memRes = getMemLocation(instruction.result, code);
 
-            // code.push_back(getLoadInstr(memArg, argWidth, 0));
-            // code.push_back(getStoreInstr(memRes, resWidth, 0));
+			std::string descriptor = "\t#" + instruction.result.first + " = " + oper + " " + instruction.argument1.first;
+
+			code.push_back(descriptor);
+			code.push_back(getLoadInstr(memArg, argWidth, 0));
+			code.push_back("\tcmpq $0, %rcx");
+			code.push_back("\tsetnz %cl");
+			code.push_back("\tmovzbq %cl, %rcx");
+			code.push_back(getStoreInstr(memRes, resWidth, 0));
         }
-		
-		int argWidth = width(instruction.argument1);
-		int resWidth = width(instruction.result);
+		else
+		{
+			int argWidth = width(instruction.argument1);
+			int resWidth = width(instruction.result);
 
-		std::string memArg = getMemLocation(instruction.argument1, code);
-		std::string memRes = getMemLocation(instruction.result, code);
-		std::string descriptor = "\t#" + instruction.result.first + " = " + oper + " " + instruction.argument1.first;
+			std::string memArg = getMemLocation(instruction.argument1, code);
+			std::string memRes = getMemLocation(instruction.result, code);
+			std::string descriptor = "\t#" + instruction.result.first + " = " + oper + " " + instruction.argument1.first;
 
-		code.push_back(getLoadInstr(memArg, argWidth, 0));
-		code.push_back(getStoreInstr(memRes, resWidth, 0));
+			code.push_back(descriptor);
+			code.push_back(getLoadInstr(memArg, argWidth, 0));
+			code.push_back(getStoreInstr(memRes, resWidth, 0));
+		}
 	}
     else if(oper == "/" || oper == "%"){
         // mov rax, 123456789012345678 ; load dividend into RAX
