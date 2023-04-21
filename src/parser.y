@@ -435,7 +435,7 @@ void methodTypeCheck(Node* node)
        
         // std::cerr<<stEntry->getName()<<"\n";
         // node->nearSymbolTable->print();
-        stEntry->print();
+        // stEntry->print();
         if(stEntry)
         {
             
@@ -2337,7 +2337,7 @@ void three_AC(Node *node){
         }
         node->node_tmp = qid( node->namelexeme  , entry);
         if(entry != NULL){
-        entry->print();
+        // entry->print();
         }
         else{
             std::cerr<< node->namelexeme<<"\n";

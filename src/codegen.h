@@ -55,6 +55,9 @@ public:
     std::vector<std::string> constants;
     // offset to assign temporary a memory address
     int tempoffset;
+    // index for constants for data section 
+    int constIndex;
+
 
 	std::map<int, char> sizeSuffix{{1, 'b'}, {2, 'w'}, {4, 'l'}, {8, 'q'}};
 	std::map<std::string, std::string> operToInstrALU {

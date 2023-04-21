@@ -16,11 +16,13 @@ std::string KEYWORD_PREFIX      = "Keyword__";
 std::string IDENTIFIER_PREFIX   = "Identifier__";
 std::string SEPARATOR_PREFIX    = "Separator__";
 std::string LITERAL_PREFIX      = "Literal__";
+std::string STRING_PREFIX       = "~STRING__";
 
 std::string KEYWORD_SUFFIX      = "";
 std::string IDENTIFIER_SUFFIX   = "";
 std::string SEPARATOR_SUFFIX    = "";
 std::string LITERAL_SUFFIX      = "";
+std::string STRING_SUFFIX       = "__STRING";
 
 Node* FixedNode(std::string prefix, const char* matched, std::string suffix, std::string type = "")
 {
@@ -232,7 +234,8 @@ Literals {DecimalIntegerLiteral}|{HexIntegerLiteral}|{OctalIntegerLiteral}|{Floa
     for(int i=0;i<strlen(yytext);i++){
         if(yytext[i]!='\"') s+=yytext[i]; 
     }
-    yylval.node = FixedNode(LITERAL_PREFIX, const_cast<char*>(s.c_str()), LITERAL_SUFFIX,"String");
+    s = "~STRING_" + s;
+    yylval.node = FixedNode(LITERAL_PREFIX, const_cast<char*>(s.c_str() ), STRING_SUFFIX,"String");
     return StringLiteral;
 }
 

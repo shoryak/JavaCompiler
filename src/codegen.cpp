@@ -147,6 +147,7 @@ std::pair<std::string, std::vector<std::string>> Registers::getRegister(std::str
 X86::X86(std::vector<quad> _tacCode)
 {
     tempoffset = 0;
+    constIndex = 0;
 	tacCode = _tacCode;
 	Registers *regs = new Registers();
 	registers = *regs;
@@ -575,39 +576,55 @@ std::vector<std::string> X86::tac2x86(quad instruction)
         code.push_back(comment);
 		code.push_back(str1);
 		code.push_back(str2);
-        // std::cerr<< "*****" + instruction.argument1.first<<"\n";
-        if(instruction.argument1.first == "0")
-		{
-            std::string movins = "\tmov $print0, %rdi";
-            std::string clearAl = "\txor %rax, %rax";
-            std::string call = "\tcall printf";
-            code.push_back(movins);
-            code.push_back(clearAl);
-            code.push_back(call);
-        }
-        else if(instruction.argument1.first == "1"){
-            std::string printversion = "$print1";
+        std::string name = instruction.argument2.first;
+        // for print string support 
+        if(name[0] == '~')
+        {
+            std::string format = "format" + std::to_string(++constIndex) + ":\n\t.asciz \"" + name.substr(8, name.length()-1) +"\\n\"";
+            constants.push_back(format);
             
-            int argWidth = width(instruction.argument2);
-            if(argWidth == 4){
-                printversion = "$print2";
-            }
-            std::string memArg = getMemLocation(instruction.argument2 , code);
-           
-            std::string movins = "\tmov " + printversion+ ", %rdi";
+            std::string movins = "\tmov $format" + std::to_string(constIndex) +", %rdi";
             std::string clearAl = "\txor %rax, %rax";
             std::string call = "\tcall printf";
             code.push_back(movins);
-            code.push_back(getLoadInstr(memArg, argWidth, 2));
             code.push_back(clearAl);
             code.push_back(call);
-        } 
 
-        str1 = "\tpop %rax";
-		str2 = "\tpop %rcx";
-        code.push_back(str1);
-		code.push_back(str2);
+        }
+        else 
+        {
+            if(instruction.argument1.first == "0")
+            {
+                std::string movins = "\tmov $print0, %rdi";
+                std::string clearAl = "\txor %rax, %rax";
+                std::string call = "\tcall printf";
+                code.push_back(movins);
+                code.push_back(clearAl);
+                code.push_back(call);
+            }
+            else if(instruction.argument1.first == "1"){
+                std::string printversion = "$print1";
+                
+                int argWidth = width(instruction.argument2);
+                if(argWidth == 4){
+                    printversion = "$print2";
+                }
+                std::string memArg = getMemLocation(instruction.argument2 , code);
+            
+                std::string movins = "\tmov " + printversion+ ", %rdi";
+                std::string clearAl = "\txor %rax, %rax";
+                std::string call = "\tcall printf";
+                code.push_back(movins);
+                code.push_back(getLoadInstr(memArg, argWidth, 2));
+                code.push_back(clearAl);
+                code.push_back(call);
+            } 
 
+            str1 = "\tpop %rax";
+            str2 = "\tpop %rcx";
+            code.push_back(str1);
+            code.push_back(str2);
+        }
 	}
     
 	else if(oper == "RETURN")
@@ -634,6 +651,7 @@ std::vector<std::string> X86::tac2x86(quad instruction)
 		code.push_back(str);
         code.push_back(getStoreInstr(memRes, resWidth,3));
 	}
+
     
 	return code;
 } 
