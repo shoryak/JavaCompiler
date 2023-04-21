@@ -229,6 +229,9 @@ int X86::getPointerReg(){
 
 std::string X86::getMemLocation(qid var, std::vector<std::string>&code)
 {
+    if(var.first == "this"){
+        return "16(%rbp)";
+    }
 	bool istemp = var.first[0] == '$';
     bool isPointer = var.first[0] == '*';
     if(isPointer){
@@ -576,7 +579,7 @@ std::vector<std::string> X86::tac2x86(quad instruction)
 	{
         std::string argPrint = instruction.result.first + std::to_string(reinterpret_cast<long long>(instruction.result.second));
         registers.locations[argPrint].second = instruction.argument1.first + "(%rbp)";
-        std::string comment = "\t#PopArg " + registers.locations[argPrint].second  ;
+        std::string comment = "\t#PopArg " + registers.locations[argPrint].second + " " + instruction.result.first ;
         code.push_back(comment);
     }
     else if(oper == "pop")

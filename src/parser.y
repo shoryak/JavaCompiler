@@ -1807,7 +1807,7 @@ void three_AC(Node *node){
             }
 
             // Constructor is never static
-            quad I1 = generate(qid("push", NULL), objTemp, emptyQid, emptyQid, -1);
+            quad I1 = generate(qid("pusharg", NULL), objTemp, qid("8", NULL), emptyQid, -1);
             node->code.push_back(I1);
             totalPopSize += 8;
 
@@ -1929,7 +1929,7 @@ void three_AC(Node *node){
                 }
 
                 // obj.func() is never static
-                quad I1 = generate(qid("push", NULL), dot->children[0]->node_tmp, emptyQid, emptyQid, -1);
+                quad I1 = generate(qid("pusharg", NULL), dot->children[0]->node_tmp, qid( "8", NULL ), emptyQid, -1);
                 node->code.push_back(I1);
                 totalPopSize += 8;
 
@@ -2025,7 +2025,7 @@ void three_AC(Node *node){
             // Pass first object address as first argument if non-static
             if(!isStatic)
             {
-                quad I1 = generate(qid("push", NULL), qid("this", NULL), emptyQid, emptyQid, -1);
+                quad I1 = generate(qid("pusharg", NULL), qid("this", NULL), qid( "8", NULL ), emptyQid, -1);
                 node->code.push_back(I1);
                 totalPopSize += 8;
             }
