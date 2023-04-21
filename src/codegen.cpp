@@ -2,6 +2,8 @@
 #include "3ac.h"
 #include <fstream>
 
+std::string g_currentFunction;
+
 inline int64_t rnd(int l,int r)
 {
 	return rand()%(r-l+1)+l;
@@ -318,7 +320,9 @@ std::vector<std::string> X86::tac2x86(quad instruction)
     else if(oper.substr(0, 2) == "$L" || oper[0] == '#')
 	{
 		int labelLength = oper.size();
-        std::string label = oper.substr(1, labelLength - 1) + ":";
+		std::string labelName = oper.substr(1, labelLength - 1);
+        std::string label = labelName + ":";
+		if(oper[0] == '#') g_currentFunction = labelName;
         code.push_back(label);
     }
 	else if(oper == "CALL")
@@ -492,6 +496,7 @@ std::vector<std::string> X86::tac2x86(quad instruction)
          std::string ret = "\tret";
          code.push_back(sp2bp);
          code.push_back(restorerbp);
+		 if(g_currentFunction == "main") code.push_back("\txorq %rax, %rax"); // return code 0 for main by default
          code.push_back(ret);
     }
     else if(oper == "LOCALVARIABLESPACE")
