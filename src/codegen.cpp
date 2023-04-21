@@ -219,8 +219,8 @@ std::string X86::getMemLocation(qid var, std::vector<std::string>&code)
         if(istemp)
 		{
             tempoffset += 8;
-            std::string comment = "\t#space for "+var.first ;
-            std::string spaceTemp= "\tsub $8, %rsp";
+            std::string comment = "\t#space for " + var.first;
+            std::string spaceTemp= "\tsubq $8, %rsp";
             code.push_back(comment);
             code.push_back(spaceTemp);
             std::string memLoc = "-" + std::to_string(tempoffset) + "(%rbp)";
@@ -244,7 +244,12 @@ std::string X86::getLoadInstr(std::string location, int width, int regNum)
 	assert(widthToReg[regNum].find(width) != widthToReg[regNum].end());
 
 	std::string suf; suf.push_back(sizeSuffix[width]);
-	std::string loadInstr = "\tmov" + suf + " " + location + ", " + widthToReg[regNum][width];
+	std::string loadInstr;
+	if(suf == "q" || location[0] == '$')
+	{
+		loadInstr = "\tmovq " + location + ", " + widthToReg[regNum][8];
+	}
+	else loadInstr = "\tmovs" + suf + "q " + location + ", " + widthToReg[regNum][8];
 	return loadInstr;
 }
 
@@ -289,6 +294,8 @@ std::vector<std::string> X86::tac2x86(quad instruction)
 		int jumpLabelSize = instruction.argument2.first.size();
 		std::string jumpLabel = instruction.argument2.first.substr(1, jumpLabelSize-1);
 
+		std::string descriptor = "\t#IfFalse " + instruction.argument1.first + " goto " + jumpLabel;
+		code.push_back(descriptor);
 		code.push_back(getLoadInstr(memArg, argWidth, 0));
 		std::string zeroReg = "\txorq %rdx, %rdx";
 		std::string compareInstr = "\tcmpq %rcx, %rdx";
@@ -304,6 +311,8 @@ std::vector<std::string> X86::tac2x86(quad instruction)
 		int jumpLabelLength = instruction.argument1.first.size();
 		std::string jumpLabel = instruction.argument1.first.substr(1, jumpLabelLength-1);
         std::string jmpLine = "\tjmp " + jumpLabel;
+		std::string descriptor = "\t#goto " + jumpLabel;
+		code.push_back(descriptor);
         code.push_back(jmpLine);
 	}
     else if(oper.substr(0, 2) == "$L" || oper[0] == '#')
@@ -338,6 +347,9 @@ std::vector<std::string> X86::tac2x86(quad instruction)
         std::string memArg2 = getMemLocation(instruction.argument2, code);
         std::string memRes = getMemLocation(instruction.result, code);
 
+		std::string descriptor = "\t#" + instruction.result.first + " = " + instruction.argument1.first + " " + oper + " " + instruction.argument2.first;
+
+		code.push_back(descriptor);
         code.push_back(getLoadInstr(memArg2, argWidth2, 0));
 		code.push_back(getLoadInstr(memArg1, argWidth1, 1));
         code.push_back(getALUInstr(oper));
@@ -356,6 +368,9 @@ std::vector<std::string> X86::tac2x86(quad instruction)
 
 		assert(operToInstrSet.find(oper) != operToInstrSet.end());
 
+		std::string descriptor = "\t#" + instruction.result.first + " = " + instruction.argument1.first + " " + oper + " " + instruction.argument2.first;
+
+		code.push_back(descriptor);
 		code.push_back(getLoadInstr(memArg1, argWidth1, 1));
 		code.push_back(getLoadInstr(memArg2, argWidth2, 0));
 		std::string compareInstr = "\tcmpq %rcx, %rdx";
@@ -383,6 +398,7 @@ std::vector<std::string> X86::tac2x86(quad instruction)
 
 		std::string memArg = getMemLocation(instruction.argument1, code);
 		std::string memRes = getMemLocation(instruction.result, code);
+		std::string descriptor = "\t#" + instruction.result.first + " = " + oper + " " + instruction.argument1.first;
 
 		code.push_back(getLoadInstr(memArg, argWidth, 0));
 		code.push_back(getStoreInstr(memRes, resWidth, 0));
@@ -421,8 +437,10 @@ std::vector<std::string> X86::tac2x86(quad instruction)
 
 		// store allocated address in %rax to result
 		std::string memRes = getMemLocation(instruction.result, code);
+		std::string descriptor = "\t#" + instruction.result.first + "= allocmem " + bytes;
 		std::string assignLine = "\tmovq %rax, " + memRes;
 
+		code.push_back(descriptor);
 		code.push_back(addBytesArgLine);
 		code.push_back(heapAllocLine);
 		code.push_back(assignLine);
@@ -436,7 +454,9 @@ std::vector<std::string> X86::tac2x86(quad instruction)
 
 		std::string memArg = getMemLocation(instruction.argument1, code);
 		std::string memRes = getMemLocation(instruction.result, code);
+		std::string descriptor = "\t#" + instruction.result.first + " = " + instruction.argument1.first;
 
+		code.push_back(descriptor);
 		code.push_back(getLoadInstr(memArg, argWidth, 0));
 		code.push_back(getStoreInstr(memRes, resWidth, 0));
     }
@@ -488,7 +508,7 @@ std::vector<std::string> X86::tac2x86(quad instruction)
     else if(oper == "poparg")
 	{
         std::string argPrint = instruction.result.first + std::to_string(reinterpret_cast<long long>(instruction.result.second));
-        registers.locations[argPrint].second = instruction.argument1.first+ "(%rbp)";
+        registers.locations[argPrint].second = instruction.argument1.first + "(%rbp)";
         std::string comment = "\t#PopArg " + registers.locations[argPrint].second  ;
         code.push_back(comment);
     }
@@ -631,14 +651,14 @@ std::vector<std::string> X86::tac2x86(quad instruction)
 	{
         std::string memArg = getMemLocation(instruction.argument1, code);
         int argWidth = width(instruction.argument1);
-        code.push_back(getLoadInstr(memArg, argWidth,3));
+        code.push_back(getLoadInstr(memArg, argWidth, 3));
     }
     
 	else if(oper == "RETURNVALUE")
 	{
         std::string memArg = getMemLocation(instruction.result, code);
         int argWidth = width(instruction.result);
-        code.push_back(getStoreInstr(memArg, argWidth,3));
+        code.push_back(getStoreInstr(memArg, argWidth, 3));
     }
 
 	else if(oper=="~"){

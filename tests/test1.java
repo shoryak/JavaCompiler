@@ -6,23 +6,9 @@ public class CS335A {
     //     return q;
     // }
     public static void main(String[] args) {
-        int i=0;
-        while(true) {
-            i++;
-            if(i == 2) continue;
-            System.out.println(i);
-            if(i == 10) break;
-        }
-        for(;;i++)
-        {
-            int j=0;
-            System.out.println(j);
-            System.out.println(80085);
-            j=11;
-            if(j == 11) break;
-            else continue;
-        }
-        System.out.println(i);
-        /* Comment it*/
+        System.out.println(10);
+        int i = -1;
+        if(i < 0) System.out.println(1);
+        else System.out.println(0);
     }
 }
