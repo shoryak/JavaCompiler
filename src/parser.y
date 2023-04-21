@@ -41,6 +41,7 @@ struct field
     int numDims;
     std::string modifier;
     int offset;
+    int size=0;
 };
 
 SymbolTable *globalSymTable = new SymbolTable;
@@ -50,7 +51,7 @@ int useCurlyForNewScope  = 1;
 std::vector<int> curlyScopes;
 int labelCounter = 0;
 std::string currentClass, currentFuncName ; 
-int localOffset, fieldOffset;
+int localOffset=0, fieldOffset=0;
 std::unordered_map<std::string, SymbolTable*> methodSymbolTable;
 std::map<std::string , std::set<std::string > > methodsForClass;
 std::map<std::string , std::set<std::string>  > fieldsForClass;
@@ -799,9 +800,11 @@ void createST(Node* node)
                 fieldStructData.numDims = nDims;
                 fieldStructData.modifier = modifier;
                 fieldStructData.offset = oldfieldOffset;
+                std::cerr<<"U***"<<fieldOffset<<" "<<oldfieldOffset<<"\n";
+                fieldStructData.size =  fieldOffset - oldfieldOffset;
                 fieldsForClass[currentClass].insert(fieldData);
                 classFieldData[currentClass +"_" + fieldData] = fieldStructData;
-                // std::cerr << "Inserting: " << currentClass + "_" + fieldData << '\n';
+                std::cerr << "Inserting: " << currentClass + "_" + fieldData << '\n';
                 currSymTable->insert(stEntry);
 
                 //3 AC
@@ -833,6 +836,7 @@ void createST(Node* node)
                 fieldStructData.numDims = nDims;
                 fieldStructData.modifier = modifier;
                 fieldStructData.offset = oldfieldOffset;
+                fieldStructData.size =  fieldOffset - oldfieldOffset;
                 fieldsForClass[currentClass].insert(fieldData);
                 classFieldData[currentClass +"_" + fieldData] = fieldStructData;
                 // std::cerr << "Inserting: " << currentClass + "_" + fieldData << '\n';
@@ -1303,6 +1307,9 @@ qid emptyQid("", NULL);
 void unary3AC(Node* node, std::string op)
 {
     node->node_tmp = newtemp(node->typeForExpr, node->nearSymbolTable);
+    if(node->children[0]->namelexeme == "."){
+        // node->children[0]->node_tmp.first =  "*" + node->children[0]->node_tmp.first + "_" + std::to_string(setOffset(node->typeForExpr));
+    }
     quad instruction = generate(qid(op, NULL), emptyQid, node->children[0]->node_tmp, node->node_tmp, -1);
     codeInsert(node,node->children[0]->code);
     node->code.push_back(instruction);
@@ -1319,7 +1326,19 @@ void binary3AC(Node* node, std::string op)
     codeInsert(node, node->children[1]->code);
     // std::cerr<< node->namelexeme <<" "<< node->typeForExpr <<" "<< node->children[0]->typeForExpr << " "<< node->children[1]->typeForExpr << "\n";
     qid left = node->children[0]->node_tmp;
+    if(node->children[0]->namelexeme == "."){
+        // std::reverse(left.first.begin(), left.first.end());
+        // left.first.push_back('*');
+        // std::reverse(left.first.begin(), left.first.end());
+        // left.first = left.first +  "_" + std::to_string(setOffset(node->children[0]->typeForExpr));
+    }
     qid right  = node->children[1]->node_tmp;
+    if(node->children[1]->namelexeme == "."){
+        // std::reverse(right.first.begin(), right.first.end());
+        // right.first.push_back('*');
+        // std::reverse(right.first.begin(), right.first.end());
+        // right.first = right.first +  "_" + std::to_string(setOffset(node->children[0]->typeForExpr));
+    }
     bool flag = node->children[0]->typeForExpr != "";
     flag = flag && (node->children[1]->typeForExpr != "");
     flag = flag && (node->typeForExpr != "");
@@ -1464,7 +1483,10 @@ void three_AC(Node *node){
         }
         quad tempassign = generate(emptyQid, node->children[1]->node_tmp, emptyQid, node->node_tmp, -1);
         if(node->children[0]->namelexeme == "."){
-            node->children[0]->node_tmp.first = "*" + node->children[0]->node_tmp.first;
+            // node->children[0]->node_tmp.first = "*" + node->children[0]->node_tmp.first + "_" + std::to_string(setOffset (node->children[0]->typeForExpr));
+        }
+        if(node->children[1]->namelexeme == "."){
+            // node->node_tmp.first = "*" + node->node_tmp.first + "_" + std::to_string(setOffset (node->children[1]->typeForExpr));
         }
         quad exp = generate(emptyQid, node->node_tmp, emptyQid, node->children[0]->node_tmp, -1);        
         node->code.push_back(tempassign);
@@ -2049,6 +2071,9 @@ void three_AC(Node *node){
            
 
             std::string objClassName;
+            
+            // will be NULL is case of this, and entry in case of pointer
+            SymbolTableEntry* objEntry = NULL;
             if(objname == "this")
             {
                 auto classNode = node;
@@ -2059,7 +2084,7 @@ void three_AC(Node *node){
             }
             else
             {
-                auto objEntry = node->nearSymbolTable->lookup(objname);
+                objEntry = node->nearSymbolTable->lookup(objname);
                 assert(objEntry);
                 objClassName = objEntry->getType();
             }
@@ -2069,9 +2094,11 @@ void three_AC(Node *node){
             int offset = fieldStructData.offset;
             
             node->node_tmp = newtemp(fieldStructData.type, node->nearSymbolTable);
-            quad I1 = generate(qid("", NULL), qid(objname, NULL), emptyQid,node->node_tmp, -1);
-            
+            quad I1 = generate(qid("", NULL), qid(objname, objEntry), emptyQid,node->node_tmp, -1);
+            // std::cerr<<offset<<" "<<fieldStructData.size<<"____________\n";
             quad I2 = generate(qid("+",NULL), node->node_tmp, qid(std::to_string(offset), NULL), node->node_tmp,-1);
+            node->node_tmp.first = "*" + node->node_tmp.first + "_" + std::to_string(fieldStructData.size);
+
             node->code.push_back(I1);
             node->code.push_back(I2);
             // print3AC1(node->code);
@@ -2616,7 +2643,7 @@ CompilationUnit:    OrdinaryCompilationUnit
                         currSymTable->insert(stEntry);
                         createST(root);
                         // SymTableCSVDump();
-                        // globalSymTable->__printAll();
+                        globalSymTable->__printAll();
                         three_AC(root);
                         // globalSymTable = $$->symTable;
                         X86* x86 = new X86(tacCode);

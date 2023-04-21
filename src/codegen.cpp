@@ -195,13 +195,64 @@ void X86::codeGen()
 		std::cerr << ins << '\n';
 }
 
+std::vector<std::string> split(std::string str , char delim){
+    std::vector<std::string> res;
+    std::string temp="";
+	
+    for(auto character: str){
+		if(character!=delim){
+			temp.push_back(character);
+		}
+		else {
+			res.push_back(temp);
+			temp="";
+		}
+	}
+	res.push_back(temp);
+	return res;
+
+
+}
+
+int X86::getPointerReg(){
+    for(int i=0;i<3;i++){
+        if(pointerRegsInUse[pointerRegs[i]]==0){
+            pointerRegsInUse[pointerRegs[i]]==1;
+            return widthToReg.size()-3 + i;
+        }
+    }
+}
+
+
+
 std::string X86::getMemLocation(qid var, std::vector<std::string>&code)
 {
 	bool istemp = var.first[0] == '$';
     bool isPointer = var.first[0] == '*';
+    if(isPointer){
+        auto entry =  var.second;
+        // std::cerr<< var.first<<"\n";
+        assert(entry);
+        auto parts = split(var.first,'_');
+        std::string varName = split(var.first,'_')[0];
+
+        varName = varName.substr(1, varName.length() -1);
+        std::string memSize = split(var.first,'_')[1];
+        // std::cerr<< varName<<" UUU "<<memSize<<"\n";
+        std::string varPrint = varName + std::to_string(reinterpret_cast<long long>(entry));
+        // std::cerr<< varPrint<<"\n";
+        int pointreg = getPointerReg();
+        std::string comment = "\t#fetching pointer " ;
+        std::string loadPointer= getLoadInstr(registers.locations[varPrint].second,8,pointreg );
+        code.push_back(comment);
+        code.push_back(loadPointer);
+        std::string memLoc = "0(" + pointerRegs[pointreg+3 - widthToReg.size()] + ")";
+        return memLoc;
+    }
+	
 
     auto entry =  var.second;
-    std::cerr<< var.first<<"\n";
+    // std::cerr<< var.first<<"\n";
     if(var.first == "" ) var.first = "0";
     if(!entry) return "$" + var.first;
     assert(entry);
@@ -239,8 +290,9 @@ std::string X86::getMemLocation(qid var, std::vector<std::string>&code)
 
 std::string X86::getLoadInstr(std::string location, int width, int regNum)
 {
+    // std::cerr<<width<<"\n";
 	assert(sizeSuffix.find(width) != sizeSuffix.end());
-	assert(0 <= regNum && regNum <= 4);
+	assert(0 <= regNum && regNum <= 7);
 	assert(widthToReg[regNum].find(width) != widthToReg[regNum].end());
 
 	std::string suf; suf.push_back(sizeSuffix[width]);
@@ -251,7 +303,7 @@ std::string X86::getLoadInstr(std::string location, int width, int regNum)
 std::string X86::getStoreInstr(std::string location, int width, int regNum)
 {
 	assert(sizeSuffix.find(width) != sizeSuffix.end());
-	assert(0 <= regNum && regNum <= 4);
+	assert(0 <= regNum && regNum <= 7);
 	assert(widthToReg[regNum].find(width) != widthToReg[regNum].end());
 
 	std::string suf; suf.push_back(sizeSuffix[width]);

@@ -77,6 +77,8 @@ public:
 		{"==", "sete"},
 		{"!=", "setne"}
 	};
+    std::vector<std::string> pointerRegs = {"%r10" , "%r11" , "%r12"};
+    std::map<std::string , int > pointerRegsInUse;
 	std::vector<std::map<int, std::string>> widthToReg {
 		{
 			{1, "%cl"},
@@ -111,6 +113,31 @@ public:
 			{4, "%ebx"},
 			{8, "%rbx"}
 		}
+        ,
+        {
+			{1, "%r10b"},
+			{2, "%r10w"},
+			{4, "%r10d"},
+			{8, "%r10"}
+		}
+        ,
+        {
+			{1, "%r11b"},
+			{2, "%r11w"},
+			{4, "%r11d"},
+			{8, "%r11"}
+		}
+        ,
+        {
+			{1, "%r12b"},
+			{2, "%r12w"},
+			{4, "%r12d"},
+			{8, "%r12"}
+		}
+
+
+
+
 
 
 
@@ -123,6 +150,7 @@ public:
 	std::string getLoadInstr(std::string address, int width, int regNum); // width = 1,2,4 or 8
 	std::string getStoreInstr(std::string address, int width, int regNum); // width = 1,2,4 or 8
 	std::string getALUInstr(std::string oper);
+    int getPointerReg(void);
 };
 
 #endif

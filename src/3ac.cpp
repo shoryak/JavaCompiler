@@ -10,6 +10,24 @@ int counter = 0;
 int printAC= 0;
 std::ofstream tac_file, tac_file1;
 
+std::vector<std::string> split3ac(std::string str , char delim){
+    std::vector<std::string> res;
+    std::string temp="";
+	
+    for(auto character: str){
+		if(character!=delim){
+			temp.push_back(character);
+		}
+		else {
+			res.push_back(temp);
+			temp="";
+		}
+	}
+	res.push_back(temp);
+	return res;
+
+
+}
 quad generate(qid op, qid arg1, qid arg2, qid res, int idx)
 {
     quad qd(op, arg1, arg2, res, idx);
@@ -48,11 +66,21 @@ qid newtempstar(std::string type, SymbolTable* currSymTable)
 
 int width(qid operand)
 {
-    if(operand.first[0] == '$')
+    if(operand.first[0] == '*'){
+        auto var = operand;
+        auto parts = split3ac(var.first,'_');
+        std::string varName = split3ac(var.first,'_')[0];
+
+        varName = varName.substr(1, varName.length() -1);
+        std::string memSize = split3ac(var.first,'_')[1];
+        std::cerr<< varName<<" UUU "<<memSize<<"\n";
+        return stoi(memSize);
+    }
+    else if(operand.first[0] == '$')
     {
-          std::string type = operand.second->getType();
-          std::cerr<<  "______________\n"+operand.first<<"\n";
-          std::cerr<<"type " + type<<"\n";
+        //   std::string type = operand.second->getType();
+        //   std::cerr<<  "______________\n"+operand.first<<"\n";
+        //   std::cerr<<"type " + type<<"\n";
           return 8; // temporary
     }
     else if(operand.second)
@@ -70,8 +98,11 @@ int width(qid operand)
         };
         std::cerr<<  "______________\n"+operand.first<<"\n";
         std::cerr<<"type " + type<<"\n";
-        assert(integralTypeToWidth.find(type) != integralTypeToWidth.end());
-        int width = integralTypeToWidth[type];
+        int width = 8; // default for custom types, it's a pointer
+        if(integralTypeToWidth.find(type) != integralTypeToWidth.end())
+        {
+            width = integralTypeToWidth[type];
+        }
         return width;
     }
     else return 8; // constant
