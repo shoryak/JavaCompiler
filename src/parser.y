@@ -1563,7 +1563,8 @@ void three_AC(Node *node){
         Node* condition = node->children[0];
         Node* thenNode = node->children[1];
         Node* elseNode = node->children[2];
-
+        
+        node->node_tmp = newtemp("type", node->nearSymbolTable);
         labelCounter++;
         std::string l1 = "$L" + std::to_string(labelCounter);
         labelCounter++;
@@ -1573,15 +1574,20 @@ void three_AC(Node *node){
         
         quad ifThenQuad = generate(qid("IfFalse", NULL), condition->node_tmp, qid(l1, NULL), emptyQid, -1);
         quad L1 = generate(qid(l1, NULL), emptyQid, emptyQid, emptyQid, -1);
+
         quad L2 = generate(qid(l2, NULL), emptyQid, emptyQid, emptyQid, -1);
         quad gotoL2 = generate(qid("$goto", NULL), qid(l2, NULL), emptyQid, emptyQid, -1);
 
         node->code = condition->code;
         node->code.push_back(ifThenQuad);
         codeInsert(node, thenNode->code);
+        quad i1 = generate(emptyQid , thenNode->node_tmp , emptyQid, node->node_tmp,-1);
+        node->code.push_back(i1);
         node->code.push_back(gotoL2);
         node->code.push_back(L1);
         codeInsert(node, elseNode->code);
+        quad i2 = generate(emptyQid , elseNode->node_tmp , emptyQid, node->node_tmp,-1);
+        node->code.push_back(i2);
         node->code.push_back(L2);
     }
 

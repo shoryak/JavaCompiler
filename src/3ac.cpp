@@ -90,7 +90,6 @@ int width(qid operand)
         std::map<std::string, int> integralTypeToWidth {
             {"boolean", 1},
             {"byte", 1},
-            {"boolean" , 1},
             {"char", 1},
             {"short", 2},
             {"int", 4},

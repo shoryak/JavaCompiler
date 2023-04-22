@@ -624,7 +624,7 @@ std::vector<std::string> X86::tac2x86(quad instruction)
         code.push_back(getStoreInstr(memArg, argWidth, 3));
     }
 
-	else if(oper=="~" ){
+	else if(oper=="~"   ){
 		std::string memArg = getMemLocation(instruction.argument2, code);
 		int argWidth = width(instruction.argument2);
         std::string memRes = getMemLocation(instruction.result,code);
@@ -635,6 +635,17 @@ std::vector<std::string> X86::tac2x86(quad instruction)
         code.push_back(getStoreInstr(memRes, resWidth,3));
 	}
     else if(oper == "!"){
+        std::string memArg = getMemLocation(instruction.argument2, code);
+        std::string resArg = getMemLocation(instruction.result ,code);
+        std::cerr<< instruction.argument2.first<<"\n";
+        code.push_back("\t#! "+instruction.argument2.first);
+        code.push_back("\txorq %rax, %rax");
+        int argWidth = width(instruction.argument2);
+        int resWidth = width(instruction.result);
+        code.push_back(getLoadInstr(memArg, argWidth , 3));
+        code.push_back("\tcmp $0, %rax");
+        code.push_back("\tsete %al");
+        code.push_back(getStoreInstr(resArg, resWidth , 3));
 
     }
     // std::cerr<<pointerRegsInUse.size()<<" size\n";
