@@ -1,30 +1,21 @@
 //testCase4
 public class Ifelsedemo{  
-
+public
     int f1;
     long f2;
 
-    Ifelsedemo(int a){
-        this.f2 = a;
+    Ifelsedemo(int f1 , long f2){
+        this.f1 = f1;
+        this.f2 =  f2;
     } 
-    
-    public void ifelse(){
-        int p=2;
-      if(p<9){  
-          System.out.println("I am p");  
-          if(p == 2){
-              System.out.println("2 here");  
-          }
-      }
-      else{  
-          System.out.println("I am p as well");  
-      }  
-    }
 
     public static void main(String[] args) {  
-        int p = 10;
-        Ifelsedemo obj = new Ifelsedemo(p);
-        obj.f1 = 8;
+        Ifelsedemo obj  = new Ifelsedemo(10,30);
+        System.out.println(obj.f1);
+        System.out.println(obj.f2);
+        obj.f2 = 200;
+        System.out.println(obj.f2 + 2*obj.f1);
+        return;
     }  
 } 
 

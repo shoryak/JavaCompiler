@@ -1,12 +1,24 @@
 //testcase 8
-public class JavaCodetest {
+public class Test8 {
     public static void main(String[] args)
     {
-        int arr[][][][] = new int[10][20][3][1];
-        int arr1[][][] = new int[10][3][1];
-        int abc[] = new int[2]; 
-        System.out.println("Array");
-        boolean a[]= new boolean[2];
+    
+        int arr[] = new int[20];
+        int arr2[][] = new int[30][30];
+        for(int i=0;i<10;i++){
+            arr[i] = i;
+            arr2[i][i] = 2*i;
+        }
+        for(int i=0;i<10;i++){
+            System.out.println(arr[i]+ arr2[i][i]);
+        }
+        
+        System.out.println("MultiDimensional Array");
+        int abc[][][][][] = new int[10][9][10][3][2]; 
+        abc[2][3][2][1][1] = 3000;
+        System.out.println(abc[2][3][2][1][1]);
+        
+
         
         // multi dim array
     }

@@ -1845,14 +1845,17 @@ void three_AC(Node *node){
             Node* dot = node->children[0];
             if(dot->children[0]->namelexeme == ".")
             {
-                if(dot->children[1]->children[0]->namelexeme == "println" && dot->children[0]->children[1]->children[0]->namelexeme == "out" && dot->children[0]->children[0]->children[0]->namelexeme == "System")
+                if((dot->children[1]->children[0]->namelexeme == "println" || dot->children[1]->children[0]->namelexeme == "print" ) && dot->children[0]->children[1]->children[0]->namelexeme == "out" && dot->children[0]->children[0]->children[0]->namelexeme == "System")
                 {
-                    // handle System.out.println
-
+                    // handle System.out.println and print
+                    std::string print = "PRINTCALL";
+                    if(dot->children[1]->children[0]->namelexeme == "print"){
+                         print = "PRINTCALL1";
+                    }
                     int totalPopSize = 0;
                     if(Arguments == NULL){
                         int numArg = 0;
-                        quad I2 = generate(qid("PRINTCALL", NULL), qid(std::to_string(numArg), NULL), emptyQid, emptyQid, -1);
+                        quad I2 = generate(qid(print, NULL), qid(std::to_string(numArg), NULL), emptyQid, emptyQid, -1);
                         node->code.push_back(I2);
                     }
                     else if(Arguments->children.size() > 1)
@@ -1875,7 +1878,7 @@ void three_AC(Node *node){
                             argTemp = argumentNode->node_tmp;
                         }
 
-                        quad I2 = generate(qid("PRINTCALL", NULL), qid(std::to_string(numArg), NULL), argTemp, emptyQid, -1);
+                        quad I2 = generate(qid(print, NULL), qid(std::to_string(numArg), NULL), argTemp, emptyQid, -1);
                         node->code.push_back(I2);
 
                         // quad I3 = generate(qid("pop", NULL), qid(std::to_string(totalPopSize), NULL), emptyQid, emptyQid, -1);

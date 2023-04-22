@@ -4,15 +4,12 @@ class testcase3 {
 	int a;
 	char b;
 
-	public long multipleargs(int a , long b, float c){
-		int vari;
-        return a + b +1;
+	public static long multipleargs(int a , long b, int c){
+        return a + b*c;
     }
 	public static void main(String[] args) {
-	  long i = 1, n = 5;
-	  while(i >=0) {
-		i--;
-	  }
+		long res = multipleargs(20, 30, 3);
+		System.out.println(res);
 	}
 	/* this is while loop */
   }

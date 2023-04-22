@@ -1,16 +1,20 @@
-class method1 {
-   
-    private static void Fifa(int x, float y){
-        System.out.println("Argument two");
+
+class Types{  
+    public static void main(String args[])  
+    {      
+        long var_long  = 100000;
+        System.out.println(var_long);
+        int var_int = (int)var_long;
+        System.out.println(var_int);
+        var_long = 1000000000000;
+        System.out.println(var_long);
+        var_int = (int)var_long;
+        System.out.println(var_int);
+        var_int = 900;
+        byte var_byte = (byte)var_int;
+        System.out.println(var_byte);
+        var_int = 90;
+        var_byte = (byte)var_int;
+        System.out.println(var_byte);
     }
-   
-    public static void main(String[] args) {
-        Fifa(10,3);  
-        
-    }
-    int functiontest(int x, int y){
-        int a = 1 ;
-        float c = 10;
-        Fifa(a,c);
-    }
-}
+}  
