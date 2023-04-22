@@ -53,7 +53,7 @@ main.o:			main.cpp token.h
 
 clean:
 				rm -f $(BIN)/$(ASTGEN_EXEC) $(BIN)/$(3ACGEN_EXEC) $(BIN)/$(TEST_EXEC)
-				rm -f *.out *.o *.output *.tab.* lex.yy.c token.h *.csv
+				rm -f *.out *.o *.output *.tab.* lex.yy.c token.h *.csv *.3ac
 
 cleanop:
 				rm -f $(ROOT)/*.csv $(ROOT)/*.3ac $(ROOT)/*.dot $(ROOT)/*.svg
