@@ -73,7 +73,7 @@ int width(qid operand)
 
         varName = varName.substr(1, varName.length() -1);
         std::string memSize = split3ac(var.first,'_')[1];
-        std::cerr<< varName<<" UUU "<<memSize<<"\n";
+        // std::cerr<< varNamglobalSe<<" UUU "<<memSize<<"\n";
         return stoi(memSize);
     }
     else if(operand.first[0] == '$')
@@ -96,8 +96,8 @@ int width(qid operand)
             {"int", 4},
             {"long", 8}
         };
-        std::cerr<<  "______________\n"+operand.first<<"\n";
-        std::cerr<<"type " + type<<"\n";
+        // std::cerr<<  "______________\n"+operand.first<<"\n";
+        // std::cerr<<"type " + type<<"\n";
         int width = 8; // default for custom types, it's a pointer
         if(integralTypeToWidth.find(type) != integralTypeToWidth.end())
         {

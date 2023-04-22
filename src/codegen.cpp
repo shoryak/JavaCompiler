@@ -3,7 +3,7 @@
 #include <fstream>
 
 std::string g_currentFunction;
-
+std::set<std::string> pointerRegsInUse;
 inline int64_t rnd(int l,int r)
 {
 	return rand()%(r-l+1)+l;
@@ -53,10 +53,11 @@ void X86::codeGen()
 	x86.push_back("");
 	x86.push_back(".text");
 	x86.push_back("");
-	std::cerr << "tacCode Size: " << tacCode.size() << "\n";
+	// std::cerr << "tacCode Size: " << tacCode.size() << "\n";
 	for(auto instruction: tacCode)
 	{
 		auto code = tac2x86(instruction);
+        // std::cerr<< pointerRegsInUse.size()<<"\n";
 		for(auto line: code)
 		{
 			x86.push_back(line);
@@ -107,11 +108,12 @@ std::vector<std::string> split(std::string str , char delim){
 
 int X86::getPointerReg(){
     for(int i=0;i<3;i++){
-        if(pointerRegsInUse[pointerRegs[i]]==0){
-            pointerRegsInUse[pointerRegs[i]]==1;
+        if(pointerRegsInUse.find(pointerRegs[i]) == pointerRegsInUse.end()){
+            pointerRegsInUse.insert(pointerRegs[i]);
             return widthToReg.size()-3 + i;
         }
     }
+    return -1;
 }
 
 
@@ -136,6 +138,8 @@ std::string X86::getMemLocation(qid var, std::vector<std::string>&code)
         std::string varPrint = varName + std::to_string(reinterpret_cast<long long>(entry));
         // std::cerr<< varPrint<<"\n";
         int pointreg = getPointerReg();
+        std::cerr<< pointreg<<"\n";
+        assert(pointreg>=0);
         std::string comment = "\t#fetching pointer " ;
         std::string loadPointer= getLoadInstr(registers.locations[varPrint].second,8,pointreg );
         code.push_back(comment);
@@ -152,7 +156,7 @@ std::string X86::getMemLocation(qid var, std::vector<std::string>&code)
     assert(entry);
 
     std::string varPrint = var.first + std::to_string(reinterpret_cast<long long>(entry));
-    std::cerr<< varPrint<<"\n";
+    // std::cerr<< varPrint<<"\n";
 
     // memory location already assigned
     if(registers.locations.find(varPrint) != registers.locations.end())
@@ -633,7 +637,8 @@ std::vector<std::string> X86::tac2x86(quad instruction)
     else if(oper == "!"){
 
     }
-
+    // std::cerr<<pointerRegsInUse.size()<<" size\n";
+    pointerRegsInUse.clear();
     
 	return code;
 } 

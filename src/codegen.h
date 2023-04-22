@@ -72,7 +72,7 @@ public:
 		{"!=", "setne"}
 	};
     std::vector<std::string> pointerRegs = {"%r10" , "%r11" , "%r12"};
-    std::map<std::string , int > pointerRegsInUse;
+    
 	std::vector<std::map<int, std::string>> widthToReg {
 		{
 			{1, "%cl"},

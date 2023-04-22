@@ -2194,7 +2194,7 @@ void three_AC(Node *node){
                 paramNames.push_back(Id->children[0]->children[0]->namelexeme);
                 entries.push_back(param->nearSymbolTable->lookup(paramNames.back()));
                 // std::cerr<< "parameterEntry##"<<"\n";
-                entries.back()->print();
+                // entries.back()->print();
             }
             
             int rv_= 16;
@@ -2643,7 +2643,7 @@ CompilationUnit:    OrdinaryCompilationUnit
                         currSymTable->insert(stEntry);
                         createST(root);
                         // SymTableCSVDump();
-                        globalSymTable->__printAll();
+                        // globalSymTable->__printAll();
                         three_AC(root);
                         // globalSymTable = $$->symTable;
                         X86* x86 = new X86(tacCode);
