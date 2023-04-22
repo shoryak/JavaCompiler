@@ -1,0 +1,25 @@
+#!/bin/bash
+
+BIN_DIR=$(dirname "$0")
+
+# shellcheck source=./Generator_template
+source "$BIN_DIR/Generator_template"
+
+{
+    IFS=$'\n' read -r -d '' error_msg;
+    IFS=$'\n' read -r -d '' arguments;
+} < <((printf '\0%s\0' "$(get_args $0 $@)" 1>&2) 2>&1)
+
+if [ -n "$error_msg" ]; then
+    echo "$error_msg"
+    exit 1
+fi
+
+readarray -t args <<<"$arguments"
+INPUT_FILE="${args[0]}"
+OUTPUT_FILE="${args[1]}"
+verbose_flag="${args[2]}"
+
+THREE_ACGEN_EXEC="$BIN_DIR/3ACGen.out"
+
+eval "$THREE_ACGEN_EXEC $INPUT_FILE $OUTPUT_FILE $verbose_flag"

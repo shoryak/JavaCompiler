@@ -1,0 +1,36 @@
+#!/bin/bash
+
+COMPILER="bin/Compiler"
+TESTFILES=$(ls tests/)
+OUTPUT_AST="output/ast"
+OUTPUT_3AC="output/3ac"
+OUTPUT_S_FILE="output.s"
+OUTPUT_EXEC="a.out"
+
+mkdir "output" &> /dev/null
+mkdir "$OUTPUT_AST" &> /dev/null
+mkdir "$OUTPUT_3AC" &> /dev/null
+
+echo "~~~~~~~~~~~~~~~STARTING TEST SUITE EXECUTION~~~~~~~~~~~~~~~"
+echo ""
+echo ""
+
+for TESTFILE in $TESTFILES
+do
+    echo "~~~~~~~~~~~~~~~TESTING $TESTFILE~~~~~~~~~~~~~~~"
+    echo "Compiling $TESTFILE..."
+    eval "$COMPILER --input tests/$TESTFILE --output $OUTPUT_AST/graph_$TESTFILE.dot &> /dev/null"
+    mv *.3ac "$OUTPUT_3AC/"
+    echo "Running $TESTFILE..."
+    echo ""
+    if gcc -no-pie "$OUTPUT_S_FILE" && eval "./$OUTPUT_EXEC"; then
+        echo "~~~~~~~~~~~~~~~TEST $TESTFILE RAN SUCCESSFULLY~~~~~~~~~~~~~~~"
+        rm "$OUTPUT_EXEC" "$OUTPUT_S_FILE"
+    else
+        echo "~~~~~~~~~~~~~~~TEST $TESTFILE RAN WITH ERRORS~~~~~~~~~~~~~~~"
+    fi
+    echo ""
+done
+
+echo ""
+echo "~~~~~~~~~~~~~~~ENDING TEST SUITE EXECUTION~~~~~~~~~~~~~~~"
