@@ -78,9 +78,9 @@ int width(qid operand)
     }
     else if(operand.first[0] == '$')
     {
-        //   std::string type = operand.second->getType();
-        //   std::cerr<<  "______________\n"+operand.first<<"\n";
-        //   std::cerr<<"type " + type<<"\n";
+          std::string type = operand.second->getType();
+          std::cerr<<  "______________\n"+operand.first<<"\n";
+          std::cerr<<"type " + type<<"\n";
           return 8; // temporary
     }
     else if(operand.second)
@@ -95,8 +95,8 @@ int width(qid operand)
             {"int", 4},
             {"long", 8}
         };
-        // std::cerr<<  "______________\n"+operand.first<<"\n";
-        // std::cerr<<"type " + type<<"\n";
+        std::cerr<<  "______________\n"+operand.first<<"\n";
+        std::cerr<<"type " + type<<"\n";
         int width = 8; // default for custom types, it's a pointer
         if(integralTypeToWidth.find(type) != integralTypeToWidth.end())
         {

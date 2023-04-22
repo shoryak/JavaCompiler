@@ -152,11 +152,15 @@ std::string X86::getMemLocation(qid var, std::vector<std::string>&code)
     auto entry =  var.second;
     // std::cerr<< var.first<<"\n";
     if(var.first == "" ) var.first = "0";
-    if(!entry) return "$" + var.first;
+    if(!entry) {
+
+          std::cerr<< var.first<<" XXXX \n";
+        return "$" + var.first;
+    }
     assert(entry);
 
     std::string varPrint = var.first + std::to_string(reinterpret_cast<long long>(entry));
-    // std::cerr<< varPrint<<"\n";
+    std::cerr<< varPrint<<"\n";
 
     // memory location already assigned
     if(registers.locations.find(varPrint) != registers.locations.end())
@@ -392,8 +396,11 @@ std::vector<std::string> X86::tac2x86(quad instruction)
     }
     // allocmem
     else if(oper == "" && instruction.argument1.first == "$allocmem")
-	{
-		std::string bytes = "$" + instruction.argument2.first;
+	{   
+        std::string bytes = getMemLocation(instruction.argument2, code);
+        // if(instruction.argument2.first[0] != '$' && instruction.argument2.first[0] != '*'){
+		//     bytes = getMemLocation
+        // }
 		std::string addBytesArgLine = "\tmovq " + bytes + ", %rdi"; // put bytes into %rdi
 		std::string heapAllocLine = "\tcall malloc";
 

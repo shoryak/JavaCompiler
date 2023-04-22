@@ -1720,7 +1720,7 @@ void three_AC(Node *node){
                 }
                 auto t1 = newtemp("Dim_" + std::to_string(axisNo) , node->nearSymbolTable );
                 auto t2 = newtemp("Offset" , node->nearSymbolTable );
-                auto final = newtemp("dereference" , node->nearSymbolTable );
+                auto final = newtemp(type , node->nearSymbolTable );
                 node->node_tmp = final;
                 quad I1 = generate(qid("*",NULL) , qid(std::to_string(offset),NULL), qid(width,NULL), t1 , -1);
                 quad I2 = generate(qid("*",NULL) , t1 , node->children[1]->node_tmp, t2, -1);
@@ -1732,7 +1732,7 @@ void three_AC(Node *node){
                 //         cntgetid++;
                 //     }
                 // }
-                quad I3 = generate(qid("[ ]" + getid , NULL) , qid(leaf->namelexeme , NULL) ,  t2, final, -1);
+                quad I3 = generate(qid("+"  , NULL) , qid(leaf->namelexeme , stEntry) ,  t2, final, -1);
                 codeInsert(node, node->children[0]->code);
                 node->code.push_back(I1);
                 node->code.push_back(I2);
@@ -1744,10 +1744,15 @@ void three_AC(Node *node){
         
               
                 auto t1 = newtemp("Offset" , node->nearSymbolTable );
-                auto final = newtemp("dereference" , node->nearSymbolTable );
+                auto final = newtemp(type , node->nearSymbolTable );
                 node->node_tmp = final;
                 quad I1 = generate(qid("*",NULL) , qid(std::to_string(offset),NULL), node->children[1]->node_tmp, t1 , -1);
-                quad I2 = generate(qid("[ ]" , NULL) , node->children[0]->node_tmp ,  t1, final, -1);
+                quad I2 = generate(qid("+" , NULL) , node->children[0]->node_tmp ,  t1, final, -1);
+                assert(node->parent);
+                if(node->parent->namelexeme != "[ ]"){
+                    // std::cerr<<node->node_tmp.first<<"\n";
+                    node->node_tmp.first = "*"  + node->node_tmp.first + "_" + std::to_string(offset);
+                }
                 codeInsert(node, node->children[0]->code);
                 node->code.push_back(I1);
                 node->code.push_back(I2);
@@ -2309,11 +2314,15 @@ void three_AC(Node *node){
             
 
         }
-        node->node_tmp = newtemp("size",node->nearSymbolTable);
+        node->node_tmp = newtemp(node->typeForExpr,node->nearSymbolTable);
         quad I1 = generate(emptyQid , qid(std::to_string(offset) , NULL), emptyQid , node->node_tmp , -1);
         node->code.push_back(I1);
         for(auto width : axisWidths){
-            quad I1 = generate(qid("*",NULL), qid(width , NULL), node->node_tmp , node->node_tmp , -1);
+            auto nx = newtemp(node->typeForExpr,node->nearSymbolTable);
+            std::cerr<<nx.first<<" AAAA\n";
+            assert(nx.second != NULL);
+            quad I1 = generate(qid("*",NULL), qid(width , NULL), node->node_tmp , nx , -1);
+            node->node_tmp = nx;
             node->code.push_back(I1);
         }
         auto x = newtemp( node->typeForExpr, node->nearSymbolTable);
