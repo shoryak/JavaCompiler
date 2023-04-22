@@ -28,16 +28,9 @@ public:
 
 	Registers(void);
 
-    // selectReg() selects a register to use next based on LRU scheme
-    std::string selectReg(void);
-
-	std::vector<std::string> writeBack(std::vector<std::string> writeRegs, bool flush);
-
     // this function tells whether varName has been assigned a register/memory location
     bool inLocations(std::string varName);
 
-    // this function is to get the register for a variable 
-    std::pair<std::string, std::vector<std::string>> getRegister(std::string varName);
 };
 
 class X86
@@ -115,6 +108,7 @@ public:
 			{8, "%rbx"}
 		}
         ,
+        // registers for pointer operations
         {
 			{1, "%r10b"},
 			{2, "%r10w"},
@@ -135,12 +129,6 @@ public:
 			{4, "%r12d"},
 			{8, "%r12"}
 		}
-
-
-
-
-
-
 
 	};
 

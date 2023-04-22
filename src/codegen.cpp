@@ -25,53 +25,6 @@ Registers::Registers()
 	
 }
 
-// selectReg() selects a register to use next based on LRU scheme
-std::string Registers::selectReg(void)
-{
-	int threshold = 1e9+6;
-	std::string reg;
-	for(auto tempreg :regs)
-	{
-		if(tempreg.second.second <= threshold)
-		{
-			threshold = tempreg.second.second;
-			reg = tempreg.first;
-		}
-	}
-	return reg;
-}
-
-std::vector<std::string> Registers::writeBack(std::vector<std::string> writeRegs = {}, bool flush = true)
-{
-	std::vector<std::string> instructions;
-
-	// inserting all registers into writeRegisters if nothing is passed
-	if(!writeRegs.size()){
-		for(auto reg : regs){
-			writeRegs.push_back(reg.first); 
-		}
-	}
-	
-	for(auto wreg: writeRegs){
-		if(regs[wreg].first!=""){
-			// loc stores memory location of the variable inside wreg
-			std::string loc = locations[regs[wreg].first].second;
-			if(loc!=""){
-				// write register value in memory location of the variable 
-				std::string instruction = "\tmov " + wreg + ",\t" + loc;
-				instructions.push_back(instruction);
-			}
-			if(flush){  
-				// remove register from the access of variable
-				locations[regs[wreg].first].first = "";
-				// reset register  
-				regs[wreg] = {"", 0};
-			}
-		}
-	}
-	return instructions;
-}
-
 // this function tells whether varName has been assigned a register/memory location
 bool Registers::inLocations(std::string varName)
 {
@@ -80,64 +33,6 @@ bool Registers::inLocations(std::string varName)
 			return true;
 	}
 	return false;
-}
-
-// this function is to get the register for a variable 
-std::pair<std::string, std::vector<std::string>> Registers::getRegister(std::string varName = "")
-{
-	// generating a random string for later use
-	if(varName.size()==0){
-		for (int i = 0; i < 8; ++i)
-		{
-			varName.push_back((char)(rnd(0,25) +'a'));
-		}
-	}
-	bool present=false;
-
-	for(auto entry :locations){
-		// if entry there then set the present as true
-		if(entry.first == varName){
-			present = true;
-			break;
-		}
-	}
-	
-	// if variable is present in register 
-	if(present && locations[varName].first.size()){
-		// incrementing the timestamp of the register
-		timestamp++;
-		regs[locations[varName].first].second = timestamp;
-		// as register already had the value of variable hence no instructions required 
-		return {locations[varName].first, {}};
-	}
-
-	// now the case if no register contains the variables value
-	std::string reg = selectReg();
-	// returns the instructions to writeback the register before assigning it to VarName
-	std::vector<std::string> instructionlist = writeBack({reg});
-
-	// assign the selected register to contain varName
-	regs[reg]={varName, ++timestamp};
-	
-	if(inLocations(varName)){
-		
-		locations[varName].first = reg;
-		std::string instruction = "\tmov\t" + locations[varName].second + ", " +  reg;
-
-		// if no memory location of the variable exit 
-		if(locations[varName].second=="") {
-			exit(1);
-		}
-		instructionlist.push_back(instruction);
-
-	}
-	else{
-		locations[varName] = {reg,""};
-	}
-
-	// return the register and instructions required to get it 
-	return {reg, instructionlist};
-
 }
 
 X86::X86(std::vector<quad> _tacCode)
@@ -736,7 +631,7 @@ std::vector<std::string> X86::tac2x86(quad instruction)
         code.push_back(getStoreInstr(memRes, resWidth,3));
 	}
     else if(oper == "!"){
-        
+
     }
 
     
