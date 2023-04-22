@@ -19,16 +19,10 @@ Registers::Registers()
 	}
 
 	argumentRegs = {"%rdi","%rsi","%rdx","%rcx","%r8","%r9"};
-	callerSaved = {};
-	calleeSaved = {};
 
 	std::vector<std::string> vecregs = {"%rax","%rbx", "%rcx", "%rdx" , "%r8", "%r9", "%r10", "%r11", "%r12", "%r13", "%r14", "%r15" };
 	std::vector<std::string> vals = {"%al", "%bl", "%cl", "%dl", "%r8b", "%r9b", "%r10b", "%r11b", "%r12b", "%r13b", "%r14b", "%r15b" };
 	
-	for(int i=0; i < vecregs.size(); i++)
-	{
-		lastByte[vecregs[i]]=vals[i];
-	}
 }
 
 // selectReg() selects a register to use next based on LRU scheme
@@ -337,7 +331,7 @@ std::vector<std::string> X86::tac2x86(quad instruction)
 	std::string oper = instruction.oper.first;
 	std::set<std::string> ALUOps {
 		"+", "-", "*",
-		"&", "|", "^", 
+		"&", "|", "^", "&&" , "||" ,
 	};
 	std::set<std::string> relOps {
 		"<", ">", "<=", ">=", "==", "!="
@@ -731,7 +725,7 @@ std::vector<std::string> X86::tac2x86(quad instruction)
         code.push_back(getStoreInstr(memArg, argWidth, 3));
     }
 
-	else if(oper=="~"){
+	else if(oper=="~" ){
 		std::string memArg = getMemLocation(instruction.argument2, code);
 		int argWidth = width(instruction.argument2);
         std::string memRes = getMemLocation(instruction.result,code);
@@ -741,6 +735,9 @@ std::vector<std::string> X86::tac2x86(quad instruction)
 		code.push_back(str);
         code.push_back(getStoreInstr(memRes, resWidth,3));
 	}
+    else if(oper == "!"){
+        
+    }
 
     
 	return code;

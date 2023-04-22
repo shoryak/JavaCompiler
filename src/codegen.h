@@ -19,9 +19,7 @@ public:
     std::vector<std::string> callerSaved ;
     // stores the calle saved registers
 	std::vector<std::string> calleeSaved ;
-    // < RegName, placeHolder for lastByte>
-	std::map<std::string, std::string> lastByte;
-    
+
 	std::string rip, rbp;
     // < variableName , < regName , memoryLocation >>
 	std::map<std::string, std::pair<std::string, std::string>> locations;
@@ -68,6 +66,9 @@ public:
 		{"&", "and"},
 		{"|", "or"},
 		{"^", "xor"},
+        {"&&", "and"},
+		{"||", "or"},
+
 	};
 	std::map<std::string, std::string> operToInstrSet {
 		{"<", "setl"},
